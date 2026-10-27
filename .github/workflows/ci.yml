@@ -1,0 +1,23 @@
+name: Rust
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  check:
+    strategy:
+      matrix:
+        os: [ubuntu-24.04, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - run: cargo fmt --all -- --check
+      - run: cargo test --locked --workspace --exclude homecloud-desktop
+      - if: runner.os == 'macOS'
+        run: cargo clippy --locked --workspace --all-targets -- -D warnings
+      - if: runner.os == 'Linux'
+        run: |
+          cargo clippy --locked --workspace --exclude homecloud-desktop --all-targets -- -D warnings
+          cc -Wall -Wextra -Werror -fsyntax-only crates/host/native/qemu_cpu_launcher.c
+      - run: python3 -m py_compile crates/host/host_runtime.py scripts/install_host.py lab/prove_access.py

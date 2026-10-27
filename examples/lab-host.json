@@ -1,0 +1,18 @@
+{
+  "pool":"hclab",
+  "dataset_root":"hclab/homecloud",
+  "image":"2139edd9da4026da8a66c0557af7eee4789101104eb27860bacd57086219cebb",
+  "capacity":{"memory_bytes":4294967296,"cpu_cores":2,"disk_bytes":137438953472},
+  "cpu_groups":[[4,10],[5,11]],
+  "housekeeping":[0,1,6,7],
+  "minimum_pool_available_bytes":32212254720,
+  "disk_overhead_gib_per_vm":2,
+  "t3_version":"0.1.2",
+  "allowed_gpus":["0000:01:00.0"],
+  "gpu_driver_packages":{"0000:01:00.0":"nvidia-driver-580"},
+  "allow_host_display_handoff":true,
+  "legacy_vms":[
+    {"name":"hclab-vm01","cpu_ids":[2,8],"unit":"homecloud-vm01.service"},
+    {"name":"hclab-vm02","cpu_ids":[3,9],"unit":"homecloud-vm02.service"}
+  ]
+}

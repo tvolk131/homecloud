@@ -1,0 +1,17 @@
+[package]
+name = "homecloud-store"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+[dependencies]
+anyhow.workspace = true
+getrandom.workspace = true
+hex.workspace = true
+homecloud-core.workspace = true
+rusqlite.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+uuid.workspace = true
+[dev-dependencies]
+tempfile.workspace = true

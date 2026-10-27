@@ -1,0 +1,10 @@
+/target/
+/.host-access/
+/.local/
+/.DS_Store
+*.db
+*.db-shm
+*.db-wal
+*.secret
+lab/evidence/private/
+__pycache__/

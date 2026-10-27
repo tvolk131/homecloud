@@ -1,0 +1,69 @@
+{
+  "purpose": "Host integration decisions to carry into the Rust MVP",
+  "provisioning": {
+    "template": "guest_cloud_init.py",
+    "acceptance": [
+      "Three new VMs reach cloud-init done without manual guest repairs",
+      "Mac key-only SSH and SFTP succeed before and after restart",
+      "VM UUIDs and SSH host keys are unique; SSH keys survive restart",
+      "Public HTTPS and DNS work; host, LAN router, and another VM are blocked"
+    ],
+    "limits": [
+      "Current transport is OpenSSH via the host; Iroh remains to be implemented"
+    ]
+  },
+  "storage": {
+    "candidate_layout": "Physical ZFS pool -> tenant parent with reservation and hard quota -> Incus-owned child and logical Incus pool",
+    "ownership": "Only the tenant parent is configured directly; Incus owns its child datasets and volume lifecycle",
+    "non_thin_admission": "Back configured guest disk sizes, image cache, per-VM metadata, ZFS overhead, and pending operations before allowing a mutation",
+    "headroom": "Keep a separate unreserved pool accounting floor. An unused dataset reservation is not a substitute. Include all managed global/cache consumers in admission.",
+    "quota_reductions": "Persist the lower future admission target separately; retain current backing until commitments have actually been released",
+    "acceptance": [
+      "A reaches both its guest filesystem limit and tenant physical cap",
+      "A separate quota-capped consumer reaches the remaining admitted global capacity while leaving the accounting floor intact",
+      "B fills its guest filesystem with incompressible data and verifies readback without QEMU backing I/O errors",
+      "Internal clones survive origin deletion and remain charged to the correct tenant",
+      "Restart, deletion, trim, scratch-pool import, and retained reservations behave as recorded"
+    ],
+    "limits": [
+      "File-backed scratch pool validates accounting and orchestration, not physical-disk failure recovery or performance",
+      "A root administrator bypassing accounting can violate the operating floor",
+      "Arbitrary user snapshots, thin provisioning, and universal overhead sizing remain deferred",
+      "Controller admission, concurrency, and crash-recovery transactions require separate Rust integration tests"
+    ]
+  },
+  "cpu": {
+    "candidate": "Root-owned, pre-created per-VM cgroup v2 cpusets; launcher enters the cgroup and sets helper affinity before executing QEMU; Incus pins vCPUs",
+    "allocation": "All SMT siblings of a physical core belong to the same VM; stopped VMs retain commitments",
+    "housekeeping": "Host services and QEMU helpers have separate housekeeping CPUs; route movable interrupts and unbound workqueues there",
+    "acceptance": [
+      "Effective per-VM cpuset excludes every other VM's dedicated cores",
+      "vCPUs remain individually pinned and helpers remain on housekeeping CPUs during concurrent CPU and I/O load",
+      "Attempting to set affinity to another VM's core fails at the cgroup bound",
+      "Policy applies before QEMU exec and survives restart, stop/start, Incus restart, and host reboot"
+    ],
+    "limits": [
+      "Residual per-CPU kernel work and hardware interference are not a hard real-time guarantee",
+      "The static lab launcher is a prototype; the Rust controller must derive and persist policy from its allocation ledger",
+      "The wrapper and AppArmor integration must be version-pinned and retested on Incus/QEMU upgrades"
+    ]
+  },
+  "sources": [
+    "https://linuxcontainers.org/incus/docs/main/reference/storage_zfs/",
+    "https://openzfs.github.io/openzfs-docs/man/master/7/zfsprops.7.html",
+    "https://linuxcontainers.org/incus/docs/main/reference/instance_options/",
+    "https://docs.kernel.org/admin-guide/cgroup-v2.html",
+    "https://www.freedesktop.org/software/systemd/man/latest/systemd.resource-control.html"
+  ],
+  "desktop": {
+    "status": "user_decision; implementation pending",
+    "framework": "iced",
+    "component_library": "iced-m3",
+    "platform_priority": [
+      "macOS"
+    ],
+    "language": "Rust",
+    "dependency_policy": "Pin mutually compatible releases and commit Cargo.lock",
+    "architecture": "GUI uses shared Rust client; allocation and authorization remain server-side"
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "scope": "Initial Homecloud control-plane integration on the disposable Ubuntu host",
+  "tests": {
+    "access": {
+      "ssh_iroh": true,
+      "guest_uid": 1000,
+      "public_outbound": true,
+      "lan_host_lab_isolation": true,
+      "changed_host_key_rejected": true,
+      "vm_id": "e8acf92e-d829-4f44-b844-cc12d10c6344"
+    },
+    "multiuser": {
+      "cross_user_inventory_denied": true,
+      "cross_user_ssh_denied": true,
+      "cross_vm_network_blocked": true,
+      "active_revocation_disconnect": true,
+      "revoked_reconnect_denied": true,
+      "deletion_released_commitments": true
+    },
+    "gpu": {
+      "cuda_non_root": {
+        "gpu": "NVIDIA GeForce GTX 1070 Ti",
+        "compute_capability": "6.1",
+        "vector_elements": 262144,
+        "kernel_launches": 63040,
+        "correct_result": true,
+        "elapsed_seconds": 1.047
+      },
+      "secure_boot_enabled": true,
+      "signed_modules": true,
+      "cold_start_compute": true,
+      "gpu_lease_retained_stopped": true,
+      "host_key_unchanged": true,
+      "t3_service_survives_cold_start": true,
+      "workspace_persisted": true,
+      "guest_telemetry": "Guest GPU responding: 0% utilization; 35/8192 MiB VRAM; 42 C. Guest-reported, not an independent hardware health guarantee.",
+      "detach_completed": true
+    }
+  },
+  "controller_restart_during_resize": "passed",
+  "native_mac_gui": "built and visually inspected with live host data",
+  "t3_version": "0.1.2",
+  "t3_bind": "127.0.0.1:3773",
+  "not_verified": [
+    "off-LAN transport",
+    "real provider session",
+    "off-host backup/restore"
+  ]
+}

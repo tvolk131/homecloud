@@ -1,0 +1,17 @@
+{
+  "fresh_boot_of_corrected_cloud_init_template": true,
+  "current_guest_configuration_verified_after_repairs": true,
+  "physical_host_reboot": true,
+  "gpu_passthrough": true,
+  "gpu_compute_as_ordinary_user": true,
+  "gpu_activity_via_incus_guest_agent": true,
+  "gpu_restart_and_stop_start": true,
+  "gpu_release_and_host_driver_restoration": true,
+  "multiuser_storage_exhaustion": true,
+  "iroh_transport": false,
+  "t3_server_installation": false,
+  "dedicated_cpu_workload_isolation": true,
+  "cpu_policy_survives_host_reboot": true,
+  "gpu_with_cpu_fencing": true,
+  "hard_realtime_cpu_isolation": false
+}

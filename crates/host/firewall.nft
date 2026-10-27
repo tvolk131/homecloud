@@ -1,0 +1,28 @@
+add table inet homecloud
+flush table inet homecloud
+table inet homecloud {
+  set non_public_v4 {
+    type ipv4_addr
+    flags interval
+    elements = { 0.0.0.0/8, 10.0.0.0/8, 100.64.0.0/10, 127.0.0.0/8,
+      169.254.0.0/16, 172.16.0.0/12, 192.0.0.0/24, 192.0.2.0/24,
+      192.168.0.0/16, 198.18.0.0/15, 198.51.100.0/24, 203.0.113.0/24,
+      224.0.0.0/4, 240.0.0.0/4 }
+  }
+  chain protect_host {
+    type filter hook input priority -20; policy accept;
+    iifname "hcvm*" ct state established,related counter accept
+    iifname "hcvm*" meta nfproto ipv6 counter drop
+    iifname "hcvm*" udp dport { 53, 67 } counter accept
+    iifname "hcvm*" tcp dport 53 counter accept
+    iifname "hcvm*" counter drop
+  }
+  chain protect_network {
+    type filter hook forward priority -20; policy accept;
+    iifname "hcvm*" meta nfproto ipv6 counter drop
+    iifname "hcvm*" ip daddr @non_public_v4 counter drop
+    iifname "hcvm*" oifname "hcvm*" counter drop
+    oifname "hcvm*" ct state established,related counter accept
+    oifname "hcvm*" counter drop
+  }
+}

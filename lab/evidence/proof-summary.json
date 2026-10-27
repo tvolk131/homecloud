@@ -1,0 +1,58 @@
+{
+  "passed": true,
+  "provisioning": {
+    "fresh_guests": 3,
+    "manual_guest_repairs": false,
+    "unique_identities": true,
+    "ssh_sftp_network_fence_and_restart": true
+  },
+  "storage": {
+    "tenant_guest_disk_bytes": 10737418240,
+    "tenant_physical_backing_bytes": 12884901888,
+    "minimum_unreserved_accounting_headroom_bytes": 1073741824,
+    "b_payload_bytes_after_other_caps_exhausted": 9328041984,
+    "b_readback_correct": true,
+    "bytes_reclaimed_by_delete_and_trim": 9364037632,
+    "backing_retained_after_trim": true,
+    "clean_fixture_passed": true,
+    "zero_headroom_negative_control": "Failed on QEMU BLOCK_IO_ERROR nospace=true despite remaining tenant reservation; keep the unreserved accounting floor as a separate admission invariant.",
+    "scope": "One VM per tenant; fixed image and volume parameters; file-backed scratch pool. Thin provisioning and arbitrary user snapshots remain deferred."
+  },
+  "cpu": {
+    "cycles": [
+      "initial",
+      "restart",
+      "stop_start",
+      "incus_daemon_restart",
+      "host_reboot"
+    ],
+    "concurrent_load_samples": 60,
+    "cross_vm_affinity_escape_rejected": true,
+    "unallocated_vm_launch_rejected": true,
+    "all_sampled_hardware_irqs_on_reserved_cores": 0,
+    "kernel_thread_affinity_exceptions": 46,
+    "guarantee": "Dedicated VM workload placement; residual kernel and hardware work is not a real-time isolation guarantee.",
+    "implementation": "Static lab pre-exec launcher and root-owned systemd cpusets; production Rust allocation ledger remains to be built."
+  },
+  "gpu_with_cpu_fencing": {
+    "gpu": "NVIDIA GeForce GTX 1070 Ti",
+    "compute_correct": true,
+    "ordinary_guest_uid": 1000,
+    "drivers_restored": true
+  },
+  "final_host": {
+    "pool_healthy": "pool 'hclab' is healthy",
+    "scratch_pool_removed": true,
+    "vm01": "running",
+    "vm02": "stopped; GPU detached",
+    "cpu_policy": "active static prototype",
+    "ssh_from_mac": "verified"
+  },
+  "next_implementation": [
+    "Rust service: SQLite allocation/operation ledger, transactional admission and crash recovery",
+    "Privileged host adapter: derive CPU policy and storage backing from that ledger",
+    "Authenticated Iroh device/control/SSH transport",
+    "macOS GUI and persistent T3 server experience inside VMs"
+  ],
+  "repeat_runner": "python3 lab/run_proofs.py; component stages were run in this session, assembled runner has not been rerun end-to-end"
+}

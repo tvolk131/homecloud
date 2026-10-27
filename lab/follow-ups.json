@@ -1,0 +1,87 @@
+[
+  {
+    "id": "host-gpu-passthrough-readiness",
+    "status": "planned",
+    "requirement": "Include actionable IOMMU/VT-d and per-GPU passthrough readiness checks in the MVP host inventory and macOS UI.",
+    "checks": [
+      "Kernel IOMMU support and boot configuration",
+      "Firmware DMAR/IVRS exposure",
+      "IOMMU groups and GPU group membership",
+      "Device driver and assignment readiness",
+      "Detect active host-console use and require an administrator-selected handoff policy",
+      "Check guest driver/toolkit compatibility with the physical GPU generation"
+    ],
+    "states": [
+      "ready",
+      "needs_firmware_configuration",
+      "needs_linux_configuration",
+      "unsupported_with_evidence",
+      "unknown"
+    ],
+    "behavior": [
+      "Provide evidence and likely cause; do not equate missing groups with unsupported hardware",
+      "Use detected motherboard identity to link verified guidance when available",
+      "Provide a Recheck action",
+      "Block GPU attachment until prerequisites pass while leaving ordinary VM operations available",
+      "Keep a host-display GPU reserved by default until an administrator explicitly configures its handoff policy",
+      "Basic guest telemetry can use the existing Incus agent; no custom telemetry daemon required"
+    ],
+    "observed_test_host": {
+      "motherboard": "MSI Z370-A PRO",
+      "gpu": "GTX 1070 Ti (Pascal)",
+      "before_firmware_change": {
+        "dmar": false,
+        "iommu_groups": 0
+      },
+      "after_firmware_change": {
+        "dmar": true,
+        "iommu_groups": 12
+      },
+      "gpu_group_members": [
+        "PCI bridge",
+        "GPU graphics function",
+        "GPU HDMI audio function"
+      ],
+      "host_display_in_use": true,
+      "validated_guest_driver_branch": "R580",
+      "supported_cuda_toolkit_generation": "12.x"
+    }
+  },
+  {
+    "id": "storage-unreserved-headroom",
+    "status": "prototype_validated",
+    "requirement": "Maintain an unreserved ZFS accounting floor in addition to tenant guarantees; block managed grants and global/cache growth that would consume it.",
+    "negative_control": {
+      "fixture": "32 GiB scratch pool; two 12 GiB tenant reservations; 10 GiB VM roots",
+      "observation": "At zero root available space, VM B paused on QEMU BLOCK_IO_ERROR nospace=true despite >6 GiB available inside its tenant reservation.",
+      "recovery": "Restoring unreserved headroom and explicitly resuming the disposable VM allowed its writes to finish without changing its tenant reservation or disk size."
+    },
+    "must_not_claim": [
+      "An unused emergency-reserve dataset is equivalent to an unreserved accounting floor",
+      "An administrator admission-target reduction frees existing backing",
+      "The zero-headroom experiment passed"
+    ],
+    "positive_control": {
+      "clean_fixture_passed": true,
+      "unreserved_floor_bytes": 1073741824,
+      "b_payload_bytes": 9328041984,
+      "restart_trim_reimport_passed": true
+    },
+    "implementation_required": "Encode the unreserved operating floor in every pool-wide admission path. Size the production margin conservatively; 1 GiB is the tested 32 GiB fixture value, not a universal setting."
+  },
+  {
+    "id": "dedicated-cpu-enforcement",
+    "status": "prototype_validated",
+    "requirement": "Provision and verify per-VM cgroup bounds before QEMU exec; derive all policy from a durable allocation ledger.",
+    "observed": "Passed CPU/I/O load across VM restart, stop/start, Incus restart, host reboot, and GPU compute.",
+    "operating_notes": [
+      "Keep complete SMT sibling pairs together",
+      "Fence host userspace and helpers onto housekeeping CPUs",
+      "Residual kernel and hardware activity is outside the workload placement guarantee",
+      "Ubuntu service EnvironmentFiles override Environment variables; put launcher PATH in the final EnvironmentFile",
+      "The static lab map currently recognizes only two VM names; the Rust adapter must register allocations before new managed VM starts",
+      "Reobserve autostart/start conflicts as desired-state convergence"
+    ],
+    "version_policy": "Pin and retest Incus/QEMU/AppArmor integration on upgrades"
+  }
+]
