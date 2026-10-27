@@ -49,7 +49,12 @@ the guest. Stopped VMs keep their CPU, RAM, disk and GPU commitments.
 ```sh
 cargo test --workspace --exclude homecloud-desktop
 cargo fmt --all -- --check
+sh scripts/test_ui.sh
 ```
+
+The native GUI has deterministic screenshot comparisons and interaction checks.
+See [interface design and visual testing](docs/interface.md) for baseline review,
+actual images, and highlighted diffs.
 
 The transport test uses real Iroh endpoints over explicit loopback addresses. The storage and
 allocation tests use disposable SQLite databases. Real QEMU, firewall, ZFS and

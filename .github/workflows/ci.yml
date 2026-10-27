@@ -16,6 +16,18 @@ jobs:
       - run: cargo test --locked --workspace --exclude homecloud-desktop
       - if: runner.os == 'macOS'
         run: cargo clippy --locked --workspace --all-targets -- -D warnings
+      - name: Compare native UI screenshots
+        if: runner.os == 'macOS'
+        env:
+          ICED_TEST_BACKEND: tiny-skia
+        run: cargo test --locked -p homecloud-desktop -- --test-threads=1
+      - name: Preserve UI screenshots and pixel diffs
+        if: failure() && runner.os == 'macOS'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: ui-screenshots
+          path: target/ui-screenshots
+          if-no-files-found: ignore
       - if: runner.os == 'Linux'
         run: |
           cargo clippy --locked --workspace --exclude homecloud-desktop --all-targets -- -D warnings
