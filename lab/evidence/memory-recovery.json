@@ -1,0 +1,448 @@
+{
+  "date": "2026-10-29",
+  "scope": "Persistent memory recovery UI and two-user nested hardware proof",
+  "worker_id": "9e944f18-bd19-44bc-9311-95fe621717d1",
+  "campaign": {
+    "users": {
+      "alice": "39c08244-c07a-4be3-8724-1ff9d5b8b37d",
+      "bob": "561c9bd8-52ad-4d7a-97e8-6d640c74292c"
+    },
+    "ids": {
+      "alice": "5ada0a18-980e-4242-adf1-1299d5070003",
+      "bob": "8c8d25a4-3185-45aa-a916-1a794b2effca"
+    },
+    "create_keys": {
+      "alice": "1c93b370-456d-4e58-88c9-b72282e34a25",
+      "bob": "0a96ee61-997c-4ea2-880d-a80aa8bfaf08"
+    },
+    "initial": {
+      "health": {
+        "condition": "healthy",
+        "details": {
+          "capacity_bytes": 7516192768,
+          "promised_bytes": 6442450944,
+          "held_bytes": 4294967296
+        }
+      },
+      "processes": {
+        "alice": [
+          17395
+        ],
+        "bob": [
+          18041
+        ]
+      },
+      "data_written": true
+    },
+    "promises-only": {
+      "health": {
+        "condition": "promises_exceed_capacity",
+        "details": {
+          "capacity_bytes": 5368709120,
+          "promised_bytes": 6442450944,
+          "held_bytes": 4294967296
+        }
+      },
+      "processes": {
+        "alice": [
+          1442
+        ],
+        "bob": [
+          1561
+        ]
+      },
+      "data": {
+        "alice": {
+          "proof_preserved": true
+        },
+        "bob": {
+          "proof_preserved": true
+        }
+      }
+    },
+    "all-blocked": {
+      "health": {
+        "condition": "allocations_exceed_capacity",
+        "details": {
+          "capacity_bytes": 3221225472,
+          "promised_bytes": 6442450944,
+          "held_bytes": 4294967296
+        }
+      },
+      "processes": {
+        "alice": [],
+        "bob": []
+      },
+      "owner_scoped_status": true,
+      "claims": {
+        "5ada0a18-980e-4242-adf1-1299d5070003": {
+          "memory_bytes": 2147483648,
+          "cpu_cores": 1,
+          "disk_bytes": 12884901888
+        },
+        "8c8d25a4-3185-45aa-a916-1a794b2effca": {
+          "memory_bytes": 2147483648,
+          "cpu_cores": 1,
+          "disk_bytes": 12884901888
+        }
+      }
+    },
+    "repair_gate_finding": "Initial explicit cache repair was rejected because ARC drift was conflated with an unfinished reserve operation. Split the attested journal phase from ARC readiness; admission and completion still require enforced ARC. Claims and VM identities were retained during the controller/helper upgrade.",
+    "unmanaged_mode_finding": "A mode-less reapply performed no ARC write. The controller refused its unenforced completion and retained the fence. Rolled back only the synthetic fault to finish that old receipt, added a pre-effect explicit-mode guard, and made GUI repair propose a concrete backed limit. The resumed proof explicitly selects 2 GiB.",
+    "arc-repair": {
+      "condition_during_drift": "arc_not_enforced",
+      "after": {
+        "condition": "allocations_exceed_capacity",
+        "details": {
+          "capacity_bytes": 3221225472,
+          "promised_bytes": 6442450944,
+          "held_bytes": 4294967296
+        }
+      },
+      "explicit_backed_two_gib_policy": true
+    },
+    "selected-recovery": {
+      "health": {
+        "condition": "promises_exceed_capacity",
+        "details": {
+          "capacity_bytes": 3221225472,
+          "promised_bytes": 6442450944,
+          "held_bytes": 2147483648
+        }
+      },
+      "processes": {
+        "alice": [],
+        "bob": [
+          15598
+        ]
+      },
+      "new_claim_denied": {
+        "accepted": false,
+        "message": "Error: Memory promises exceed physical capacity; reduce grants or review capacity before allocating more\n"
+      }
+    },
+    "race": {
+      "health": {
+        "condition": "healthy",
+        "details": {
+          "capacity_bytes": 3221225472,
+          "promised_bytes": 3221225472,
+          "held_bytes": 2147483648
+        }
+      },
+      "requests": [
+        {
+          "request": [
+            "alice",
+            "start",
+            "5ada0a18-980e-4242-adf1-1299d5070003"
+          ],
+          "response": {
+            "accepted": true,
+            "result": {
+              "progress": null,
+              "id": "ceeca19d-615f-48f6-8f8b-b33615105d44",
+              "vm_id": "5ada0a18-980e-4242-adf1-1299d5070003",
+              "actor": "39c08244-c07a-4be3-8724-1ff9d5b8b37d",
+              "request": {
+                "kind": "start",
+                "vm_id": "5ada0a18-980e-4242-adf1-1299d5070003",
+                "without_gpu": false
+              },
+              "phase": "pending",
+              "error": null
+            }
+          }
+        },
+        {
+          "request": [
+            "alice",
+            "start",
+            "5ada0a18-980e-4242-adf1-1299d5070003"
+          ],
+          "response": {
+            "accepted": false,
+            "message": "Error: VM already has an unfinished operation\n"
+          }
+        },
+        {
+          "request": [
+            "bob",
+            "start",
+            "8c8d25a4-3185-45aa-a916-1a794b2effca"
+          ],
+          "response": {
+            "accepted": true,
+            "result": {
+              "progress": null,
+              "id": "4fa7abc8-f980-41ea-b625-0426ae534a79",
+              "vm_id": "8c8d25a4-3185-45aa-a916-1a794b2effca",
+              "actor": "561c9bd8-52ad-4d7a-97e8-6d640c74292c",
+              "request": {
+                "kind": "start",
+                "vm_id": "8c8d25a4-3185-45aa-a916-1a794b2effca",
+                "without_gpu": false
+              },
+              "phase": "pending",
+              "error": null
+            }
+          }
+        },
+        {
+          "request": [
+            "bob",
+            "start",
+            "8c8d25a4-3185-45aa-a916-1a794b2effca"
+          ],
+          "response": {
+            "accepted": false,
+            "message": "Error: VM already has an unfinished operation\n"
+          }
+        },
+        {
+          "request": [
+            "admin",
+            "grant",
+            "39c08244-c07a-4be3-8724-1ff9d5b8b37d",
+            "--memory",
+            2,
+            "--cores",
+            1,
+            "--disk",
+            12
+          ],
+          "response": {
+            "accepted": false,
+            "message": "Error: Memory quota exceeded\n"
+          }
+        },
+        {
+          "request": [
+            "admin",
+            "grant",
+            "561c9bd8-52ad-4d7a-97e8-6d640c74292c",
+            "--memory",
+            2,
+            "--cores",
+            1,
+            "--disk",
+            12
+          ],
+          "response": {
+            "accepted": true,
+            "result": null
+          }
+        }
+      ],
+      "processes": {
+        "alice": [
+          17480
+        ],
+        "bob": [
+          17618
+        ]
+      },
+      "data": {
+        "alice": {
+          "proof_preserved": true
+        },
+        "bob": {
+          "proof_preserved": true
+        }
+      },
+      "unique_cpu_ids": [
+        2,
+        3,
+        4,
+        5
+      ]
+    },
+    "passed": true,
+    "final": {
+      "health": {
+        "condition": "healthy",
+        "details": {
+          "capacity_bytes": 3221225472,
+          "promised_bytes": 3221225472,
+          "held_bytes": 2147483648
+        }
+      },
+      "users": [
+        {
+          "id": "5ca24df3-54a2-4f3d-b1cf-84bfcce45dec",
+          "name": "Nested lab administrator",
+          "grant": {
+            "memory_bytes": 0,
+            "cpu_cores": 0,
+            "disk_bytes": 0
+          },
+          "committed": {
+            "memory_bytes": 0,
+            "cpu_cores": 0,
+            "disk_bytes": 0
+          }
+        },
+        {
+          "id": "39c08244-c07a-4be3-8724-1ff9d5b8b37d",
+          "name": "Nested alice",
+          "grant": {
+            "memory_bytes": 1073741824,
+            "cpu_cores": 1,
+            "disk_bytes": 12884901888
+          },
+          "committed": {
+            "memory_bytes": 1073741824,
+            "cpu_cores": 1,
+            "disk_bytes": 12884901888
+          }
+        },
+        {
+          "id": "561c9bd8-52ad-4d7a-97e8-6d640c74292c",
+          "name": "Nested bob",
+          "grant": {
+            "memory_bytes": 2147483648,
+            "cpu_cores": 1,
+            "disk_bytes": 12884901888
+          },
+          "committed": {
+            "memory_bytes": 1073741824,
+            "cpu_cores": 1,
+            "disk_bytes": 12884901888
+          }
+        }
+      ],
+      "vms": [
+        {
+          "id": "5ada0a18-980e-4242-adf1-1299d5070003",
+          "owner": "39c08244-c07a-4be3-8724-1ff9d5b8b37d",
+          "name": "hc-proof-5ef1458f74-alice",
+          "desired": "running",
+          "observed": "running",
+          "resources": {
+            "memory_bytes": 1073741824,
+            "cpu_cores": 1,
+            "disk_bytes": 12884901888
+          },
+          "cpu_ids": [
+            2,
+            3
+          ]
+        },
+        {
+          "id": "8c8d25a4-3185-45aa-a916-1a794b2effca",
+          "owner": "561c9bd8-52ad-4d7a-97e8-6d640c74292c",
+          "name": "hc-proof-5ef1458f74-bob",
+          "desired": "running",
+          "observed": "running",
+          "resources": {
+            "memory_bytes": 1073741824,
+            "cpu_cores": 1,
+            "disk_bytes": 12884901888
+          },
+          "cpu_ids": [
+            4,
+            5
+          ]
+        }
+      ],
+      "probe": {
+        "boot_id": "94e66076-2d7e-48fb-ae45-00147a0f083e",
+        "memory": 8250351616,
+        "arc": {
+          "size": 327927088,
+          "c_min": 257823488,
+          "c_max": 2147483648
+        },
+        "arc_parameters": {
+          "zfs_arc_max": "2147483648",
+          "zfs_arc_min": "0"
+        },
+        "versions": {
+          "zfs": "2.4.1-1ubuntu5.1",
+          "incus": "Client version: 6.0.5\nServer version: 6.0.5",
+          "kernel": "7.0.0-38-generic",
+          "qemu": "QEMU emulator version 10.2.1 (Debian 1:10.2.1+ds-1ubuntu3.3)"
+        },
+        "pool": "ONLINE",
+        "vms": [
+          {
+            "id": "5ada0a18-980e-4242-adf1-1299d5070003",
+            "status": "Running",
+            "pid": 17480,
+            "boot_autostart": "false",
+            "memory": "1GiB"
+          },
+          {
+            "id": "8c8d25a4-3185-45aa-a916-1a794b2effca",
+            "status": "Running",
+            "pid": 17618,
+            "boot_autostart": "false",
+            "memory": "1GiB"
+          }
+        ],
+        "swap": {
+          "pswpin": 0,
+          "pswpout": 0
+        }
+      },
+      "unfinished_operations": 0
+    }
+  },
+  "cleanup": {
+    "worker_deleted": true,
+    "owned_test_volume_deleted": true,
+    "original_grant_restored": true,
+    "disposable_leases_removed": true
+  },
+  "final_host_health": {
+    "permanent_devbox_pid": 3361,
+    "t3_service": "active",
+    "disposable_leases": {
+      "cpu_leases": 0,
+      "gpu_leases": 0,
+      "network_leases": 0
+    },
+    "test_volumes_removed": true,
+    "daemon_sha256": "9c25124fddc0cca1e9c06aad12410d4fe3efbf66df249af5a142c6e23fcf19e9",
+    "bundle_sha256": "aa4c3f2c25c640703aa8aa9e91cfe5234920ec6bfbe26a24c0feec69852e8069"
+  },
+  "final_host_memory": {
+    "condition": "healthy",
+    "details": {
+      "capacity_bytes": 44023414784,
+      "promised_bytes": 4294967296,
+      "held_bytes": 4294967296
+    }
+  },
+  "final_original_grant": {
+    "memory_bytes": 4294967296,
+    "cpu_cores": 2,
+    "disk_bytes": 137438953472
+  },
+  "final_original_commitments": {
+    "memory_bytes": 4294967296,
+    "cpu_cores": 1,
+    "disk_bytes": 51539607552
+  },
+  "verification": {
+    "mac_rust_tests_passed": 203,
+    "linux_rust_tests_passed": 118,
+    "mac_python_tests_run": 121,
+    "mac_python_skipped": 2,
+    "native_screenshot_comparisons": 133,
+    "new_screenshots_directly_inspected": 7,
+    "clippy_warnings_denied": true,
+    "format_check": true,
+    "diff_check": true,
+    "mac_bundle_signature_verified": true,
+    "mac_app_reopened_and_visually_inspected": true
+  },
+  "test_tooling_notes": [
+    "An ad hoc inner controller update initially used /tmp staging across filesystems, then hit protected-/tmp overwrite permissions. Private staging and an atomic destination-directory replacement completed the update with all claims preserved. This was test upgrade tooling, not a managed-installer failure."
+  ],
+  "limits": [
+    "Two real inner VMs/users; not a full-density physical-host performance proof.",
+    "Warnings are condition-derived and persist until resolution; no alert acknowledgment history or email/push was added.",
+    "The earlier unexplained Incus SIGKILL and QEMU orphan causes remain separate unresolved investigations."
+  ]
+}

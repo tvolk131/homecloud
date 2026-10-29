@@ -1,0 +1,51 @@
+{
+  "recorded_at_utc": "2026-10-28T04:29:50.472362+00:00",
+  "scope": "macOS desktop workspace navigation and layout; existing backend APIs",
+  "checks": {
+    "rust_workspace_tests": 70,
+    "desktop_tests": 24,
+    "native_iced_screenshot_baselines": 58,
+    "ordinary_screenshot_comparison_passed": true,
+    "clippy_passed": true,
+    "format_and_diff_check_passed": true,
+    "details_entry_points_target_same_workspace": true,
+    "header_start_stop_cleanup_bounds_both_sizes": true,
+    "pending_signin_survives_tab_changes": true,
+    "unsubmitted_code_cleared_on_tab_change": true,
+    "provider_success_notice_and_compact_row_tested": true,
+    "separate_gpu_and_delete_confirmation_tested": true
+  },
+  "screenshots_directly_inspected": [
+    "workspaces-tiny-skia.png",
+    "small-window-tiny-skia.png",
+    "workspace-ready-tiny-skia.png",
+    "workspace-ready-small-tiny-skia.png",
+    "workspace-settings-tiny-skia.png",
+    "workspace-settings-small-tiny-skia.png",
+    "workspace-settings-lower-small-tiny-skia.png",
+    "workspace-long-name-tiny-skia.png",
+    "workspace-stopped-tiny-skia.png",
+    "workspace-gpu-preference-tiny-skia.png",
+    "gpu-unavailable-small-tiny-skia.png",
+    "t3-claude-waiting-tiny-skia.png",
+    "t3-claude-waiting-small-tiny-skia.png",
+    "host-tiny-skia.png"
+  ],
+  "source_sha256": {
+    "crates/desktop/src/main.rs": "ab5ba4b4979037f63484a89f8e908a3301316399428f6e392c0aadaf55c5d561",
+    "crates/desktop/src/ui.rs": "e9d48ee956798d242e432e40f060fe0413d456d9d91bbad6271b60a19065597e",
+    "crates/desktop/src/ui/workspace.rs": "3b513929f5e5e82acc36c9708cb2acba6b35180a061707b34857ef397c42b4c6",
+    "crates/desktop/src/ui/applications.rs": "bada287c5faa2d01ff5c1dccd9ce2c6b998eb48ca9df89309dd63761c7e3c29a",
+    "crates/desktop/src/ui/hosts.rs": "fe16bd892c1d721cad25f5e6c50cd5b37620708a1e640c6c3d77beb537e3c0fc",
+    "crates/desktop/src/visual_tests.rs": "eaf2e6bfc975750a66fb2af35ab085325e94700c66f844e899dcfe8b96f36b95"
+  },
+  "server_deployment_required": false,
+  "real_vm_or_account_mutations_performed": false,
+  "owner_reported_claude_signin_success": true,
+  "native_app_reopened": true,
+  "limitations": [
+    "Native click automation previously returned noWindowsAvailable. Navigation and layout are exercised through the actual iced Simulator; native OS integrations are not revalidated by pixel tests."
+  ],
+  "mac_app_sha256": "554b671423eefd030034c6937701c6c9bc89e2b7be3c3dd53bdc1610e73077af",
+  "native_workspace_card_verified": "Updated Open terminal / Details actions visible; VM still running."
+}

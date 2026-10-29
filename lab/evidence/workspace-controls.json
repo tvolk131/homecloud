@@ -1,0 +1,69 @@
+{
+  "recorded_at_utc": "2026-10-28T18:12:33.009260+00:00",
+  "scope": "Compact workspace lifecycle controls, official Material action icons, and explicit durable force-stop recovery",
+  "checks": {
+    "rust_workspace_tests": 81,
+    "desktop_tests": 30,
+    "native_iced_screenshot_cases": 68,
+    "ordinary_screenshot_comparisons_passed": true,
+    "python_tests_on_mac": 50,
+    "python_skips_on_mac": 2,
+    "lifecycle_fault_tests_on_ubuntu": 15,
+    "workspace_clippy_passed": true,
+    "force_is_never_an_automatic_timeout_fallback": true,
+    "only_reviewed_stops_can_be_superseded": true,
+    "concurrent_retry_and_force_serialize": true,
+    "ownership_idempotency_audit_restart_and_stale_completion_tested": true,
+    "gpu_cpu_memory_held_until_verified_shutdown_and_cleanup": true,
+    "tab_enter_focus_tooltip_and_gpu_consent_tested": true,
+    "immediate_progress_and_stale_snapshot_guard_tested": true,
+    "controller_disconnect_is_unknown_and_blocks_lifecycle_actions": true
+  },
+  "screenshots_directly_inspected": [
+    "workspaces-tiny-skia.png",
+    "small-window-tiny-skia.png",
+    "workspaces-starting-tiny-skia.png",
+    "stopping-tiny-skia.png",
+    "workspaces-unavailable-tiny-skia.png",
+    "lifecycle-tooltip-tiny-skia.png",
+    "workspace-stop-timeout-tiny-skia.png",
+    "force-stop-confirmation-small-tiny-skia.png"
+  ],
+  "native_mac_app_reopened_and_inspected": true,
+  "deployment": {
+    "controller_active": true,
+    "guest_processes_and_states_preserved": true,
+    "t3_service_process_preserved": true,
+    "endpoint_identity_preserved": true,
+    "rollback_copies": "/var/lib/homecloud/test-runs/workspace-controls/1793210406",
+    "daemon_sha256": "19a890d5e6159bae81c73077726444221878df5fc391021cffad1ae314b8d09e",
+    "linux_cli_sha256": "4a06ad1412c6fcfb7ffe641c6448d23697fde99c933a0b28fd0ede0454aad6c5",
+    "adapter_sha256": "8470573e491fe04f29b32a8f49fda50fa91e38ef15a52575b5a703362fe17268"
+  },
+  "source_sha256": {
+    "crates/core/src/lib.rs": "0dcb1002a55d49f583368d393989fd31ab94b999742ab21fb2d910f8532e8023",
+    "crates/store/src/lib.rs": "f386621aaaf7ea7fc39dab8c815e074283d768f03539f6891052446eb72276ab",
+    "crates/store/src/tests.rs": "2917af58ad6423177b06a0a61b2b006b1632b7d6eccf5ceb83cb2a3bca300d59",
+    "crates/daemon/src/lib.rs": "fb4c4de45f1afec68da7fbb40577cbe57effb391a785618b4790bc24f3577fa9",
+    "crates/cli/src/main.rs": "d73afa534117f7e4dc585b79f1586c77aaf7ec8d6b3962687afd898404d1e287",
+    "crates/host/host_runtime.py": "8470573e491fe04f29b32a8f49fda50fa91e38ef15a52575b5a703362fe17268",
+    "crates/host/tests/test_lifecycle.py": "b81142931c3354b2f442bec45788f18584c00cf38c6a58a34562df4a1de4d845",
+    "crates/desktop/src/main.rs": "1f0a716bfde8f4feb22e3344926a3f7e22d7fea8f8e062da4a327710bfdc349c",
+    "crates/desktop/src/ui.rs": "cbd809eb48013e13edc7f79d6c22374af61fd8bb3490e1309c31fabac0d0d073",
+    "crates/desktop/src/ui/lifecycle.rs": "184340ebbeadeefcb6c3fa6efcdb970cb1e34ae57ccf8aae775ee57d47ea8cc5",
+    "crates/desktop/src/ui/workspaces.rs": "8104ae46e49c31ba8b25a019703e720bff0a711aa7469f1454b354da8d331054",
+    "crates/desktop/src/ui/workspace.rs": "c14a6b8c7013b6a1c31e779f2ee75f85f131ce266e3e7622d56ee7038523f657",
+    "crates/desktop/src/visual_tests.rs": "5394087ac27ecf5793092338d398baed2592e58e4273382fc4340f86931e7b10"
+  },
+  "mac_app_sha256": "c3fbfc3ca099886b42e732ed56260c98f434871b29d810e49771016f5564768f",
+  "live_force_stop_acceptance": {
+    "status": "pending",
+    "reason": "The reviewed 4 GiB host capacity is fully allocated to the active devbox. No quota/budget was changed and no guest was interrupted to create test headroom. A disposable running VM and real GPU-reset proof remain required."
+  },
+  "guest_power_or_account_mutations_performed": false,
+  "sidebar_icons_changed": false,
+  "limitations": [
+    "Keyboard and tooltip tests do not establish native macOS VoiceOver support.",
+    "Existing hotspot repeat remains deferred; no new off-LAN claim is made."
+  ]
+}

@@ -1,0 +1,68 @@
+{
+  "recorded_at": "2026-10-28T21:57:29.070627+00:00",
+  "scope": "Shared resource sliders with numeric entry and inline provider identities",
+  "forms": [
+    "Create workspace",
+    "Edit workspace",
+    "Invite coworker",
+    "Edit resource grant"
+  ],
+  "controls": "Pinned iced-m3 native sliders and text fields; whole GiB and physical-core steps; ticks only on small ranges.",
+  "bounds": [
+    "Create uses uncommitted quota and configured per-VM disk overhead",
+    "Edit reuses current backing, preserves above-quota allocations and prevents disk shrinking",
+    "Stopped CPU/RAM configuration is checked on the later Start",
+    "Grant limits retain other users promised or committed backing including disabled users",
+    "Form ranges remain fixed through refresh; server admission remains authoritative",
+    "New forms choose defaults inside their ranges; grants may be zero"
+  ],
+  "provider_rows": "Owner-only Codex/Claude email and plan sit beside the provider name where they fit; long metadata wraps.",
+  "backend_change": "Read-only Snapshot.disk_overhead_gib_per_vm comes from Limits; older snapshots retain a 2 GiB default.",
+  "tests": {
+    "rust_workspace": 115,
+    "desktop": 47,
+    "native_screenshot_comparisons": 90,
+    "linux_core_daemon_and_transport": 16,
+    "clippy_all_targets_warnings_denied": true
+  },
+  "native_interaction_proofs": [
+    "mouse slider drag",
+    "arrow-key adjustment",
+    "exact numeric typing",
+    "disk slider cannot shrink; typed shrink disables Save",
+    "restart confirmation remains staged and targeted",
+    "provider metadata shares the name row and long email wraps without clipping"
+  ],
+  "direct_visual_inspection": [
+    "workspace-edit-restart",
+    "create-small",
+    "resource-edit-over-quota-small",
+    "resource-create-no-capacity-small",
+    "resource-grant-small",
+    "workspace-accounts",
+    "workspace-accounts-long-small"
+  ],
+  "deployment": {
+    "controller_active": true,
+    "resource_claims_preserved": true,
+    "vm_and_application_ids_preserved": true,
+    "gpu_transition_schema_ready": true,
+    "guest_pids_and_states_preserved": true,
+    "t3_service_pid_preserved": true,
+    "endpoint_identity_preserved": true
+  },
+  "installed_sha256": {
+    "/usr/local/bin/homecloudd": "d8394b7fa2c694eaf5172430b0c1b895814cf4880e4f0d4e2ae305532f422b2f",
+    "/usr/local/bin/homecloud": "de4b8aebbcf9d380f732508bcbeecb8323abc6a1531a862a19aa32dbfaa6fa2d"
+  },
+  "live_read_only_api": {
+    "snapshot_reports_configured_disk_overhead": true,
+    "managed_vms_have_no_errors": true,
+    "no_pending_vm_operations": true,
+    "read_only_check": true
+  },
+  "mac_app_rebuilt_and_reopened": true,
+  "vm_resource_mutations_performed": false,
+  "existing_pending_hardware_tests_unchanged": true,
+  "live_edit_dialog_inspected": true
+}

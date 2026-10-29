@@ -1,0 +1,71 @@
+{
+  "date": "2026-10-28",
+  "scope": "Admin additional host reserves with serialized admission, root enforcement and restart recovery",
+  "limits": [
+    "Reserves stay inside the reviewed VM envelope; expanding it or reducing installed safety margins needs local privileged host setup",
+    "Single connected host; fleet aggregation remains deferred",
+    "No full host reboot in this pass: the production boot CPU-layout entrypoint was replayed while the guest stayed running",
+    "Live RAM reserve increases were safely rejected because all managed RAM is committed; positive RAM and mixed changes have automated coverage",
+    "Pool floor is operating headroom, not a ZFS reservation or protection from arbitrary unmanaged writes"
+  ],
+  "accounting": "Per resource sum(max(user grant, held VM commitments)), including disabled accounts and pending cleanup",
+  "verification": {
+    "workspace_tests": 145,
+    "desktop_tests": 63,
+    "native_screenshot_comparisons": 108,
+    "python_tests": 77,
+    "python_skipped": 2,
+    "linux_rust_tests": 82,
+    "linux_reserve_adapter_tests": 11,
+    "clippy": "workspace, all targets, warnings denied",
+    "direct_visual_inspection": [
+      "Normal reserve editor",
+      "Small invalid editor",
+      "No-headroom small editor",
+      "Pending operation",
+      "Retry and safe discard screens",
+      "Live host Overview before and after CPU/disk reserve",
+      "Live Mac editor with disabled controls and no-unpromised-capacity explanation"
+    ],
+    "mac_app": "Rebuilt and reopened; admin editor inspected"
+  },
+  "deployment": {
+    "controller_active": true,
+    "host_policy_unchanged": true,
+    "resource_claims_preserved": true,
+    "vm_and_application_ids_preserved": true,
+    "gpu_transition_schema_ready": true,
+    "guest_pids_and_states_preserved": true,
+    "t3_service_pid_preserved": true,
+    "endpoint_identity_preserved": true,
+    "backup_directory": "/var/lib/homecloud/test-runs/host-reserves/1793229952",
+    "sha256": {
+      "/usr/local/bin/homecloudd": "7f9446729110fec2d5d57ff861281cd6d2085e3567065bbd37dba8903532a4b6",
+      "/usr/local/bin/homecloud": "2e541e9d6fdd9d89abb5c3bfa2a22437259e01ee0464113009d2504dc63c6442",
+      "/usr/local/libexec/homecloud/host_runtime.py": "677807b7b7752385aff49aaa8fcaf49d1c3bdca6ebda80055f728a43afe8b5dc",
+      "/usr/local/libexec/homecloud/resource_reserves.py": "40767d6b0bacdc2c08a8ead7ba890d20009ca77a7c67693d8da3bf64f9143051"
+    }
+  },
+  "live": {
+    "tests": {
+      "memory_unused_promises_protected": true,
+      "cpu_unused_promises_protected": true,
+      "disk_unused_promises_protected": true,
+      "live_cpu_and_disk_reserve_applied": true,
+      "running_guest_and_t3_not_restarted": true,
+      "vcpu_pins_unchanged": true,
+      "pool_floor_increased": true,
+      "reserved_capacity_cannot_be_promised": true,
+      "release_keeps_capacity_until_confirmed": true,
+      "controller_crash_after_host_effect_recovers": true,
+      "boot_policy_entrypoint_replay_preserves_guests": true,
+      "original_grants_and_capacity_restored": true,
+      "all_guest_claims_and_processes_preserved": true,
+      "baseline_root_policy_unchanged": true,
+      "endpoint_identity_preserved": true
+    },
+    "final_revision": 2,
+    "full_host_reboot_performed": false
+  },
+  "regression": "Fully deleted VM history is excluded from CPU ownership; unconfirmed stopped claims remain protected. The initial live rejection occurred before effects; discard and grant restoration succeeded."
+}

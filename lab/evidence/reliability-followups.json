@@ -1,0 +1,184 @@
+{
+  "recorded_at_utc": "2026-10-29T03:55:15.064457+00:00",
+  "scope": "Five reliability follow-ups: startup, explicit ARC backing, DNS, resumable harness, interrupted persistence",
+  "verification": {
+    "rust_workspace_tests": 152,
+    "native_screenshots": 113,
+    "desktop_tests": 65,
+    "host_python_tests": 99,
+    "host_python_existing_skips": 2,
+    "lab_harness_tests": 7,
+    "linux_rust_tests": 81,
+    "formatting": true,
+    "clippy_warnings_denied": true,
+    "whitespace": true,
+    "native_mac_ui_inspected": true
+  },
+  "startup": {
+    "new_vms_with_single_seed_completed": 7,
+    "manual_guest_repairs_after_fix": 0,
+    "agent_and_generated_qemu_cids_matched": true,
+    "duplicate_cloud_init_seed_removed_for_new_vms": true,
+    "prior_launch_survives_reboot_window": true,
+    "unfinished_create_can_be_deleted": true,
+    "stale_create_fenced_after_delete": true,
+    "pre_fix_failures": [
+      "Untracked QEMU remained after Incus deletion; claim retained until explicit verified lab cleanup",
+      "VSOCK mismatch around first-boot restart",
+      "Competing cloud-init seeds interrupted network setup; NIC unmanaged and package DNS failed"
+    ],
+    "remaining_limit": "Exact upstream QEMU daemonization failure unproven; 24 tiny stock/launcher probes passed. Safe review path holds claims; pin and retest integration versions."
+  },
+  "memory_policy": {
+    "operating_floor_bytes": 2147483648,
+    "minimum_total_system_bytes": 4294967296,
+    "automatic_recommendation_bytes": 2147483648,
+    "custom_cap_requires_backing": true,
+    "native_zero_not_used": true,
+    "warm_arc_bytes": 4308580224,
+    "reclaimed_arc_bytes": 2082914608,
+    "vm_capacity_held_until_reclaimed": true,
+    "temporary_reclaim_target_restored": true
+  },
+  "pressure": {
+    "all_guest_capacity_claimed_bytes": 11811160064,
+    "physical_cores_claimed": 5,
+    "load_only_in_four_disposable_vms": true,
+    "permanent_devbox_kept_idle": true,
+    "limit": "Not a new full-resident saturation test; no universal zero-swap guarantee. Initial differing working-set comparison was rejected and repeated with fixed equal allocations.",
+    "rounds": [
+      {
+        "mode": "auto",
+        "duration_seconds": 120.01,
+        "effective_arc_maximum_bytes": 2147483648,
+        "allocated_disposable_guest_bytes": 4580179968,
+        "swap_out_bytes": 0,
+        "final_30_seconds_swap_out_bytes": 0,
+        "final_psi_avg10": 0.0,
+        "guests_healthy": true,
+        "pool_healthy": true
+      },
+      {
+        "mode": "custom",
+        "duration_seconds": 117.67,
+        "effective_arc_maximum_bytes": 2147483648,
+        "allocated_disposable_guest_bytes": 4580179968,
+        "swap_out_bytes": 16384,
+        "final_30_seconds_swap_out_bytes": 0,
+        "final_psi_avg10": 0.0,
+        "guests_healthy": true,
+        "pool_healthy": true
+      }
+    ]
+  },
+  "dns": {
+    "dns_faults": [
+      {
+        "persistent": false,
+        "exit": 0,
+        "seconds": 1.44,
+        "failed": 2,
+        "forwarded": 2
+      },
+      {
+        "persistent": true,
+        "exit": 100,
+        "seconds": 7.23,
+        "failed": 8,
+        "forwarded": 0
+      }
+    ],
+    "resolver_restored": true
+  },
+  "persistence": {
+    "real_zfs_and_initramfs_in_disposable_vm": true,
+    "cpu_placement_excluded_from_component_fixture": true,
+    "physical_host_not_rebooted": true,
+    "cases": [
+      {
+        "checkpoint": "before-initramfs",
+        "actual_reboot": true,
+        "journal_applied": true,
+        "final_arc_maximum_bytes": 268435456,
+        "temporary_target_restored": true
+      },
+      {
+        "checkpoint": "during-initramfs",
+        "actual_reboot": true,
+        "journal_applied": true,
+        "final_arc_maximum_bytes": 268435456,
+        "temporary_target_restored": true
+      },
+      {
+        "checkpoint": "after-initramfs",
+        "actual_reboot": true,
+        "journal_applied": true,
+        "final_arc_maximum_bytes": 268435456,
+        "temporary_target_restored": true
+      }
+    ]
+  },
+  "deployment": {
+    "backup": "/var/lib/homecloud/test-runs/reliability/1793243333",
+    "guest_processes_preserved": true,
+    "claims_preserved": true,
+    "endpoint_preserved": true,
+    "memory_policy": {
+      "operating_floor_bytes": 2147483648,
+      "recommended_arc_bytes": 2147483648,
+      "minimum_system_bytes": 4294967296
+    }
+  },
+  "final": {
+    "capacity": {
+      "memory_bytes": 11811160064,
+      "cpu_cores": 4,
+      "disk_bytes": 137438953472
+    },
+    "grant": {
+      "memory_bytes": 4294967296,
+      "cpu_cores": 2,
+      "disk_bytes": 137438953472
+    },
+    "system_reserves": {
+      "revision": 26,
+      "additional": {
+        "memory_bytes": 0,
+        "cpu_cores": 1,
+        "disk_bytes": 0
+      },
+      "core_groups": [
+        [
+          3,
+          9
+        ]
+      ],
+      "arc": {
+        "mode": "custom",
+        "max_bytes": 2147483648
+      }
+    },
+    "proof_dataset_removed": true,
+    "proof_vms_removed": true,
+    "vm_names": [
+      "homecloud-devbox",
+      "t3-devbox"
+    ],
+    "pending_operations": 0,
+    "pool_healthy": true,
+    "host_swappiness_unchanged": 60
+  },
+  "deferred": [
+    "Hotspot repeat checks",
+    "Off-host backups"
+  ],
+  "final_host_verification": {
+    "controller_active": true,
+    "permanent_vm_and_t3_processes_preserved": true,
+    "leases_preserved": true,
+    "identity_preserved": true,
+    "host_modules_match_tested_source": true,
+    "swappiness": 60,
+    "temporary_arc_target_restored": 0
+  }
+}

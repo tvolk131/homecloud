@@ -1,4 +1,15 @@
-use super::{App, Field, Msg, Page, Panel};
+use super::{App, Field, Msg, Page, Panel, unix_now};
+mod applications;
+mod editor;
+mod floating_actions;
+mod hosts;
+pub(crate) mod lifecycle;
+mod memory_health;
+mod reserves;
+mod resource_controls;
+mod setup;
+mod workspace;
+mod workspaces;
 use homecloud_core::*;
 use iced::{
     Alignment, Border, Color, Length,
@@ -70,6 +81,9 @@ fn glyph<'a>(name: &str) -> Element<'a, Msg> {
         }
         "activity" => {
             "M12 2a10 10 0 1 1-9.5 13h2.1A8 8 0 1 0 5.4 7.5L8 10H1V3l3 3A10 10 0 0 1 12 2Zm-1 4h2v6.4l4 2.4-1 1.7-5-3V6Z"
+        }
+        "settings" => {
+            "M10 2h4l.6 2.4 2 .9 2.2-.8 2 3.5-1.7 1.7.2 2.3 1.7 1.7-2 3.5-2.2-.8-2 .9L14 22h-4l-.6-2.4-2-.9-2.2.8-2-3.5 1.7-1.7-.2-2.3L3 10.3l2-3.5 2.2.8 2-.9L10 2Zm2 6a4 4 0 1 0 0 8 4 4 0 0 0 0-8Z"
         }
         _ => "M4 4h16v16H4V4Zm2 2v12h12V6H6Z",
     };
@@ -150,6 +164,8 @@ fn state_label(vm: &Vm) -> &str {
         "Updating"
     } else {
         match vm.observed.as_str() {
+            "running" if vm.desired == Lifecycle::Stopped => "Stopping",
+            "stopped" if vm.desired == Lifecycle::Running => "Starting",
             "running" => "Running",
             "stopped" => "Stopped",
             "pending" => "Creating",
@@ -158,55 +174,81 @@ fn state_label(vm: &Vm) -> &str {
     }
 }
 
+// Content and floating actions share a 24px right edge. The scrollbar occupies
+// the outer 16px gutter, rather than pushing the whole page farther inward.
+const PAGE_EDGE_INSET: f32 = 24.0;
+const SCROLLBAR_GUTTER: f32 = 16.0;
+
 pub fn view(app: &App) -> Element<'_, Msg> {
     let background: Element<'_, Msg> = if let Some(snapshot) = &app.snapshot {
         responsive(move |size| {
             let items = [
-                (Page::Workspaces, "Workspaces", "vm"),
-                (Page::Host, "Host", "host"),
+                (Page::Workspaces, "VMs", "vm"),
+                (Page::Hosts, "Hosts", "host"),
                 (Page::People, "People", "people"),
                 (Page::Activity, "Activity", "activity"),
+                (Page::Settings, "Settings", "settings"),
             ]
             .into_iter()
             .filter(|(page, _, _)| *page != Page::People || snapshot.me.role == Role::Admin)
             .map(|(page, label, icon)| NavigationItem::new(page, label, glyph(icon)));
-            let rail = navigation_rail(items, Some(app.page))
-                .on_select(Msg::Navigate)
-                .header(container(glyph("cloud")).center_x(48).center_y(48))
-                .footer(
-                    column![
-                        badge(
-                            snapshot.me.name.chars().next().unwrap_or('U').to_string(),
-                            false
-                        ),
-                        copy(if snapshot.me.role == Role::Admin {
-                            "Admin"
-                        } else {
-                            "Member"
-                        })
-                    ]
-                    .align_x(Alignment::Center)
-                    .spacing(8),
-                );
+            let rail = navigation_rail(
+                items,
+                Some(if matches!(app.page, Page::Workspace(_)) {
+                    Page::Workspaces
+                } else if app.page == Page::Host {
+                    Page::Hosts
+                } else {
+                    app.page
+                }),
+            )
+            .on_select(Msg::Navigate)
+            .header(container(glyph("cloud")).center_x(48).center_y(48))
+            .footer(
+                column![
+                    badge(
+                        snapshot.me.name.chars().next().unwrap_or('U').to_string(),
+                        false
+                    ),
+                    copy(if snapshot.me.role == Role::Admin {
+                        "Admin"
+                    } else {
+                        "Member"
+                    })
+                ]
+                .align_x(Alignment::Center)
+                .spacing(8),
+            );
             let padding = if size.width < 950.0 { 20.0 } else { 32.0 };
-            let width = (size.width - 96.0 - padding * 2.0).max(400.0);
+            let right_padding = PAGE_EDGE_INSET - SCROLLBAR_GUTTER;
+            let width = (size.width - 96.0 - padding - right_padding).max(400.0);
             let title = match app.page {
-                Page::Workspaces => "Workspaces",
-                Page::Host => "Host",
+                Page::Workspaces => "VMs",
+                Page::Workspace(id) => snapshot
+                    .vms
+                    .iter()
+                    .find(|v| v.id == id)
+                    .map(|v| v.spec.name.as_str())
+                    .unwrap_or("VM"),
+                Page::Hosts => "Hosts",
+                Page::Host => hosts::hostname(snapshot),
                 Page::People => "People",
                 Page::Activity => "Activity",
+                Page::Settings => "Settings",
             };
             let subtitle = match app.page {
                 Page::Workspaces => "Your development machines, in one place.",
-                Page::Host => "Capacity, storage, and hardware readiness.",
+                Page::Workspace(_) => "VM details",
+                Page::Hosts => "Physical machines and their VM capacity.",
+                Page::Host => "Capacity, people, and hardware on this machine.",
                 Page::People => "People and devices with access to your cloud.",
                 Page::Activity => "Requests, progress, and anything that needs attention.",
+                Page::Settings => "Preferences for this Homecloud client.",
             };
             let primary: Element<'_, Msg> = match app.page {
-                Page::Workspaces => button("+  New VM")
-                    .on_press(Msg::Open(Panel::Create))
-                    .disabled(app.busy)
-                    .into(),
+                Page::Workspace(_) => quiet("Back to VMs", Msg::Navigate(Page::Workspaces)).into(),
+                Page::Host => quiet("Back to hosts", Msg::Navigate(Page::Hosts)).into(),
+                Page::Workspaces => widget::space().into(),
                 Page::People if snapshot.me.role == Role::Admin => button("+  Invite coworker")
                     .on_press(Msg::Open(Panel::Invite))
                     .disabled(app.busy)
@@ -222,65 +264,105 @@ pub fn view(app: &App) -> Element<'_, Msg> {
                 .disabled(app.refreshing)
                 .into(),
             };
-            let header = row![
+            let default_header: Element<'_, Msg> = row![
                 column![typography(title, Type::HeadlineLarge), copy(subtitle)]
                     .spacing(4)
                     .width(Length::Fill),
                 primary
             ]
             .spacing(16)
-            .align_y(Alignment::Center);
-            let body = match app.page {
-                Page::Workspaces => workspaces(app, snapshot, width),
-                Page::Host => host(app, snapshot),
-                Page::People if snapshot.me.role == Role::Admin => people(app, snapshot),
-                Page::People => workspaces(app, snapshot, width),
-                Page::Activity => activity(app, snapshot),
+            .align_y(Alignment::Center)
+            .into();
+            let header = if let Page::Workspace(id) = app.page {
+                workspace::header(app, snapshot, id, width)
+            } else if app.page == Page::Host {
+                column![default_header, hosts::navigation(app)]
+                    .spacing(16)
+                    .into()
+            } else {
+                default_header
             };
-            let mut main = column![header].spacing(24);
+            let body = match app.page {
+                Page::Workspaces => workspaces::view(app, snapshot, width),
+                Page::Workspace(id) => workspace::view(app, snapshot, id),
+                Page::Hosts => hosts::directory(app, snapshot),
+                Page::Host => hosts::view(app, snapshot, width - 16.0),
+                Page::People if snapshot.me.role == Role::Admin => people(app, snapshot),
+                Page::People => workspaces::view(app, snapshot, width),
+                Page::Activity => activity(app, snapshot),
+                Page::Settings => settings(app),
+            };
+            let fab = floating_actions::action(app, snapshot);
+            let bottom_clearance = if fab.is_some() {
+                floating_actions::clearance(padding)
+            } else {
+                16.0
+            };
+            let mut main = column![container(header).padding(iced::Padding {
+                right: SCROLLBAR_GUTTER,
+                ..Default::default()
+            })]
+            .spacing(24);
             if app.panel.is_none() {
                 if let Some(e) = &app.error {
-                    main = main.push(message(e, true));
+                    main = main.push(container(message(e, true)).padding(iced::Padding {
+                        right: SCROLLBAR_GUTTER,
+                        ..Default::default()
+                    }));
                 } else if !app.notice.is_empty() {
-                    main = main.push(message(&app.notice, false));
+                    main = main.push(container(message(&app.notice, false)).padding(
+                        iced::Padding {
+                            right: SCROLLBAR_GUTTER,
+                            ..Default::default()
+                        },
+                    ));
                 }
+            }
+            if let Some(warning) = memory_health::banner(app, snapshot) {
+                main = main.push(container(warning).padding(iced::Padding {
+                    right: SCROLLBAR_GUTTER,
+                    ..Default::default()
+                }));
             }
             main = main.push(
                 scrollable(
                     container(body)
                         .padding(iced::Padding {
-                            right: 16.0,
-                            bottom: 16.0,
+                            right: SCROLLBAR_GUTTER,
+                            bottom: bottom_clearance,
                             ..Default::default()
                         })
                         .width(Length::Fill),
                 )
+                .id("page-body")
                 .width(Length::Fill)
                 .height(Length::Fill),
             );
             let content = container(main)
-                .padding(padding)
+                .padding(iced::Padding {
+                    top: padding,
+                    right: right_padding,
+                    bottom: padding,
+                    left: padding,
+                })
                 .max_width(1350)
                 .height(Length::Fill);
-            row![
-                rail,
-                container(content)
-                    .center_x(Length::Fill)
-                    .height(Length::Fill)
-            ]
-            .height(Length::Fill)
-            .into()
+            let pane: Element<'_, Msg> = container(content)
+                .center_x(Length::Fill)
+                .height(Length::Fill)
+                .into();
+            let pane: Element<'_, Msg> = if let Some(fab) = fab {
+                widget::stack![pane, floating_actions::positioned(fab)].into()
+            } else {
+                pane
+            };
+            row![rail, pane].height(Length::Fill).into()
         })
         .into()
     } else {
         pairing(app)
     };
-    let panel = app
-        .panel
-        .as_ref()
-        .or(app.last_panel.as_ref())
-        .map(|panel| panel_view(app, panel))
-        .unwrap_or_else(|| dialog(text("")).on_dismiss(Msg::Close));
+    let panel = displayed_dialog(app);
     iced_m3::focus::scope(modal(background, panel, app.panel.is_some()))
 }
 fn message(value: &str, error: bool) -> Element<'_, Msg> {
@@ -316,322 +398,14 @@ fn message(value: &str, error: bool) -> Element<'_, Msg> {
     })
     .into()
 }
-fn metric(label: &str, used: u64, grant: u64, unit: &str) -> Element<'static, Msg> {
-    let over = used > grant;
-    surface(
-        column![
-            copy(label.to_owned()),
-            row![
-                typography(used.to_string(), Type::HeadlineLarge),
-                copy(format!("/ {grant} {unit}"))
-            ]
-            .spacing(8)
-            .align_y(Alignment::Center),
-            iced_m3::linear_progress(if grant == 0 {
-                if used == 0 { 0.0 } else { 1.0 }
-            } else {
-                (used as f32 / grant as f32).min(1.0)
-            }),
-            copy(if over {
-                format!("{} {unit} over grant · growth paused", used - grant)
-            } else {
-                format!("{} {unit} available", grant - used)
-            })
-        ]
-        .spacing(12),
-        false,
-    )
-    .into()
-}
-fn compact_metric(label: &str, used: u64, grant: u64, unit: &str) -> Element<'static, Msg> {
-    column![
-        copy(label.to_owned()),
-        typography(format!("{used} / {grant}"), Type::TitleLarge),
-        copy(if used > grant {
-            format!("{unit} · over grant")
-        } else {
-            format!("{unit} allocated")
-        })
-    ]
-    .spacing(6)
-    .width(Length::Fill)
-    .into()
-}
-fn workspaces<'a>(app: &'a App, snapshot: &'a Snapshot, width: f32) -> Element<'a, Msg> {
-    let user = &snapshot.me;
-    let metrics: Element<'_, Msg> = if width < 740.0 {
-        surface(
-            row![
-                compact_metric(
-                    "Memory",
-                    user.committed.memory_bytes / GIB,
-                    user.grant.memory_bytes / GIB,
-                    "GiB"
-                ),
-                compact_metric(
-                    "Dedicated CPU",
-                    user.committed.cpu_cores,
-                    user.grant.cpu_cores,
-                    "cores"
-                ),
-                compact_metric(
-                    "Disk backing",
-                    user.committed.disk_bytes / GIB,
-                    user.grant.disk_bytes / GIB,
-                    "GiB"
-                )
-            ]
-            .spacing(20),
-            false,
-        )
-        .into()
-    } else {
-        row![
-            metric(
-                "Memory",
-                user.committed.memory_bytes / GIB,
-                user.grant.memory_bytes / GIB,
-                "GiB"
-            ),
-            metric(
-                "Dedicated CPU",
-                user.committed.cpu_cores,
-                user.grant.cpu_cores,
-                "cores"
-            ),
-            metric(
-                "Disk backing",
-                user.committed.disk_bytes / GIB,
-                user.grant.disk_bytes / GIB,
-                "GiB"
-            )
-        ]
-        .spacing(12)
-        .into()
-    };
-    let mut body = column![
-        metrics,
-        row![
-            heading("Your machines"),
-            horizontal_space(),
-            copy(format!("{} total", snapshot.vms.len()))
-        ]
-        .align_y(Alignment::Center)
-    ]
-    .spacing(24);
-    if snapshot.vms.is_empty() {
-        body=body.push(surface(column![container(glyph("vm")).padding(12),heading("A workspace of your own"),copy("Create a VM for your projects. Your files and T3 server stay here when your Mac disconnects."),button("Create your first VM").on_press(Msg::Open(Panel::Create))].spacing(16).align_x(Alignment::Center),false));
-    } else {
-        let columns = if width >= 840.0 { 2 } else { 1 };
-        for chunk in snapshot.vms.chunks(columns) {
-            let mut line = row![].spacing(16);
-            for vm in chunk {
-                line = line.push(vm_card(app, vm));
-            }
-            if chunk.len() < columns {
-                line = line.push(horizontal_space().width(Length::Fill));
-            }
-            body = body.push(line);
-        }
-    }
-    body.push(copy(
-        "Stopped VMs keep their allocations. Manage a machine to change resources or attach a GPU.",
-    ))
-    .into()
-}
-fn vm_card<'a>(app: &'a App, vm: &'a Vm) -> Element<'a, Msg> {
-    let ready = vm.observed == "running" && vm.ssh_host_key.is_some();
-    let mut content = column![
-        row![
-            container(glyph("vm"))
-                .padding(10)
-                .style(|theme: &Theme| container::Style {
-                    background: Some(theme.colors.secondary_container.into()),
-                    text_color: Some(theme.colors.on_secondary_container),
-                    border: Border {
-                        radius: 14.0.into(),
-                        ..Default::default()
-                    },
-                    ..Default::default()
-                }),
-            horizontal_space(),
-            badge(
-                state_label(vm),
-                vm.observed == "running" && vm.error.is_none()
-            )
-        ]
-        .align_y(Alignment::Center),
-        typography(&vm.spec.name, Type::TitleLarge).width(Length::Fill),
-        copy("Ubuntu · development VM"),
-        row![
-            vm_stat(format!("{} GiB", vm.spec.memory_gib), "Memory"),
-            vm_stat(
-                format!(
-                    "{} core{}",
-                    vm.spec.cores,
-                    if vm.spec.cores == 1 { "" } else { "s" }
-                ),
-                "Dedicated CPU"
-            ),
-            vm_stat(format!("{} GiB", vm.spec.disk_gib), "Disk")
-        ]
-        .spacing(16),
-    ]
-    .spacing(16);
-    if let Some(error) = &vm.error {
-        content = content.push(copy(error.strip_prefix("pending: ").unwrap_or(error)));
-    }
-    if vm.gpu.is_some() {
-        content = content.push(badge("GPU reserved", true));
-    }
-    content = content.push(
-        row![
-            button("Open terminal")
-                .on_press(Msg::Ssh(vm.id, false))
-                .disabled(app.busy || !ready),
-            secondary("Set up T3", Msg::Open(Panel::T3(vm.id)))
-                .disabled(app.busy || vm.ssh_host_key.is_none()),
-            quiet("Manage", Msg::Open(Panel::Vm(vm.id)))
-        ]
-        .spacing(8)
-        .align_y(Alignment::Center)
-        .wrap(),
-    );
-    surface(content, false).into()
-}
 fn vm_stat(value: String, label: &'static str) -> Element<'static, Msg> {
     column![typography(value, Type::TitleMedium), copy(label)]
         .spacing(4)
         .width(Length::Fill)
         .into()
 }
-fn host<'a>(app: &'a App, s: &'a Snapshot) -> Element<'a, Msg> {
-    let i = &s.inventory;
-    let healthy = i.pool_health == "ONLINE"
-        && i.warnings.is_empty()
-        && i.iommu.as_ref().is_none_or(|r| r.state == "ready");
-    let mut body = column![surface(
-        row![
-            column![
-                copy("HOST STATUS"),
-                typography(
-                    if healthy {
-                        "Host is healthy"
-                    } else {
-                        "Review host setup"
-                    },
-                    Type::HeadlineMedium
-                ),
-                copy(format!(
-                    "{} · {} physical cores · {} GiB RAM",
-                    i.hostname,
-                    i.physical_cores,
-                    i.memory_bytes / GIB
-                ))
-            ]
-            .spacing(12)
-            .width(Length::Fill),
-            badge(if healthy { "Healthy" } else { "Check host" }, healthy)
-        ]
-        .spacing(16)
-        .align_y(Alignment::Center),
-        true
-    )]
-    .spacing(20);
-    for warning in &i.warnings {
-        body = body.push(message(warning, true));
-    }
-    body = body.push(surface(
-        column![
-            row![
-                heading("Storage"),
-                horizontal_space(),
-                badge(&i.pool_health, i.pool_health == "ONLINE")
-            ]
-            .align_y(Alignment::Center),
-            typography(
-                format!("{} GiB available", i.pool_available_bytes / GIB),
-                Type::HeadlineMedium
-            ),
-            copy(format!(
-                "Pool {} · reserved physical backing for your users",
-                i.pool
-            ))
-        ]
-        .spacing(14),
-        false,
-    ));
-    let mut hardware = column![
-        row![
-            heading("GPU passthrough"),
-            horizontal_space(),
-            badge(
-                i.iommu
-                    .as_ref()
-                    .map(|r| if r.state == "ready" {
-                        "IOMMU ready"
-                    } else {
-                        "Setup needed"
-                    })
-                    .unwrap_or("Unknown"),
-                i.iommu.as_ref().is_some_and(|r| r.state == "ready")
-            )
-        ]
-        .align_y(Alignment::Center)
-    ]
-    .spacing(16);
-    if i.gpus.is_empty() {
-        hardware = hardware.push(copy("No supported GPU detected."));
-    }
-    for gpu in &i.gpus {
-        hardware = hardware
-            .push(typography(gpu_name(&gpu.model), Type::TitleMedium))
-            .push(copy(if gpu.readiness.state == "ready" {
-                "Available for an eligible VM. Assign it from the machine's Manage dialog."
-            } else if gpu.readiness.state == "assigned" {
-                "Exclusively reserved to a VM, including while that VM is stopped."
-            } else {
-                "Review the hardware setup before assigning this device."
-            }))
-            .push(copy(gpu.telemetry.as_deref().unwrap_or(
-                "Utilization is unavailable until a supported guest driver responds.",
-            )));
-        for step in &gpu.readiness.next_steps {
-            hardware = hardware.push(copy(step));
-        }
-    }
-    if let Some(iommu) = &i.iommu {
-        for step in &iommu.next_steps {
-            hardware = hardware.push(copy(step));
-        }
-    }
-    hardware = hardware.push(quiet(
-        if app.hardware_details {
-            "Hide hardware details"
-        } else {
-            "Show hardware details"
-        },
-        Msg::ToggleHardware,
-    ));
-    if app.hardware_details {
-        hardware = hardware.push(copy(&i.cpu_model));
-        if let Some(iommu) = &i.iommu {
-            for evidence in &iommu.evidence {
-                hardware = hardware.push(copy(evidence));
-            }
-        }
-        for gpu in &i.gpus {
-            hardware = hardware.push(copy(format!(
-                "PCI {} · driver {}",
-                gpu.pci,
-                gpu.driver.as_deref().unwrap_or("unbound")
-            )));
-            for line in &gpu.readiness.evidence {
-                hardware = hardware.push(copy(line));
-            }
-        }
-    }
-    body = body.push(surface(hardware, false)).push(surface(
+fn settings(app: &App) -> Element<'_, Msg> {
+    surface(
         row![
             column![
                 heading("Motion"),
@@ -646,8 +420,8 @@ fn host<'a>(app: &'a App, s: &'a Snapshot) -> Element<'a, Msg> {
         .spacing(16)
         .align_y(Alignment::Center),
         false,
-    ));
-    body.into()
+    )
+    .into()
 }
 fn people<'a>(app: &'a App, s: &'a Snapshot) -> Element<'a, Msg> {
     let mut body = column![heading("Resource grants")].spacing(16);
@@ -726,6 +500,11 @@ fn people<'a>(app: &'a App, s: &'a Snapshot) -> Element<'a, Msg> {
 fn operation_name(op: &Operation) -> &'static str {
     match &op.request {
         Mutation::Create { .. } => "Create VM",
+        Mutation::Start {
+            without_gpu: true, ..
+        } => "Start without GPUs",
+        Mutation::Start { .. } => "Start VM",
+        Mutation::ForceStop { .. } => "Force stop VM",
         Mutation::State {
             desired: Lifecycle::Running,
             ..
@@ -736,6 +515,7 @@ fn operation_name(op: &Operation) -> &'static str {
         } => "Stop VM",
         Mutation::State { .. } => "Delete VM",
         Mutation::Resize { .. } => "Resize VM",
+        Mutation::Edit { .. } => "Edit VM",
         Mutation::Gpu { pci: Some(_), .. } => "Attach GPU",
         Mutation::Gpu { .. } => "Detach GPU",
     }
@@ -792,7 +572,7 @@ fn pairing(app: &App) -> Element<'_, Msg> {
             if connecting {
                 "Connecting to your cloud"
             } else {
-                "Your cloud. Your workspace."
+                "Your cloud. Your VMs."
             },
             Type::HeadlineLarge
         ),
@@ -818,150 +598,235 @@ fn pairing(app: &App) -> Element<'_, Msg> {
         .center_y(Length::Fill)
         .into()
 }
+fn displayed_dialog(app: &App) -> iced_m3::Dialog<'_, Msg> {
+    app.panel
+        .as_ref()
+        .or(app.last_panel.as_ref())
+        .map(|panel| panel_view(app, panel))
+        .unwrap_or_else(|| dialog(text("")).on_dismiss(Msg::Close))
+}
+fn panel_error(app: &App) -> Option<&String> {
+    if app.panel.is_some() {
+        app.error.as_ref()
+    } else {
+        app.last_panel_error.as_ref()
+    }
+}
+#[cfg(test)]
+pub(super) fn retained_dialog(app: &App) -> Element<'_, Msg> {
+    // Hold the actual exit body visible so tests can inspect its layout after
+    // logical dismissal; the production modal owns animation and input gating.
+    iced_m3::focus::scope(modal(
+        widget::space().width(Length::Fill).height(Length::Fill),
+        displayed_dialog(app),
+        true,
+    ))
+}
 fn panel_view<'a>(app: &'a App, panel: &'a Panel) -> iced_m3::Dialog<'a, Msg> {
     let mut content = column![].spacing(20);
     let mut actions = row![quiet("Cancel", Msg::Close).disabled(app.busy)].spacing(8);
     match panel {
-        Panel::Create | Panel::Resize(_) => {
-            let resize = matches!(panel, Panel::Resize(_));
-            content = content
-                .push(heading(if resize {
-                    "Resize machine"
-                } else {
-                    "Create a workspace"
-                }))
-                .push(copy(if resize {
-                    "The VM will restart to apply these sizes. Disk capacity can only grow."
-                } else {
-                    "An isolated Ubuntu VM with persistent storage and your T3 server."
-                }));
-            if !resize {
-                content = content.push(app.input("Machine name", Field::Name));
+        Panel::SetupDiagnostics(id) => {
+            return dialog(setup::details(app, *id))
+                .actions(
+                    row![
+                        quiet("Refresh", Msg::LoadSetupDiagnostics(*id))
+                            .disabled(app.setup_diagnostics_loading),
+                        quiet("Done", Msg::Close)
+                    ]
+                    .spacing(8),
+                )
+                .width(720.0)
+                .max_height(680.0)
+                .on_dismiss(Msg::Close);
+        }
+        Panel::ReviewMemoryCapacity => {
+            if let Some(s) = &app.snapshot
+                && let Some(m) = &app.memory_review
+            {
+                let changed = s
+                    .host_reserves
+                    .as_ref()
+                    .and_then(|v| v.memory.as_ref())
+                    .is_none_or(|live| {
+                        live.revision != m.revision || live.safe_bytes != m.safe_bytes
+                    });
+                let promised = s
+                    .users
+                    .iter()
+                    .map(|u| u.grant.memory_bytes.max(u.committed.memory_bytes) as u128)
+                    .sum::<u128>();
+                let held = s
+                    .users
+                    .iter()
+                    .map(|u| u.committed.memory_bytes as u128)
+                    .sum::<u128>();
+                content = content.push(heading("Review memory capacity"))
+                        .push(copy(format!("Usable physical RAM: {:.1} GiB. System minimum: {} GiB.", m.physical_bytes as f64 / GIB as f64, m.minimum_system_bytes/GIB)))
+                        .push(copy(format!("VM envelope: {} → {} GiB.",m.reviewed_bytes/GIB,m.safe_bytes/GIB)))
+                        .push(copy(format!("User promises: {} GiB. Held VM memory: {} GiB.",promised/GIB as u128,held/GIB as u128)))
+                        .push(copy("All grants and VM claims are kept. If promises exceed physical capacity, additions stay blocked until an administrator reduces grants. VM starts wait while held memory exceeds capacity."));
+                if changed {
+                    content =
+                        content.push(copy("Memory capacity changed. Close and review it again."));
+                }
+                actions = actions.push(
+                    button("Adopt capacity")
+                        .on_press(Msg::AdoptMemoryCapacity)
+                        .disabled(app.busy || !m.arc_ready || app.snapshot_unavailable || changed),
+                );
             }
-            content=content.push(row![app.input("Memory · GiB",Field::Ram),app.input("Physical cores",Field::Cores),app.input("Disk · GiB",Field::Disk)].spacing(12))
-                .push(copy("Whole physical cores include SMT siblings. Disk backing includes 2 GiB of additional overhead on this host."));
-            if !resize {
-                content = content
-                    .push(app.input("Guest SSH public key", Field::Key))
-                    .push(copy(
-                        "Only a public key. Your private key stays on this Mac.",
-                    ));
+        }
+        Panel::HostReserves => {
+            let (body, buttons) = reserves::form(app);
+            return dialog(body)
+                .actions(buttons)
+                .width(600.0)
+                .max_height(720.0)
+                .on_dismiss(Msg::Close)
+                .dismiss_on_outside(!app.busy)
+                .dismiss_on_escape(!app.busy);
+        }
+        Panel::EditWorkspace(id) => {
+            let (body, buttons) = editor::form(app, *id);
+            content = content.push(body);
+            return dialog(content)
+                .actions(buttons)
+                .width(600.0)
+                .max_height(720.0)
+                .on_dismiss(Msg::Close)
+                .dismiss_on_outside(!app.busy)
+                .dismiss_on_escape(!app.busy);
+        }
+        Panel::ConfirmEdit { vm_id, changes } => {
+            let (body, buttons) = editor::confirmation(app, *vm_id, changes);
+            content = content.push(body);
+            return dialog(content)
+                .actions(buttons)
+                .width(560.0)
+                .max_height(700.0)
+                .on_dismiss(Msg::Close)
+                .dismiss_on_outside(!app.busy)
+                .dismiss_on_escape(!app.busy);
+        }
+        Panel::Create => {
+            if let Some(pending) = app.displayed_create() {
+                let spec = &pending.spec;
+                content = content.push(heading("Confirm VM creation"))
+                    .push(typography(spec.name.clone(), Type::TitleMedium))
+                    .push(copy(format!("{} GiB RAM · {} {} · {} GiB disk", spec.memory_gib, spec.cores, if spec.cores == 1 { "core" } else { "cores" }, spec.disk_gib)))
+                    .push(copy(if spec.managed_host() { "Homecloud host with 32 GiB test disk" } else if spec.applications.contains(&ApplicationKind::T3) { "T3 Code included" } else { "Ubuntu VM" }))
+                    .push(copy("Your request is saved. Retry checks the original submission without creating another VM."))
+                    .push(row![
+                        iced_m3::circular_progress(0.0).indeterminate(app.busy).paused(app.reduced_motion).size(20.0),
+                        copy(if app.busy { "Checking the request…" } else { "Waiting for confirmation" }),
+                    ].spacing(12).align_y(Alignment::Center))
+                    .push(copy("Closing this dialog does not cancel VM creation."));
+                actions = row![
+                    quiet("Close", Msg::Close).disabled(app.busy),
+                    button(if app.busy {
+                        "Checking…"
+                    } else {
+                        "Retry request"
+                    })
+                    .on_press(Msg::Create)
+                    .disabled(app.busy || app.create_error.is_some()),
+                ]
+                .spacing(8);
+                return dialog(content)
+                    .actions(actions)
+                    .width(560.0)
+                    .max_height(680.0)
+                    .on_dismiss(Msg::Close)
+                    .dismiss_on_outside(!app.busy)
+                    .dismiss_on_escape(!app.busy);
             }
-            let msg = if let Panel::Resize(id) = panel {
-                Msg::Resize(*id)
+            if let Some(error) = &app.create_error {
+                content = content.push(copy(error.clone()));
+            }
+            let selected = if app.install_managed_host {
+                Some(ApplicationKind::HomecloudHost)
+            } else if app.install_t3 {
+                Some(ApplicationKind::T3)
             } else {
-                Msg::Create
+                None
             };
+            content = content.push(heading("Create a VM"));
+            let mut workloads = column![
+                iced_m3::radio("Ubuntu VM", None, Some(selected)).on_select(Msg::SelectWorkload),
+                iced_m3::radio("T3 Code", Some(ApplicationKind::T3), Some(selected))
+                    .on_select(Msg::SelectWorkload),
+            ]
+            .spacing(4);
+            if app
+                .snapshot
+                .as_ref()
+                .is_some_and(|s| s.me.role == Role::Admin)
+            {
+                workloads = workloads.push(
+                    iced_m3::radio(
+                        "Homecloud host lab",
+                        Some(ApplicationKind::HomecloudHost),
+                        Some(selected),
+                    )
+                    .on_select(Msg::SelectWorkload),
+                );
+            }
+            content=content.push(workloads).push(copy(if app.install_managed_host {
+                "A separate controller, Incus and ZFS pool. Includes a backed 32 GiB test disk. Nested KVM and a prepared host bundle are required."
+            } else if app.install_t3 {
+                "Includes Codex and Claude Code. 4 GiB RAM recommended; sign in after installation."
+            } else { "An isolated Ubuntu VM with persistent storage." }))
+                .push(app.input("Machine name",Field::Name))
+                .push(resource_controls::controls(app))
+                .push(resource_controls::validation(app,format!("Whole cores include SMT siblings. Disk backing includes {} GiB overhead{}.",app.snapshot.as_ref().map(|s|s.disk_overhead_gib_per_vm).unwrap_or(2),if app.install_managed_host { " plus the 32 GiB test disk" } else { " per VM" })))
+                .push(app.input("Guest SSH public key",Field::Key))
+                .push(copy("Only a public key. Your private key stays on this Mac.")).spacing(12);
             actions = actions.push(
                 button(if app.busy {
                     "Submitting…"
-                } else if resize {
-                    "Apply & restart"
                 } else {
                     "Create VM"
                 })
-                .on_press(msg)
-                .disabled(app.busy),
+                .on_press(Msg::Create)
+                .disabled(
+                    app.busy
+                        || app.create_error.is_some()
+                        || app.snapshot_unavailable
+                        || crate::resources::FormBounds::current(app)
+                            .is_none_or(|b| b.validate(app).is_err()),
+                ),
             );
         }
-        Panel::Vm(id) => {
-            if let Some(vm) = app
+        Panel::GpuUnavailable(conflict) => {
+            let name = app
                 .snapshot
                 .as_ref()
-                .and_then(|s| s.vms.iter().find(|v| v.id == *id))
-            {
-                content = content
-                    .push(typography(&vm.spec.name, Type::TitleLarge).width(Length::Fill))
-                    .push(badge(state_label(vm), vm.observed == "running"))
-                    .push(copy(format!(
-                        "{} GiB RAM · {} dedicated cores · {} GiB disk",
-                        vm.spec.memory_gib, vm.spec.cores, vm.spec.disk_gib
-                    )));
-                content = content.push(
-                    row![
-                        secondary(
-                            if vm.desired == Lifecycle::Running {
-                                "Stop VM"
-                            } else {
-                                "Start VM"
-                            },
-                            Msg::Change(Mutation::State {
-                                vm_id: *id,
-                                desired: if vm.desired == Lifecycle::Running {
-                                    Lifecycle::Stopped
-                                } else {
-                                    Lifecycle::Running
-                                }
-                            })
-                        )
-                        .disabled(app.busy),
-                        secondary("Resize", Msg::Open(Panel::Resize(*id))).disabled(app.busy)
-                    ]
-                    .spacing(8),
-                );
-                content=content.push(heading("GPU")).push(copy("Assignments are exclusive and remain reserved while the VM is stopped. Changes can restart this machine."));
-                if let Some(pci) = &vm.gpu {
-                    content = content.push(copy(format!("Reserved device: {pci}"))).push(
-                        secondary(
-                            "Detach GPU",
-                            Msg::Change(Mutation::Gpu {
-                                vm_id: *id,
-                                pci: None,
-                            }),
-                        )
-                        .disabled(app.busy),
-                    );
-                } else if let Some(snapshot) = &app.snapshot {
-                    if !snapshot.me.gpu_allowed && snapshot.me.role != Role::Admin {
-                        content =
-                            content.push(copy("Ask your administrator to enable GPU access."));
-                    } else {
-                        for gpu in &snapshot.inventory.gpus {
-                            content = content
-                                .push(typography(gpu_name(&gpu.model), Type::TitleMedium))
-                                .push(
-                                    secondary(
-                                        "Attach GPU",
-                                        Msg::Change(Mutation::Gpu {
-                                            vm_id: *id,
-                                            pci: Some(gpu.pci.clone()),
-                                        }),
-                                    )
-                                    .disabled(
-                                        app.busy
-                                            || gpu.readiness.state != "ready"
-                                            || vm.spec.memory_gib < 4,
-                                    ),
-                                );
-                        }
-                    }
-                    if vm.spec.memory_gib < 4 {
-                        content = content
-                            .push(copy("Resize to at least 4 GiB RAM before attaching a GPU."));
-                    }
-                }
-                content = content.push(quiet(
-                    if app.identity_details {
-                        "Hide machine identity"
-                    } else {
-                        "Show machine identity"
-                    },
-                    Msg::ToggleIdentity,
-                ));
-                if app.identity_details {
-                    content = content
-                        .push(copy(vm.id.to_string()))
-                        .push(copy("SSH host-key trust is pinned to this identity."));
-                }
-                content = content.push(
-                    button("Delete VM")
-                        .variant(Variant::Text)
-                        .palette(|t| (Color::TRANSPARENT, t.colors.error))
-                        .on_press(Msg::Delete(*id))
-                        .disabled(app.busy),
-                );
-                actions = row![quiet("Done", Msg::Close).disabled(app.busy)];
-            }
+                .and_then(|s| s.vms.iter().find(|v| v.id == conflict.vm_id))
+                .map(|v| v.spec.name.as_str())
+                .unwrap_or("This VM");
+            let model = app
+                .snapshot
+                .as_ref()
+                .and_then(|s| s.inventory.gpus.iter().find(|g| g.pci == conflict.pci))
+                .map(|g| gpu_name(&g.model))
+                .unwrap_or_else(|| "Remembered GPU".into());
+            content = content.push(heading("GPU unavailable"))
+                .push(typography(format!("{name} is still stopped"), Type::TitleMedium))
+                .push(copy(format!("{model} · {}", conflict.pci)))
+                .push(copy(&conflict.reason))
+                .push(copy("Go back to try again later, or start with none of the selected GPUs. All GPU preferences will be remembered for the next start."));
+            actions = row![
+                quiet("Go back", Msg::Close).disabled(app.busy),
+                button(if app.busy {
+                    "Submitting…"
+                } else {
+                    "Start without GPUs"
+                })
+                .on_press(Msg::StartWithoutGpu(conflict.vm_id))
+                .disabled(app.busy)
+            ]
+            .spacing(8);
         }
         Panel::Invite | Panel::Grant => {
             let invite = matches!(panel, Panel::Invite);
@@ -975,9 +840,10 @@ fn panel_view<'a>(app: &'a App, panel: &'a Panel) -> iced_m3::Dialog<'a, Msg> {
             } else {
                 content = content.push(copy(app.get(Field::User)));
             }
-            content=content.push(app.input("Memory grant · GiB",Field::RamGrant)).push(app.input("Physical core grant",Field::CoreGrant)).push(app.input("Disk backing grant · GiB",Field::DiskGrant))
+            content=content.push(resource_controls::controls(app))
+                .push(resource_controls::validation(app,"Grants reserve capacity on this host. Availability is checked again when saving.".into()))
                 .push(iced_m3::switch(app.gpu).label("Allow GPU assignment").on_toggle(|_|Msg::ToggleGpu))
-                .push(copy(if invite{"The invitation expires after 24 hours and can enroll one device."}else{"Reducing a grant blocks further growth. Existing VMs and GPU assignments keep running."}));
+                .push(copy(if invite{"The invitation expires after 24 hours and can enroll one device."}else{"Reducing a grant blocks further growth. Existing VMs and GPU assignments keep running."})).spacing(12);
             actions = actions.push(
                 button(if invite {
                     "Create invitation"
@@ -985,19 +851,13 @@ fn panel_view<'a>(app: &'a App, panel: &'a Panel) -> iced_m3::Dialog<'a, Msg> {
                     "Save grant"
                 })
                 .on_press(if invite { Msg::Invite } else { Msg::Grant })
-                .disabled(app.busy || (invite && app.get(Field::User).trim().is_empty())),
-            );
-        }
-        Panel::T3(id) => {
-            content=content.push(heading("Connect T3 Code")).push(copy("Your projects, provider credentials, and agents run inside this VM."))
-                .push(copy("1. Set up and copy this machine's SSH alias."))
-                .push(copy("2. In T3 Code, open Settings → Environments → Add environment, choose SSH, and paste the alias."))
-                .push(copy("3. Sign into your provider in that remote environment."))
-                .push(copy("This adds a managed Include to your Mac's SSH config. Existing entries are preserved, and host-key checking stays enabled."));
-            actions = actions.push(
-                button("Set up & copy alias")
-                    .on_press(Msg::Ssh(*id, true))
-                    .disabled(app.busy),
+                .disabled(
+                    app.busy
+                        || app.snapshot_unavailable
+                        || (invite && app.get(Field::User).trim().is_empty())
+                        || crate::resources::FormBounds::current(app)
+                            .is_none_or(|b| b.validate(app).is_err()),
+                ),
             );
         }
         Panel::Invitation => {
@@ -1018,13 +878,44 @@ fn panel_view<'a>(app: &'a App, panel: &'a Panel) -> iced_m3::Dialog<'a, Msg> {
             actions =
                 actions.push(danger("Delete permanently", Msg::Delete(*id)).disabled(app.busy));
         }
+        Panel::ForceStop(id) => {
+            let name = app
+                .snapshot
+                .as_ref()
+                .and_then(|s| s.vms.iter().find(|v| v.id == *id))
+                .map(|v| v.spec.name.as_str())
+                .unwrap_or("this machine");
+            content = content.push(heading(format!("Force stop {name}?")))
+                .push(copy("This powers off the VM without waiting for its operating system to shut down. Unsaved work and pending disk writes may be lost."))
+                .push(copy("Its disk is retained. CPU, RAM and GPU allocations stay held until the host confirms shutdown and cleanup."));
+            actions = actions.push(
+                danger("Force stop", Msg::ForceStop(*id))
+                    .disabled(app.busy || app.snapshot_unavailable),
+            );
+        }
+        Panel::Stop(id) => {
+            let name = app
+                .snapshot
+                .as_ref()
+                .and_then(|s| s.vms.iter().find(|v| v.id == *id))
+                .map(|v| v.spec.name.as_str())
+                .unwrap_or("this machine");
+            content = content.push(heading(format!("Stop {name}?")))
+                .push(copy("This shuts down the VM and ends its running terminals and tasks. Its disk and installed applications are kept."))
+                .push(copy("CPU, RAM and the GPU become available after shutdown and cleanup finish."));
+            actions = actions.push(
+                button("Stop VM")
+                    .on_press(Msg::Stop(*id))
+                    .disabled(app.busy || app.snapshot_unavailable),
+            );
+        }
         Panel::Revoke(peer) => {
             content=content.push(heading("Revoke this device?")).push(copy(short(peer))).push(copy("Its active SSH tunnels will close, and it will no longer be able to connect. Enrolling it again requires a fresh device key."));
             actions =
                 actions.push(danger("Revoke access", Msg::Revoke(peer.clone())).disabled(app.busy));
         }
     }
-    if let Some(error) = &app.error {
+    if let Some(error) = panel_error(app) {
         content = content.push(message(error, true));
     }
     dialog(content)

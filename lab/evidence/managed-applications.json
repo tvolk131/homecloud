@@ -1,0 +1,297 @@
+{
+  "recorded_at_utc": "2026-10-28T03:59:36.675863+00:00",
+  "automated_checks": {
+    "mac_rust_tests": 66,
+    "linux_rust_tests": 46,
+    "python_adapter_cases": 45,
+    "screenshots": 51,
+    "clippy_both_platforms": true,
+    "fmt_and_diff_check": true,
+    "python_mac_skipped_modern_tar_filter_cases": 2
+  },
+  "real_lab_checks": [
+    {
+      "controller_restart_preserved_guest_job_and_challenge": true,
+      "host_database_excludes_challenge": true
+    },
+    {
+      "vm_reboot_cleared_incomplete_pairing": true,
+      "t3_service_started_without_pairing": true,
+      "setup_ready_for_fresh_link": true
+    },
+    {
+      "fresh_selected_t3_install_succeeded": true,
+      "fresh_proof_vm_deleted_and_resources_released": true,
+      "main_devbox_restored_cpu_only": true,
+      "controller_active": true,
+      "temporary_transport_logging_removed": true
+    }
+  ],
+  "installed_sha256": {
+    "/usr/local/bin/homecloud": "dd5a2c8aeef0b6d6e13ccb8d3b3a16ef2303e3c7c5fa2cb6c79dcfa708a0ec1c",
+    "/usr/local/bin/homecloudd": "65b1e1118575b3740909159e46b4e64faac9b4281f217ad1a7934cca0c35ab51",
+    "/usr/local/libexec/homecloud/host_runtime.py": "b517aab8c40642458e956d7350a08dea08fc7457507b4c6fe21a39dc1b65d8b9",
+    "/usr/local/libexec/homecloud/managed_apps.py": "14bb6537eaa02c62ed0474c8239cb4756024f542a75fa8f8a5fdb76b4bab51da",
+    "/usr/local/libexec/homecloud/managed-app.py": "0d7a08af8eb55ead5a4dd7ee6300b4e8e7a937fe790ce023cb71fdaa29965cb9",
+    "/usr/local/libexec/homecloud/setup-t3.sh": "82c3d67d9c18483754f47278e82ffc17cb532964ccc4a406cc4a14dea8a0bc29",
+    "/usr/local/libexec/homecloud/setup-providers.py": "426b9d592dd4e85fd1685cca769b9516313b9a58736070f4d25062691b7aa827",
+    "/usr/local/libexec/homecloud/codex_auth.py": "78872e96d33fe2c9a546d1a5c9baf6c27bed9b0727fa534d6503829830a67f0a",
+    "/usr/local/libexec/homecloud/claude_auth.py": "06dbf52b0e9ad40531dd0836b5cd935eadb4ca9e28918c0081e32b507a980324"
+  },
+  "source_sha256": {
+    "crates/cli/src/main.rs": "bbee83df098967f3e0566965eecb589772ceca5ee6b2094c1fb39c29afea6465",
+    "crates/core/src/apps.rs": "25beefee938c24b031877c2242ef82fec748838cfcfa89a2df58aafa505affc4",
+    "crates/core/src/lib.rs": "ca2a480a5ee3a949c69147e6a97cdde763e6bf16ba0f869d8703c4f47c5486f3",
+    "crates/daemon/src/apps.rs": "8f48b782dd13d02ca1e1fdc936a80da04d676e093e808addfdf5d1b7451fd6b8",
+    "crates/daemon/src/lib.rs": "c120c0b7f34819dc15f66f7ad185f9f9891b42d1c61f399d08b58083ee3940f8",
+    "crates/daemon/src/main.rs": "b8628d753f1904f72e9f29b08eb2fe09a952485cbab434fea026db5dcb2c7033",
+    "crates/desktop/src/main.rs": "949b349bf6e9aec211e36ce608b527924981c2423022ede8eefff5553dfb62d7",
+    "crates/desktop/src/ui.rs": "4eef98a092499eb5f74c0f2d142dcac2dd47b0158e46dbb4bebd0f287e3c5036",
+    "crates/desktop/src/visual_tests.rs": "5497050ad2b9aad4fe76b150a4e9e04e285c97e9d0b3f5201b2b9b1c2b408b70",
+    "crates/host/host_runtime.py": "b517aab8c40642458e956d7350a08dea08fc7457507b4c6fe21a39dc1b65d8b9",
+    "crates/host/managed_apps.py": "14bb6537eaa02c62ed0474c8239cb4756024f542a75fa8f8a5fdb76b4bab51da",
+    "crates/host/src/lib.rs": "c2bf7f58e61b941b29deec73b567fe9ba7fd0bd377b47accd6dd3cec4f5c56bb",
+    "crates/store/src/apps.rs": "6f6bd62bfe118d596ad8f8477668282ae1f6a69ddc7e7b7c6e83995abd906278",
+    "crates/store/src/lib.rs": "c4b78299e9c3c12542d4231afa2bc669b6eb4cbbcd481a01b902e1f3cf6fedd8",
+    "crates/store/src/tests.rs": "29bfe7e67257a4ee4fccfafb3afd86eafd7472f83fe045290bbee09aabcb823a",
+    "guest/managed-app.py": "0d7a08af8eb55ead5a4dd7ee6300b4e8e7a937fe790ce023cb71fdaa29965cb9",
+    "scripts/install_host.py": "6573b2faec8467b04ce721ffa5ed93172712897b7e77bb526017203ffe9ae5c9",
+    "crates/host/tests/test_lifecycle.py": "c4dd5d7a3d04a0f61534eef8ecc048a7b02714a6913d22042a0064f4a4a7737b",
+    "crates/host/tests/runtime.rs": "fd2787ceda2dd60630ddefd73bf3c3580d83be1b5768190f9b789508facdcfe3",
+    "crates/host/tests/test_applications.py": "052ca9dfe9f162fa648eac295570073f27fbd745633b5b1651a8075caffec7b3",
+    "guest/setup-providers.py": "426b9d592dd4e85fd1685cca769b9516313b9a58736070f4d25062691b7aa827",
+    "guest/setup-t3.sh": "82c3d67d9c18483754f47278e82ffc17cb532964ccc4a406cc4a14dea8a0bc29",
+    "crates/host/tests/test_providers.py": "380773d9ac5a77aa38130f84ea5b145e639f5ca319662a4e8c0b5178d922c3a8",
+    "guest/codex_auth.py": "78872e96d33fe2c9a546d1a5c9baf6c27bed9b0727fa534d6503829830a67f0a",
+    "crates/host/tests/test_codex_auth.py": "77bc478af660e7ed327b7ce84ffd17b5f3376e9c4249d6de2d22beef625a8be3",
+    "guest/claude_auth.py": "06dbf52b0e9ad40531dd0836b5cd935eadb4ca9e28918c0081e32b507a980324",
+    "crates/host/tests/test_claude_auth.py": "d3583c308ca9f1f818e83fda3076d155bd20bbdf007274790d35006d1b0a10b1",
+    "crates/desktop/src/ui/applications.rs": "e6fb3b339bb86ce20b77ba5f07890060f6ee5f51b2343973701f56b6bf4457eb",
+    "guest/fixtures/claude-auth-terminal.json": "3572e9e129b7a3ff5365a8245fd1252dfa45f33a139735e8eb793133246007ab"
+  },
+  "pending": [],
+  "limitations": [
+    "T3 CLI authorization prompt parsing is pinned to version 0.1.2"
+  ],
+  "paired_account_checks": [
+    {
+      "native_t3_connection_reachable": true,
+      "guest_job_success_reconciled_to_database": true
+    },
+    {
+      "paired_vm_reboot_reconnected_without_new_authorization": true,
+      "same_account_and_relay_configuration": true,
+      "t3_service_auto_started": true,
+      "same_setup_operation_succeeded": true,
+      "host_database_contains_no_challenge": true,
+      "recovery_seconds": 71.11
+    }
+  ],
+  "owner_confirmation": {
+    "t3_account_approval_and_mac_environment_selection": "reported successful",
+    "ai_provider_task": "Owner reports T3 usable after sign-in; no specific task artifact independently inspected.",
+    "codex_gui_signin": "Owner reported successful Homecloud Codex sign-in and working T3 use in the devbox.",
+    "claude_gui_signin_and_task": "Owner reported successful Homecloud Claude sign-in and a working Claude thread in T3 before the reboot."
+  },
+  "provider_bootstrap": {
+    "initial_versions": {
+      "codex": "0.165.0",
+      "claude": "2.1.308"
+    },
+    "runtime": {
+      "versions": {
+        "codex": "codex-cli 0.165.0",
+        "claude": "2.1.308 (Claude Code)"
+      },
+      "both_discoverable_on_actual_t3_service_path": true,
+      "codex_app_server_entrypoint_available_without_node": true,
+      "t3_account_still_linked": true,
+      "t3_reachability": "reachable",
+      "node_required_or_installed": false
+    },
+    "paired_reboot_with_providers": [
+      {
+        "native_t3_connection_reachable": true,
+        "guest_job_success_reconciled_to_database": true
+      },
+      {
+        "paired_vm_reboot_reconnected_without_new_authorization": true,
+        "same_account_and_relay_configuration": true,
+        "t3_service_auto_started": true,
+        "same_setup_operation_succeeded": true,
+        "host_database_contains_no_challenge": true,
+        "recovery_seconds": 78.9
+      }
+    ],
+    "initial_artifacts_sha256_verified": true,
+    "existing_compatible_versions_preserved": true,
+    "service_repair_activates_path_changes": true,
+    "owner_provider_login_or_task": "Owner reported successful Codex sign-in and T3 use.",
+    "checks": {
+      "repair_succeeded": true,
+      "both_provider_components_ready": true,
+      "paired_after_reboot": true,
+      "controller_active": true
+    }
+  },
+  "codex_gui_signin": {
+    "protocol": "Codex 0.165.0 app-server JSONL, chatgptDeviceCode",
+    "real_recovery_checks": [
+      {
+        "controller_restart_preserved_same_codex_job_and_challenge": true,
+        "t3_kept_running_without_reinstallation": true,
+        "host_database_excludes_challenge": true,
+        "guest_job_state_private": true
+      },
+      {
+        "vm_reboot_cleared_incomplete_codex_challenge": true,
+        "no_automatic_replacement_login": true,
+        "t3_account_preserved": true,
+        "codex_still_signed_out": true,
+        "recovery_seconds": 16.91
+      }
+    ],
+    "owner_only_action_and_challenge_tested": true,
+    "cross_action_idempotency_and_concurrency_tested": true,
+    "structured_login_success_denial_and_unsaved_completion_tested_with_subprocess_fixtures": true,
+    "restart_recovery_does_not_conflate_t3_pairing_with_codex_auth": true,
+    "screenshots_directly_inspected": true,
+    "mac_app_rebuilt_and_reopened": true,
+    "native_dialog_click_automation": "Computer Use server error -10005: noWindowsAvailable; use manual navigation",
+    "owner_browser_approval": "Owner confirmed successful.",
+    "actual_provider_task": "Owner reports working T3 use after sign-in; specific task artifact not independently inspected."
+  },
+  "shared_setup_and_claude": {
+    "claude_version_validated": "2.1.308",
+    "anonymous_disposable_profile_spike": {
+      "allowlisted_url_and_manual_code_prompt": true,
+      "no_owner_account_approval_performed": true,
+      "osc8_hyperlink_output_observed": true
+    },
+    "immediate_progress_delayed_ack_and_stale_snapshot_tests": true,
+    "transient_return_code_stdin_fifo_and_redacted_debug_tests": true,
+    "owner_exact_operation_and_live_challenge_tests": true,
+    "actual_iced_screenshots_inspected_including_scrolled_small_window": true,
+    "real_lab_checks": [
+      {
+        "controller_restart_preserved_claude_job_url_and_fifo": true,
+        "challenge_excluded_from_host_database": true,
+        "guest_challenge_and_fifo_private": true,
+        "t3_process_and_codex_auth_preserved": true
+      },
+      {
+        "dead_login_job_cleared_challenge": true,
+        "no_automatic_new_login": true,
+        "vm_and_working_t3_not_interrupted": true
+      }
+    ],
+    "mac_app_rebuilt_and_reopened": true,
+    "native_settings_click_automation": "noWindowsAvailable; owner uses manual navigation",
+    "owner_claude_browser_approval": "Owner confirmed successful.",
+    "real_claude_task": "Owner confirmed a Claude thread worked before the reboot.",
+    "post_deployment_states": {
+      "Codex CLI": "signed_in",
+      "Claude Code": "signed_out",
+      "t3_setup": "ready"
+    },
+    "completed_login_invalidates_prior_signed_out_cache_test": true,
+    "terminal_hyperlink_url_fix": {
+      "fresh_real_cli_challenge": true,
+      "https_occurrences": 1,
+      "control_characters": 0,
+      "host": "claude.com",
+      "path": "/cai/oauth/authorize",
+      "query_parameter_counts": {
+        "code": 1,
+        "client_id": 1,
+        "response_type": 1,
+        "redirect_uri": 1,
+        "scope": 1,
+        "code_challenge": 1,
+        "code_challenge_method": 1,
+        "state": 1
+      },
+      "guest_parser_sha256": "06dbf52b0e9ad40531dd0836b5cd935eadb4ca9e28918c0081e32b507a980324",
+      "t3_process_and_codex_auth_preserved": true,
+      "challenge_excluded_from_host_database": true,
+      "owner_browser_approval": "Owner confirmed successful.",
+      "root_cause": "OSC 8 hidden hyperlink target joined to visible URL with BEL",
+      "shared_guest_and_desktop_terminal_fixtures": true,
+      "subprocess_fifo_hyperlink_regression": true,
+      "desktop_control_character_guard_preserved": true,
+      "mac_app_rebuilt_and_reopened": true,
+      "mac_app_sha256": "5298b5376b37cc19cf3d6429b43d414f3b2bcd9d55fba60b5250db54b1d06a98",
+      "actual_browser_page_not_automated": "Native click automation unavailable; owner handoff"
+    }
+  },
+  "github_identity_provenance": {
+    "reported_identity_traced_to_codex_connected_plugin_tool": true,
+    "same_connected_plugin_identity_verified_in_mac_session": true,
+    "mac_github_cli_identity_is_different": true,
+    "guest_github_cli_absent": true,
+    "guest_git_credential_files_and_outbound_keys_absent": true,
+    "github_token_variables_absent_in_t3_and_provider_processes": true,
+    "guest_t3_source_control_token_settings_absent": true,
+    "no_account_connection_or_active_login_changed": true,
+    "future_onboarding_must_distinguish_provider_plugins_from_guest_git_credentials": true
+  },
+  "provider_reboot_recovery": {
+    "check": "provider_reboot_recovery",
+    "passed": true,
+    "recorded_at_utc": "2026-10-28T15:08:13.989541+00:00",
+    "guest_boot_id_changed": true,
+    "guest_machine_identity_preserved": true,
+    "ssh_host_key_preserved": true,
+    "t3_auto_started_and_listening_only_on_loopback": true,
+    "same_t3_account_and_relay": true,
+    "t3_remote_reachability": "reachable",
+    "codex_account": "signed_in",
+    "claude_account": "signed_in",
+    "versions": {
+      "t3": "t3 v0.1.2",
+      "codex": "codex-cli 0.165.0",
+      "claude": "2.1.308 (Claude Code)"
+    },
+    "existing_t3_threads_preserved": 2,
+    "existing_t3_message_records_preserved": 14,
+    "workspace_files_verified": 3,
+    "resource_claims_unchanged": true,
+    "no_new_authorization_or_setup_operation": true,
+    "controller_observation_healthy": true,
+    "recovery_seconds": 69.05,
+    "owner_provider_followup_messages": "Owner confirmed both existing threads replied without reauthorization.",
+    "ssh_after_reboot": {
+      "ssh_reachable": true,
+      "guest_uid": 1000,
+      "workspace_present": true,
+      "existing_ssh_alias_and_host_key_check": true
+    },
+    "message_preservation_check": "Compared persisted message record identifiers only; no message bodies or credentials were read."
+  },
+  "provider_disconnect_recovery": {
+    "recorded_at_utc": "2026-10-28T16:09:13.410019+00:00",
+    "evidence_source": "Owner report",
+    "method": "Mac internet turned off and restored; Mac was not put to sleep",
+    "provider_thread_replies_received_after_reconnect": true,
+    "owner_reported_workflow_success": true,
+    "actual_os_sleep_wake_exercised": false,
+    "duration_seconds": "not recorded"
+  },
+  "provider_sleep_recovery": {
+    "recorded_at_utc": "2026-10-28T16:14:38.580134+00:00",
+    "evidence_source": "Owner report",
+    "method": "Owner completed the requested waiting-task, Mac sleep/wake and follow-up workflow",
+    "actual_os_sleep_wake_exercised": true,
+    "owner_reported_workflow_success": true,
+    "duration": "Approximately 30 seconds requested; exact duration not independently measured",
+    "independent_instrumentation": false
+  },
+  "real_workflow_acceptance": {
+    "passed": true,
+    "vm_reboot_automated_checks": true,
+    "claude_and_codex_existing_thread_followups_after_reboot": "Owner confirmed both replied without signing in again",
+    "mac_internet_disconnect_reconnect": "Owner confirmed successful",
+    "mac_sleep_wake_with_provider_task_and_followup": "Owner confirmed successful",
+    "automatic_mode_hotspot_reliability": "Separate unresolved connectivity item"
+  }
+}

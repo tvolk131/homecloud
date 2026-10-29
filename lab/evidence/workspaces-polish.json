@@ -1,0 +1,42 @@
+{
+  "recorded_at_utc": "2026-10-28T17:27:54.766210+00:00",
+  "scope": "Workspaces capacity, card density and action hierarchy using existing backend APIs",
+  "checks": {
+    "desktop_tests": 27,
+    "native_iced_screenshot_baselines": 62,
+    "ordinary_screenshot_comparison_passed": true,
+    "desktop_clippy_passed": true,
+    "selected_vm_terminal_start_cleanup_actions_tested": true,
+    "start_retains_gpu_consent_requirement": true,
+    "pending_actions_disabled_and_review_routes_to_details": true,
+    "t3_readiness_requires_vm_service_connection_tools_and_provider_signin": true,
+    "small_window_primary_controls_visible": true,
+    "format_and_diff_check_passed": true
+  },
+  "screenshots_directly_inspected": [
+    "workspaces-tiny-skia.png",
+    "small-window-tiny-skia.png",
+    "wide-window-tiny-skia.png",
+    "workspaces-ready-tiny-skia.png",
+    "workspaces-attention-tiny-skia.png",
+    "workspaces-cleanup-tiny-skia.png",
+    "workspaces-updating-tiny-skia.png",
+    "over-quota-tiny-skia.png",
+    "empty-tiny-skia.png"
+  ],
+  "source_sha256": {
+    "crates/desktop/src/ui.rs": "1db13616d4ecd69d3c458b73c8aab6a517c6856e43cda519cd9fbf651e026fd1",
+    "crates/desktop/src/ui/workspaces.rs": "43811cc2a898a95544bc39a64a0be76ce4c005c165fe8bc00e177573049bdb3d",
+    "crates/desktop/src/visual_tests.rs": "045d201ae03d7e7927ae369ce22e55d14e1bfe9f9052604b7bd9a71c72e35bbb"
+  },
+  "mac_app_sha256": "72001a3c96cd57a0684829e372ac0dcc71ca5d7bb73e57a08145b0111403f56f",
+  "server_deployment_required": false,
+  "real_vm_or_account_mutations_performed": false,
+  "icons_changed": false,
+  "hotspot_retest": "Deferred at operator request; this UI pass makes no networking acceptance claim.",
+  "native_app_reopened": true,
+  "native_workspaces_inspected": true,
+  "limitations": [
+    "Native layout was visually checked. Widget interactions use the actual iced Simulator; OS accessibility and terminal automation are not revalidated by screenshots."
+  ]
+}

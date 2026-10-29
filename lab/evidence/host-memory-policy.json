@@ -1,0 +1,2239 @@
+{
+  "recorded_at_utc": "2026-10-29T01:51:17.613291+00:00",
+  "scope": "Total host reserves and independent elastic ZFS ARC policy",
+  "verification": {
+    "rust_workspace_tests": 150,
+    "desktop_tests": 65,
+    "native_screenshot_comparisons": 113,
+    "python_tests": 88,
+    "python_skipped": 2,
+    "linux_rust_tests": 85,
+    "linux_reserve_adapter_tests": 14,
+    "clippy": "workspace/all targets, warnings denied",
+    "direct_visual_inspection": [
+      "normal total reserve editor",
+      "small editor and scrolled cache controls",
+      "automatic mode",
+      "cache above a new cap",
+      "live Mac host Overview and editor"
+    ],
+    "mac_app": "rebuilt and reopened"
+  },
+  "deployment": {
+    "controller_active": true,
+    "retired_stopped_legacy_vms": [
+      "hclab-vm01",
+      "hclab-vm02"
+    ],
+    "managed_guest_processes_and_t3_preserved": true,
+    "cpu_gpu_claims_preserved": true,
+    "endpoint_identity_preserved": true,
+    "initial_effective_vm_budget_preserved": true,
+    "minimum_reserves": {
+      "memory_bytes": 4294967296,
+      "cpu_cores": 1,
+      "disk_bytes": 32212254720
+    },
+    "reviewed_envelope": {
+      "memory_bytes": 11811160064,
+      "cpu_cores": 5,
+      "disk_bytes": 137438953472
+    },
+    "arc_custom_cap_preserved": 2147483648,
+    "backup_directory": "/var/lib/homecloud/test-runs/memory-policy/1793235394"
+  },
+  "live": {
+    "checks": {
+      "custom_limit_changes_no_vm_capacity_or_grants": true,
+      "selected_cache_ceiling_applied_live": true,
+      "full_guest_budget_claimed_without_overcommit": true,
+      "five_guest_memory_jobs_healthy": true,
+      "selected_cache_policy_held_under_memory_and_storage_pressure": true,
+      "no_host_oom": true,
+      "host_swap_out_below_one_percent_of_ram": true,
+      "paging_settled_in_final_30_seconds": true,
+      "final_memory_stalls_below_one_percent": true,
+      "pool_healthy_under_scrub_and_writes": true,
+      "original_grants_restored_and_disposable_vms_removed": true,
+      "final_system_reserve_4_gib_and_2_cores": true,
+      "selected_cache_policy_validated": true,
+      "no_guest_oom_events": true
+    },
+    "pressure_samples": [
+      {
+        "memory": {
+          "MemTotal": 16164499456,
+          "MemAvailable": 3978612736,
+          "SwapTotal": 4294963200,
+          "SwapFree": 3320262656
+        },
+        "vmstat": {
+          "pswpin": 690959,
+          "pswpout": 1083125,
+          "oom_kill": 0
+        },
+        "arc": {
+          "size_bytes": 2154876464,
+          "minimum_bytes": 505140608,
+          "maximum_bytes": 2147483648,
+          "parameter_bytes": 2147483648,
+          "automatic_maximum_bytes": 15090757632,
+          "version": "2.4.1-1ubuntu5.1"
+        },
+        "pressure": "some avg10=0.00 avg60=0.00 avg300=0.00 total=2136194\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=2035271",
+        "pool_healthy": true,
+        "proof_prepared": true,
+        "scan": "scan: scrub in progress since Thu Oct 29 01:44:55 2026",
+        "elapsed_seconds": 0.28
+      },
+      {
+        "memory": {
+          "MemTotal": 16164499456,
+          "MemAvailable": 1791426560,
+          "SwapTotal": 4294963200,
+          "SwapFree": 3349319680
+        },
+        "vmstat": {
+          "pswpin": 698071,
+          "pswpout": 1083125,
+          "oom_kill": 0
+        },
+        "arc": {
+          "size_bytes": 2155295216,
+          "minimum_bytes": 505140608,
+          "maximum_bytes": 2147483648,
+          "parameter_bytes": 2147483648,
+          "automatic_maximum_bytes": 15090757632,
+          "version": "2.4.1-1ubuntu5.1"
+        },
+        "pressure": "some avg10=0.00 avg60=0.00 avg300=0.00 total=2137385\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=2036462",
+        "pool_healthy": true,
+        "proof_prepared": true,
+        "scan": "scan: scrub in progress since Thu Oct 29 01:44:55 2026",
+        "elapsed_seconds": 3.89
+      },
+      {
+        "memory": {
+          "MemTotal": 16164499456,
+          "MemAvailable": 1773592576,
+          "SwapTotal": 4294963200,
+          "SwapFree": 3362537472
+        },
+        "vmstat": {
+          "pswpin": 701826,
+          "pswpout": 1083125,
+          "oom_kill": 0
+        },
+        "arc": {
+          "size_bytes": 2158310128,
+          "minimum_bytes": 505140608,
+          "maximum_bytes": 2147483648,
+          "parameter_bytes": 2147483648,
+          "automatic_maximum_bytes": 15090757632,
+          "version": "2.4.1-1ubuntu5.1"
+        },
+        "pressure": "some avg10=0.00 avg60=0.00 avg300=0.00 total=2137385\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=2036462",
+        "pool_healthy": true,
+        "proof_prepared": true,
+        "scan": "scan: scrub in progress since Thu Oct 29 01:44:55 2026",
+        "elapsed_seconds": 7.26
+      },
+      {
+        "memory": {
+          "MemTotal": 16164499456,
+          "MemAvailable": 1812774912,
+          "SwapTotal": 4294963200,
+          "SwapFree": 3371999232
+        },
+        "vmstat": {
+          "pswpin": 704233,
+          "pswpout": 1083125,
+          "oom_kill": 0
+        },
+        "arc": {
+          "size_bytes": 2121783784,
+          "minimum_bytes": 505140608,
+          "maximum_bytes": 2147483648,
+          "parameter_bytes": 2147483648,
+          "automatic_maximum_bytes": 15090757632,
+          "version": "2.4.1-1ubuntu5.1"
+        },
+        "pressure": "some avg10=0.36 avg60=0.06 avg300=0.02 total=2190321\nfull avg10=0.36 avg60=0.06 avg300=0.01 total=2089341",
+        "pool_healthy": true,
+        "proof_prepared": true,
+        "scan": "scan: scrub in progress since Thu Oct 29 01:44:55 2026",
+        "elapsed_seconds": 10.54
+      },
+      {
+        "memory": {
+          "MemTotal": 16164499456,
+          "MemAvailable": 1642160128,
+          "SwapTotal": 4294963200,
+          "SwapFree": 3394048000
+        },
+        "vmstat": {
+          "pswpin": 709094,
+          "pswpout": 1083125,
+          "oom_kill": 0
+        },
+        "arc": {
+          "size_bytes": 2133076720,
+          "minimum_bytes": 505140608,
+          "maximum_bytes": 2147483648,
+          "parameter_bytes": 2147483648,
+          "automatic_maximum_bytes": 15090757632,
+          "version": "2.4.1-1ubuntu5.1"
+        },
+        "pressure": "some avg10=0.29 avg60=0.06 avg300=0.02 total=2190321\nfull avg10=0.29 avg60=0.06 avg300=0.01 total=2089342",
+        "pool_healthy": true,
+        "proof_prepared": true,
+        "scan": "scan: scrub in progress since Thu Oct 29 01:44:55 2026",
+        "elapsed_seconds": 13.93
+      },
+      {
+        "memory": {
+          "MemTotal": 16164499456,
+          "MemAvailable": 1592434688,
+          "SwapTotal": 4294963200,
+          "SwapFree": 3394826240
+        },
+        "vmstat": {
+          "pswpin": 709204,
+          "pswpout": 1083125,
+          "oom_kill": 0
+        },
+        "arc": {
+          "size_bytes": 2137265392,
+          "minimum_bytes": 505140608,
+          "maximum_bytes": 2147483648,
+          "parameter_bytes": 2147483648,
+          "automatic_maximum_bytes": 15090757632,
+          "version": "2.4.1-1ubuntu5.1"
+        },
+        "pressure": "some avg10=0.19 avg60=0.05 avg300=0.01 total=2190321\nfull avg10=0.19 avg60=0.05 avg300=0.01 total=2089342",
+        "pool_healthy": true,
+        "proof_prepared": true,
+        "scan": "scan: scrub in progress since Thu Oct 29 01:44:55 2026",
+        "elapsed_seconds": 17.39
+      },
+      {
+        "memory": {
+          "MemTotal": 16164499456,
+          "MemAvailable": 1611550720,
+          "SwapTotal": 4294963200,
+          "SwapFree": 3395727360
+        },
+        "vmstat": {
+          "pswpin": 709321,
+          "pswpout": 1083125,
+          "oom_kill": 0
+        },
+        "arc": {
+          "size_bytes": 2135562016,
+          "minimum_bytes": 505140608,
+          "maximum_bytes": 2147483648,
+          "parameter_bytes": 2147483648,
+          "automatic_maximum_bytes": 15090757632,
+          "version": "2.4.1-1ubuntu5.1"
+        },
+        "pressure": "some avg10=0.13 avg60=0.05 avg300=0.01 total=2190321\nfull avg10=0.13 avg60=0.05 avg300=0.01 total=2089342",
+        "pool_healthy": true,
+        "proof_prepared": true,
+        "scan": "scan: scrub in progress since Thu Oct 29 01:44:55 2026",
+        "elapsed_seconds": 20.76
+      },
+      {
+        "memory": {
+          "MemTotal": 16164499456,
+          "MemAvailable": 2279235584,
+          "SwapTotal": 4294963200,
+          "SwapFree": 3396116480
+        },
+        "vmstat": {
+          "pswpin": 709376,
+          "pswpout": 1083127,
+          "oom_kill": 0
+        },
+        "arc": {
+          "size_bytes": 1749181888,
+          "minimum_bytes": 505140608,
+          "maximum_bytes": 2147483648,
+          "parameter_bytes": 2147483648,
+          "automatic_maximum_bytes": 15090757632,
+          "version": "2.4.1-1ubuntu5.1"
+        },
+        "pressure": "some avg10=0.10 avg60=0.05 avg300=0.01 total=2197636\nfull avg10=0.10 avg60=0.05 avg300=0.01 total=2096267",
+        "pool_healthy": true,
+        "proof_prepared": true,
+        "scan": "scan: scrub in progress since Thu Oct 29 01:44:55 2026",
+        "elapsed_seconds": 24.12
+      },
+      {
+        "memory": {
+          "MemTotal": 16164499456,
+          "MemAvailable": 2116325376,
+          "SwapTotal": 4294963200,
+          "SwapFree": 3396141056
+        },
+        "vmstat": {
+          "pswpin": 709378,
+          "pswpout": 1083127,
+          "oom_kill": 0
+        },
+        "arc": {
+          "size_bytes": 1751300968,
+          "minimum_bytes": 505140608,
+          "maximum_bytes": 2147483648,
+          "parameter_bytes": 2147483648,
+          "automatic_maximum_bytes": 15090757632,
+          "version": "2.4.1-1ubuntu5.1"
+        },
+        "pressure": "some avg10=0.07 avg60=0.04 avg300=0.01 total=2197636\nfull avg10=0.07 avg60=0.04 avg300=0.01 total=2096267",
+        "pool_healthy": true,
+        "proof_prepared": true,
+        "scan": "scan: scrub in progress since Thu Oct 29 01:44:55 2026",
+        "elapsed_seconds": 27.46
+      },
+      {
+        "memory": {
+          "MemTotal": 16164499456,
+          "MemAvailable": 2142527488,
+          "SwapTotal": 4294963200,
+          "SwapFree": 3396284416
+        },
+        "vmstat": {
+          "pswpin": 709403,
+          "pswpout": 1083127,
+          "oom_kill": 0
+        },
+        "arc": {
+          "size_bytes": 1747342104,
+          "minimum_bytes": 505140608,
+          "maximum_bytes": 2147483648,
+          "parameter_bytes": 2147483648,
+          "automatic_maximum_bytes": 15090757632,
+          "version": "2.4.1-1ubuntu5.1"
+        },
+        "pressure": "some avg10=0.04 avg60=0.04 avg300=0.01 total=2197636\nfull avg10=0.04 avg60=0.04 avg300=0.01 total=2096267",
+        "pool_healthy": true,
+        "proof_prepared": true,
+        "scan": "scan: scrub in progress since Thu Oct 29 01:44:55 2026",
+        "elapsed_seconds": 30.82
+      },
+      {
+        "memory": {
+          "MemTotal": 16164499456,
+          "MemAvailable": 2070142976,
+          "SwapTotal": 4294963200,
+          "SwapFree": 3396358144
+        },
+        "vmstat": {
+          "pswpin": 709433,
+          "pswpout": 1083133,
+          "oom_kill": 0
+        },
+        "arc": {
+          "size_bytes": 1985666408,
+          "minimum_bytes": 505140608,
+          "maximum_bytes": 2147483648,
+          "parameter_bytes": 2147483648,
+          "automatic_maximum_bytes": 15090757632,
+          "version": "2.4.1-1ubuntu5.1"
+        },
+        "pressure": "some avg10=0.03 avg60=0.04 avg300=0.01 total=2201322\nfull avg10=0.03 avg60=0.04 avg300=0.01 total=2099574",
+        "pool_healthy": true,
+        "proof_prepared": true,
+        "scan": "scan: scrub in progress since Thu Oct 29 01:44:55 2026",
+        "elapsed_seconds": 34.18
+      },
+      {
+        "memory": {
+          "MemTotal": 16164499456,
+          "MemAvailable": 1878515712,
+          "SwapTotal": 4294963200,
+          "SwapFree": 3396546560
+        },
+        "vmstat": {
+          "pswpin": 709489,
+          "pswpout": 1083133,
+          "oom_kill": 0
+        },
+        "arc": {
+          "size_bytes": 1991091368,
+          "minimum_bytes": 505140608,
+          "maximum_bytes": 2147483648,
+          "parameter_bytes": 2147483648,
+          "automatic_maximum_bytes": 15090757632,
+          "version": "2.4.1-1ubuntu5.1"
+        },
+        "pressure": "some avg10=0.02 avg60=0.04 avg300=0.01 total=2201330\nfull avg10=0.02 avg60=0.04 avg300=0.01 total=2099582",
+        "pool_healthy": true,
+        "proof_prepared": true,
+        "scan": "scan: scrub in progress since Thu Oct 29 01:44:55 2026",
+        "elapsed_seconds": 37.52
+      },
+      {
+        "memory": {
+          "MemTotal": 16164499456,
+          "MemAvailable": 1852510208,
+          "SwapTotal": 4294963200,
+          "SwapFree": 3396599808
+        },
+        "vmstat": {
+          "pswpin": 709528,
+          "pswpout": 1083133,
+          "oom_kill": 0
+        },
+        "arc": {
+          "size_bytes": 1992813592,
+          "minimum_bytes": 505140608,
+          "maximum_bytes": 2147483648,
+          "parameter_bytes": 2147483648,
+          "automatic_maximum_bytes": 15090757632,
+          "version": "2.4.1-1ubuntu5.1"
+        },
+        "pressure": "some avg10=0.01 avg60=0.03 avg300=0.01 total=2201330\nfull avg10=0.01 avg60=0.03 avg300=0.01 total=2099582",
+        "pool_healthy": true,
+        "proof_prepared": true,
+        "scan": "scan: scrub in progress since Thu Oct 29 01:44:55 2026",
+        "elapsed_seconds": 40.87
+      },
+      {
+        "memory": {
+          "MemTotal": 16164499456,
+          "MemAvailable": 1948274688,
+          "SwapTotal": 4294963200,
+          "SwapFree": 3396599808
+        },
+        "vmstat": {
+          "pswpin": 709528,
+          "pswpout": 1083133,
+          "oom_kill": 0
+        },
+        "arc": {
+          "size_bytes": 2141719024,
+          "minimum_bytes": 505140608,
+          "maximum_bytes": 2147483648,
+          "parameter_bytes": 2147483648,
+          "automatic_maximum_bytes": 15090757632,
+          "version": "2.4.1-1ubuntu5.1"
+        },
+        "pressure": "some avg10=0.01 avg60=0.03 avg300=0.01 total=2201330\nfull avg10=0.01 avg60=0.03 avg300=0.01 total=2099582",
+        "pool_healthy": true,
+        "proof_prepared": true,
+        "scan": "scan: scrub in progress since Thu Oct 29 01:44:55 2026",
+        "elapsed_seconds": 44.27
+      },
+      {
+        "memory": {
+          "MemTotal": 16164499456,
+          "MemAvailable": 2530127872,
+          "SwapTotal": 4294963200,
+          "SwapFree": 3396608000
+        },
+        "vmstat": {
+          "pswpin": 709533,
+          "pswpout": 1083135,
+          "oom_kill": 0
+        },
+        "arc": {
+          "size_bytes": 1344294744,
+          "minimum_bytes": 505140608,
+          "maximum_bytes": 2147483648,
+          "parameter_bytes": 2147483648,
+          "automatic_maximum_bytes": 15090757632,
+          "version": "2.4.1-1ubuntu5.1"
+        },
+        "pressure": "some avg10=0.00 avg60=0.03 avg300=0.01 total=2207524\nfull avg10=0.00 avg60=0.03 avg300=0.00 total=2105646",
+        "pool_healthy": true,
+        "proof_prepared": true,
+        "scan": "scan: scrub in progress since Thu Oct 29 01:44:55 2026",
+        "elapsed_seconds": 47.61
+      },
+      {
+        "memory": {
+          "MemTotal": 16164499456,
+          "MemAvailable": 2550808576,
+          "SwapTotal": 4294963200,
+          "SwapFree": 3396608000
+        },
+        "vmstat": {
+          "pswpin": 709536,
+          "pswpout": 1083135,
+          "oom_kill": 0
+        },
+        "arc": {
+          "size_bytes": 1337688776,
+          "minimum_bytes": 505140608,
+          "maximum_bytes": 2147483648,
+          "parameter_bytes": 2147483648,
+          "automatic_maximum_bytes": 15090757632,
+          "version": "2.4.1-1ubuntu5.1"
+        },
+        "pressure": "some avg10=0.00 avg60=0.02 avg300=0.01 total=2207524\nfull avg10=0.00 avg60=0.02 avg300=0.00 total=2105646",
+        "pool_healthy": true,
+        "proof_prepared": true,
+        "scan": "scan: scrub in progress since Thu Oct 29 01:44:55 2026",
+        "elapsed_seconds": 50.96
+      },
+      {
+        "memory": {
+          "MemTotal": 16164499456,
+          "MemAvailable": 2030538752,
+          "SwapTotal": 4294963200,
+          "SwapFree": 3399000064
+        },
+        "vmstat": {
+          "pswpin": 710014,
+          "pswpout": 1083135,
+          "oom_kill": 0
+        },
+        "arc": {
+          "size_bytes": 2031823072,
+          "minimum_bytes": 505140608,
+          "maximum_bytes": 2147483648,
+          "parameter_bytes": 2147483648,
+          "automatic_maximum_bytes": 15090757632,
+          "version": "2.4.1-1ubuntu5.1"
+        },
+        "pressure": "some avg10=0.00 avg60=0.02 avg300=0.01 total=2208242\nfull avg10=0.00 avg60=0.02 avg300=0.00 total=2106356",
+        "pool_healthy": true,
+        "proof_prepared": true,
+        "scan": "scan: scrub in progress since Thu Oct 29 01:44:55 2026",
+        "elapsed_seconds": 54.32
+      },
+      {
+        "memory": {
+          "MemTotal": 16164499456,
+          "MemAvailable": 1834262528,
+          "SwapTotal": 4294963200,
+          "SwapFree": 3399131136
+        },
+        "vmstat": {
+          "pswpin": 710023,
+          "pswpout": 1083135,
+          "oom_kill": 0
+        },
+        "arc": {
+          "size_bytes": 2057327128,
+          "minimum_bytes": 505140608,
+          "maximum_bytes": 2147483648,
+          "parameter_bytes": 2147483648,
+          "automatic_maximum_bytes": 15090757632,
+          "version": "2.4.1-1ubuntu5.1"
+        },
+        "pressure": "some avg10=0.00 avg60=0.02 avg300=0.00 total=2208242\nfull avg10=0.00 avg60=0.02 avg300=0.00 total=2106356",
+        "pool_healthy": true,
+        "proof_prepared": true,
+        "scan": "scan: scrub in progress since Thu Oct 29 01:44:55 2026",
+        "elapsed_seconds": 57.66
+      },
+      {
+        "memory": {
+          "MemTotal": 16164499456,
+          "MemAvailable": 1785692160,
+          "SwapTotal": 4294963200,
+          "SwapFree": 3399168000
+        },
+        "vmstat": {
+          "pswpin": 710024,
+          "pswpout": 1083135,
+          "oom_kill": 0
+        },
+        "arc": {
+          "size_bytes": 2051301368,
+          "minimum_bytes": 505140608,
+          "maximum_bytes": 2147483648,
+          "parameter_bytes": 2147483648,
+          "automatic_maximum_bytes": 15090757632,
+          "version": "2.4.1-1ubuntu5.1"
+        },
+        "pressure": "some avg10=0.00 avg60=0.02 avg300=0.00 total=2208242\nfull avg10=0.00 avg60=0.02 avg300=0.00 total=2106356",
+        "pool_healthy": true,
+        "proof_prepared": true,
+        "scan": "scan: scrub in progress since Thu Oct 29 01:44:55 2026",
+        "elapsed_seconds": 61.0
+      },
+      {
+        "memory": {
+          "MemTotal": 16164499456,
+          "MemAvailable": 1820184576,
+          "SwapTotal": 4294963200,
+          "SwapFree": 3403554816
+        },
+        "vmstat": {
+          "pswpin": 710463,
+          "pswpout": 1083135,
+          "oom_kill": 0
+        },
+        "arc": {
+          "size_bytes": 2150325000,
+          "minimum_bytes": 505140608,
+          "maximum_bytes": 2147483648,
+          "parameter_bytes": 2147483648,
+          "automatic_maximum_bytes": 15090757632,
+          "version": "2.4.1-1ubuntu5.1"
+        },
+        "pressure": "some avg10=0.00 avg60=0.02 avg300=0.00 total=2208242\nfull avg10=0.00 avg60=0.02 avg300=0.00 total=2106356",
+        "pool_healthy": true,
+        "proof_prepared": true,
+        "scan": "scan: scrub in progress since Thu Oct 29 01:44:55 2026",
+        "elapsed_seconds": 64.77
+      },
+      {
+        "memory": {
+          "MemTotal": 16164499456,
+          "MemAvailable": 2595012608,
+          "SwapTotal": 4294963200,
+          "SwapFree": 3402952704
+        },
+        "vmstat": {
+          "pswpin": 710469,
+          "pswpout": 1083284,
+          "oom_kill": 0
+        },
+        "arc": {
+          "size_bytes": 1553518392,
+          "minimum_bytes": 505140608,
+          "maximum_bytes": 2147483648,
+          "parameter_bytes": 2147483648,
+          "automatic_maximum_bytes": 15090757632,
+          "version": "2.4.1-1ubuntu5.1"
+        },
+        "pressure": "some avg10=0.00 avg60=0.02 avg300=0.00 total=2242445\nfull avg10=0.00 avg60=0.02 avg300=0.00 total=2140447",
+        "pool_healthy": true,
+        "proof_prepared": true,
+        "scan": "scan: scrub in progress since Thu Oct 29 01:44:55 2026",
+        "elapsed_seconds": 68.06
+      },
+      {
+        "memory": {
+          "MemTotal": 16164499456,
+          "MemAvailable": 2773491712,
+          "SwapTotal": 4294963200,
+          "SwapFree": 3384557568
+        },
+        "vmstat": {
+          "pswpin": 710469,
+          "pswpout": 1086568,
+          "oom_kill": 0
+        },
+        "arc": {
+          "size_bytes": 1156417200,
+          "minimum_bytes": 505140608,
+          "maximum_bytes": 2147483648,
+          "parameter_bytes": 2147483648,
+          "automatic_maximum_bytes": 15090757632,
+          "version": "2.4.1-1ubuntu5.1"
+        },
+        "pressure": "some avg10=0.44 avg60=0.11 avg300=0.02 total=2277103\nfull avg10=0.44 avg60=0.11 avg300=0.02 total=2175031",
+        "pool_healthy": true,
+        "proof_prepared": true,
+        "scan": "scan: scrub in progress since Thu Oct 29 01:44:55 2026",
+        "elapsed_seconds": 71.39
+      },
+      {
+        "memory": {
+          "MemTotal": 16164499456,
+          "MemAvailable": 1895419904,
+          "SwapTotal": 4294963200,
+          "SwapFree": 3384573952
+        },
+        "vmstat": {
+          "pswpin": 710482,
+          "pswpout": 1086568,
+          "oom_kill": 0
+        },
+        "arc": {
+          "size_bytes": 2177544448,
+          "minimum_bytes": 505140608,
+          "maximum_bytes": 2147483648,
+          "parameter_bytes": 2147483648,
+          "automatic_maximum_bytes": 15090757632,
+          "version": "2.4.1-1ubuntu5.1"
+        },
+        "pressure": "some avg10=0.29 avg60=0.10 avg300=0.02 total=2277103\nfull avg10=0.29 avg60=0.10 avg300=0.02 total=2175031",
+        "pool_healthy": true,
+        "proof_prepared": true,
+        "scan": "scan: scrub in progress since Thu Oct 29 01:44:55 2026",
+        "elapsed_seconds": 74.71
+      },
+      {
+        "memory": {
+          "MemTotal": 16164499456,
+          "MemAvailable": 1794101248,
+          "SwapTotal": 4294963200,
+          "SwapFree": 3384573952
+        },
+        "vmstat": {
+          "pswpin": 710484,
+          "pswpout": 1086568,
+          "oom_kill": 0
+        },
+        "arc": {
+          "size_bytes": 2151542008,
+          "minimum_bytes": 505140608,
+          "maximum_bytes": 2147483648,
+          "parameter_bytes": 2147483648,
+          "automatic_maximum_bytes": 15090757632,
+          "version": "2.4.1-1ubuntu5.1"
+        },
+        "pressure": "some avg10=0.24 avg60=0.10 avg300=0.02 total=2277103\nfull avg10=0.24 avg60=0.10 avg300=0.02 total=2175031",
+        "pool_healthy": true,
+        "proof_prepared": true,
+        "scan": "scan: scrub in progress since Thu Oct 29 01:44:55 2026",
+        "elapsed_seconds": 78.03
+      },
+      {
+        "memory": {
+          "MemTotal": 16164499456,
+          "MemAvailable": 1700831232,
+          "SwapTotal": 4294963200,
+          "SwapFree": 3384578048
+        },
+        "vmstat": {
+          "pswpin": 710484,
+          "pswpout": 1086568,
+          "oom_kill": 0
+        },
+        "arc": {
+          "size_bytes": 2149131080,
+          "minimum_bytes": 505140608,
+          "maximum_bytes": 2147483648,
+          "parameter_bytes": 2147483648,
+          "automatic_maximum_bytes": 15090757632,
+          "version": "2.4.1-1ubuntu5.1"
+        },
+        "pressure": "some avg10=0.16 avg60=0.09 avg300=0.02 total=2277103\nfull avg10=0.16 avg60=0.09 avg300=0.02 total=2175031",
+        "pool_healthy": true,
+        "proof_prepared": true,
+        "scan": "scan: scrub in progress since Thu Oct 29 01:44:55 2026",
+        "elapsed_seconds": 81.33
+      },
+      {
+        "memory": {
+          "MemTotal": 16164499456,
+          "MemAvailable": 1750106112,
+          "SwapTotal": 4294963200,
+          "SwapFree": 3383840768
+        },
+        "vmstat": {
+          "pswpin": 710484,
+          "pswpout": 1086597,
+          "oom_kill": 0
+        },
+        "arc": {
+          "size_bytes": 2145076824,
+          "minimum_bytes": 505140608,
+          "maximum_bytes": 2147483648,
+          "parameter_bytes": 2147483648,
+          "automatic_maximum_bytes": 15090757632,
+          "version": "2.4.1-1ubuntu5.1"
+        },
+        "pressure": "some avg10=0.10 avg60=0.08 avg300=0.02 total=2279067\nfull avg10=0.10 avg60=0.08 avg300=0.02 total=2176989",
+        "pool_healthy": true,
+        "proof_prepared": true,
+        "scan": "scan: scrub in progress since Thu Oct 29 01:44:55 2026",
+        "elapsed_seconds": 84.63
+      },
+      {
+        "memory": {
+          "MemTotal": 16164499456,
+          "MemAvailable": 1865633792,
+          "SwapTotal": 4294963200,
+          "SwapFree": 3385774080
+        },
+        "vmstat": {
+          "pswpin": 710878,
+          "pswpout": 1086597,
+          "oom_kill": 0
+        },
+        "arc": {
+          "size_bytes": 2147750968,
+          "minimum_bytes": 505140608,
+          "maximum_bytes": 2147483648,
+          "parameter_bytes": 2147483648,
+          "automatic_maximum_bytes": 15090757632,
+          "version": "2.4.1-1ubuntu5.1"
+        },
+        "pressure": "some avg10=0.08 avg60=0.08 avg300=0.02 total=2279103\nfull avg10=0.08 avg60=0.08 avg300=0.02 total=2177026",
+        "pool_healthy": true,
+        "proof_prepared": true,
+        "scan": "scan: scrub in progress since Thu Oct 29 01:44:55 2026",
+        "elapsed_seconds": 87.93
+      },
+      {
+        "memory": {
+          "MemTotal": 16164499456,
+          "MemAvailable": 2069696512,
+          "SwapTotal": 4294963200,
+          "SwapFree": 3376328704
+        },
+        "vmstat": {
+          "pswpin": 710912,
+          "pswpout": 1087474,
+          "oom_kill": 0
+        },
+        "arc": {
+          "size_bytes": 1789975400,
+          "minimum_bytes": 505140608,
+          "maximum_bytes": 2147483648,
+          "parameter_bytes": 2147483648,
+          "automatic_maximum_bytes": 15090757632,
+          "version": "2.4.1-1ubuntu5.1"
+        },
+        "pressure": "some avg10=0.24 avg60=0.11 avg300=0.02 total=2314558\nfull avg10=0.24 avg60=0.11 avg300=0.02 total=2212361",
+        "pool_healthy": true,
+        "proof_prepared": true,
+        "scan": "scan: scrub in progress since Thu Oct 29 01:44:55 2026",
+        "elapsed_seconds": 91.25
+      },
+      {
+        "memory": {
+          "MemTotal": 16164499456,
+          "MemAvailable": 2072514560,
+          "SwapTotal": 4294963200,
+          "SwapFree": 3376328704
+        },
+        "vmstat": {
+          "pswpin": 710927,
+          "pswpout": 1087474,
+          "oom_kill": 0
+        },
+        "arc": {
+          "size_bytes": 1785318808,
+          "minimum_bytes": 505140608,
+          "maximum_bytes": 2147483648,
+          "parameter_bytes": 2147483648,
+          "automatic_maximum_bytes": 15090757632,
+          "version": "2.4.1-1ubuntu5.1"
+        },
+        "pressure": "some avg10=0.16 avg60=0.10 avg300=0.02 total=2314558\nfull avg10=0.16 avg60=0.10 avg300=0.02 total=2212361",
+        "pool_healthy": true,
+        "proof_prepared": true,
+        "scan": "scan: scrub in progress since Thu Oct 29 01:44:55 2026",
+        "elapsed_seconds": 94.55
+      },
+      {
+        "memory": {
+          "MemTotal": 16164499456,
+          "MemAvailable": 2067898368,
+          "SwapTotal": 4294963200,
+          "SwapFree": 3376328704
+        },
+        "vmstat": {
+          "pswpin": 710927,
+          "pswpout": 1087474,
+          "oom_kill": 0
+        },
+        "arc": {
+          "size_bytes": 1774507416,
+          "minimum_bytes": 505140608,
+          "maximum_bytes": 2147483648,
+          "parameter_bytes": 2147483648,
+          "automatic_maximum_bytes": 15090757632,
+          "version": "2.4.1-1ubuntu5.1"
+        },
+        "pressure": "some avg10=0.13 avg60=0.10 avg300=0.02 total=2314558\nfull avg10=0.13 avg60=0.10 avg300=0.02 total=2212361",
+        "pool_healthy": true,
+        "proof_prepared": true,
+        "scan": "scan: scrub in progress since Thu Oct 29 01:44:55 2026",
+        "elapsed_seconds": 97.84
+      },
+      {
+        "memory": {
+          "MemTotal": 16164499456,
+          "MemAvailable": 1754001408,
+          "SwapTotal": 4294963200,
+          "SwapFree": 3376021504
+        },
+        "vmstat": {
+          "pswpin": 710928,
+          "pswpout": 1087546,
+          "oom_kill": 0
+        },
+        "arc": {
+          "size_bytes": 2154725224,
+          "minimum_bytes": 505140608,
+          "maximum_bytes": 2147483648,
+          "parameter_bytes": 2147483648,
+          "automatic_maximum_bytes": 15090757632,
+          "version": "2.4.1-1ubuntu5.1"
+        },
+        "pressure": "some avg10=0.08 avg60=0.09 avg300=0.02 total=2327646\nfull avg10=0.08 avg60=0.09 avg300=0.02 total=2225428",
+        "pool_healthy": true,
+        "proof_prepared": true,
+        "scan": "scan: scrub in progress since Thu Oct 29 01:44:55 2026",
+        "elapsed_seconds": 101.16
+      },
+      {
+        "memory": {
+          "MemTotal": 16164499456,
+          "MemAvailable": 1751093248,
+          "SwapTotal": 4294963200,
+          "SwapFree": 3384406016
+        },
+        "vmstat": {
+          "pswpin": 711571,
+          "pswpout": 1087549,
+          "oom_kill": 0
+        },
+        "arc": {
+          "size_bytes": 2154027112,
+          "minimum_bytes": 505140608,
+          "maximum_bytes": 2147483648,
+          "parameter_bytes": 2147483648,
+          "automatic_maximum_bytes": 15090757632,
+          "version": "2.4.1-1ubuntu5.1"
+        },
+        "pressure": "some avg10=0.05 avg60=0.08 avg300=0.02 total=2329200\nfull avg10=0.05 avg60=0.08 avg300=0.02 total=2226981",
+        "pool_healthy": true,
+        "proof_prepared": true,
+        "scan": "scan: scrub in progress since Thu Oct 29 01:44:55 2026",
+        "elapsed_seconds": 104.5
+      },
+      {
+        "memory": {
+          "MemTotal": 16164499456,
+          "MemAvailable": 1730285568,
+          "SwapTotal": 4294963200,
+          "SwapFree": 3385565184
+        },
+        "vmstat": {
+          "pswpin": 711642,
+          "pswpout": 1087549,
+          "oom_kill": 0
+        },
+        "arc": {
+          "size_bytes": 2153619448,
+          "minimum_bytes": 505140608,
+          "maximum_bytes": 2147483648,
+          "parameter_bytes": 2147483648,
+          "automatic_maximum_bytes": 15090757632,
+          "version": "2.4.1-1ubuntu5.1"
+        },
+        "pressure": "some avg10=0.04 avg60=0.08 avg300=0.02 total=2330238\nfull avg10=0.04 avg60=0.08 avg300=0.02 total=2228019",
+        "pool_healthy": true,
+        "proof_prepared": true,
+        "scan": "scan: scrub in progress since Thu Oct 29 01:44:55 2026",
+        "elapsed_seconds": 107.82
+      },
+      {
+        "memory": {
+          "MemTotal": 16164499456,
+          "MemAvailable": 1930813440,
+          "SwapTotal": 4294963200,
+          "SwapFree": 3384668160
+        },
+        "vmstat": {
+          "pswpin": 711875,
+          "pswpout": 1088247,
+          "oom_kill": 0
+        },
+        "arc": {
+          "size_bytes": 2170797504,
+          "minimum_bytes": 505140608,
+          "maximum_bytes": 2147483648,
+          "parameter_bytes": 2147483648,
+          "automatic_maximum_bytes": 15090757632,
+          "version": "2.4.1-1ubuntu5.1"
+        },
+        "pressure": "some avg10=0.21 avg60=0.11 avg300=0.03 total=2367174\nfull avg10=0.21 avg60=0.11 avg300=0.02 total=2264726",
+        "pool_healthy": true,
+        "proof_prepared": true,
+        "scan": "scan: scrub in progress since Thu Oct 29 01:44:55 2026",
+        "elapsed_seconds": 111.14
+      },
+      {
+        "memory": {
+          "MemTotal": 16164499456,
+          "MemAvailable": 1811939328,
+          "SwapTotal": 4294963200,
+          "SwapFree": 3384766464
+        },
+        "vmstat": {
+          "pswpin": 711910,
+          "pswpout": 1088247,
+          "oom_kill": 0
+        },
+        "arc": {
+          "size_bytes": 2123919304,
+          "minimum_bytes": 505140608,
+          "maximum_bytes": 2147483648,
+          "parameter_bytes": 2147483648,
+          "automatic_maximum_bytes": 15090757632,
+          "version": "2.4.1-1ubuntu5.1"
+        },
+        "pressure": "some avg10=0.17 avg60=0.10 avg300=0.03 total=2367174\nfull avg10=0.17 avg60=0.10 avg300=0.02 total=2264726",
+        "pool_healthy": true,
+        "proof_prepared": true,
+        "scan": "scan: scrub in progress since Thu Oct 29 01:44:55 2026",
+        "elapsed_seconds": 114.42
+      },
+      {
+        "memory": {
+          "MemTotal": 16164499456,
+          "MemAvailable": 1804886016,
+          "SwapTotal": 4294963200,
+          "SwapFree": 3384766464
+        },
+        "vmstat": {
+          "pswpin": 711911,
+          "pswpout": 1088247,
+          "oom_kill": 0
+        },
+        "arc": {
+          "size_bytes": 2118102632,
+          "minimum_bytes": 505140608,
+          "maximum_bytes": 2147483648,
+          "parameter_bytes": 2147483648,
+          "automatic_maximum_bytes": 15090757632,
+          "version": "2.4.1-1ubuntu5.1"
+        },
+        "pressure": "some avg10=0.11 avg60=0.10 avg300=0.03 total=2367174\nfull avg10=0.11 avg60=0.10 avg300=0.02 total=2264726",
+        "pool_healthy": true,
+        "proof_prepared": true,
+        "scan": "scan: scrub in progress since Thu Oct 29 01:44:55 2026",
+        "elapsed_seconds": 117.83
+      }
+    ],
+    "policy_under_test": "custom_2_gib",
+    "initial": {
+      "memory": {
+        "MemTotal": 16164499456,
+        "MemAvailable": 11298877440,
+        "SwapTotal": 4294963200,
+        "SwapFree": 3286798336
+      },
+      "vmstat": {
+        "pswpin": 683244,
+        "pswpout": 1083125,
+        "oom_kill": 0
+      },
+      "arc": {
+        "size_bytes": 105423008,
+        "minimum_bytes": 505140608,
+        "maximum_bytes": 2147483648,
+        "parameter_bytes": 2147483648,
+        "automatic_maximum_bytes": 15090757632,
+        "version": "2.4.1-1ubuntu5.1"
+      },
+      "pressure": "some avg10=0.00 avg60=0.04 avg300=0.16 total=2118772\nfull avg10=0.00 avg60=0.04 avg300=0.16 total=2024636",
+      "pool_healthy": true,
+      "proof_prepared": false,
+      "scan": "scan: scrub canceled on Thu Oct 29 01:36:20 2026"
+    },
+    "lower_custom_limit_observation": {
+      "size_bytes": 114230248,
+      "minimum_bytes": 505140608,
+      "maximum_bytes": 2147483648,
+      "parameter_bytes": 2147483648,
+      "automatic_maximum_bytes": 15090757632,
+      "version": "2.4.1-1ubuntu5.1"
+    },
+    "temporary_vm_ids": [
+      "ca11e61e-0696-404e-8121-2eab42b06884",
+      "74c5d1fc-b1cf-40d3-874c-4a7546c8aeb1",
+      "4618836f-b545-4061-b9e9-06d2a973c8df",
+      "73927e88-1832-461e-a724-f78e83d9ab0f"
+    ],
+    "before_pressure": {
+      "memory": {
+        "MemTotal": 16164499456,
+        "MemAvailable": 5099466752,
+        "SwapTotal": 4294963200,
+        "SwapFree": 3302166528
+      },
+      "vmstat": {
+        "pswpin": 687480,
+        "pswpout": 1083125,
+        "oom_kill": 0
+      },
+      "arc": {
+        "size_bytes": 2140842368,
+        "minimum_bytes": 505140608,
+        "maximum_bytes": 2147483648,
+        "parameter_bytes": 2147483648,
+        "automatic_maximum_bytes": 15090757632,
+        "version": "2.4.1-1ubuntu5.1"
+      },
+      "pressure": "some avg10=0.00 avg60=0.00 avg300=0.01 total=2136152\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=2035228",
+      "pool_healthy": true,
+      "proof_prepared": true,
+      "scan": "scan: scrub canceled on Thu Oct 29 01:36:20 2026"
+    },
+    "guest_pressure": {
+      "hc-e8acf92ed8294f44b844cc12d10c6344": {
+        "unit": "active",
+        "allocation": {
+          "allocated_bytes": 2516582400,
+          "reserve_bytes": 536870912
+        },
+        "oom_kill": 0
+      },
+      "hc-ca11e61e0696404e81212eab42b06884": {
+        "unit": "active",
+        "allocation": {
+          "allocated_bytes": 1375731712,
+          "reserve_bytes": 268435456
+        },
+        "oom_kill": 0
+      },
+      "hc-74c5d1fcb1cf40d3874c4a7546c8aeb1": {
+        "unit": "active",
+        "allocation": {
+          "allocated_bytes": 1342177280,
+          "reserve_bytes": 268435456
+        },
+        "oom_kill": 0
+      },
+      "hc-4618836fb5454061b9e906d2a973c8df": {
+        "unit": "active",
+        "allocation": {
+          "allocated_bytes": 1342177280,
+          "reserve_bytes": 268435456
+        },
+        "oom_kill": 0
+      },
+      "hc-73927e881832461ea724f78e83d9ab0f": {
+        "unit": "active",
+        "allocation": {
+          "allocated_bytes": 285212672,
+          "reserve_bytes": 268435456
+        },
+        "oom_kill": 0
+      }
+    },
+    "swap_out_delta_bytes": 20979712,
+    "swap_out_limit_bytes": 161644994,
+    "last_30_seconds_swap_out_bytes": 3166208,
+    "final_memory_stall_percent": 0.11,
+    "final": {
+      "memory": {
+        "MemTotal": 16164499456,
+        "MemAvailable": 11293032448,
+        "SwapTotal": 4294963200,
+        "SwapFree": 3418087424
+      },
+      "vmstat": {
+        "pswpin": 715757,
+        "pswpout": 1093171,
+        "oom_kill": 0
+      },
+      "arc": {
+        "size_bytes": 104974144,
+        "minimum_bytes": 505140608,
+        "maximum_bytes": 2147483648,
+        "parameter_bytes": 2147483648,
+        "automatic_maximum_bytes": 15090757632,
+        "version": "2.4.1-1ubuntu5.1"
+      },
+      "pressure": "some avg10=0.00 avg60=0.04 avg300=0.02 total=2408351\nfull avg10=0.00 avg60=0.04 avg300=0.01 total=2305445",
+      "pool_healthy": true,
+      "proof_prepared": false,
+      "scan": "scan: scrub canceled on Thu Oct 29 01:47:25 2026"
+    }
+  },
+  "host_reboot": {
+    "host_rebooted": true,
+    "system_reserves_and_guest_budget_preserved": true,
+    "custom_arc_limit_loaded_at_boot": true,
+    "effective_arc_maximum_verified": true,
+    "all_cpu_gpu_claims_vm_and_application_ids_preserved": true,
+    "endpoint_identity_preserved": true,
+    "devbox_recovered_automatically": true,
+    "t3_connected": true,
+    "codex_signed_in": true,
+    "claude_signed_in": true,
+    "pool_healthy": true,
+    "arc_after_reboot": {
+      "size_bytes": 555859568,
+      "minimum_bytes": 505140352,
+      "maximum_bytes": 2147483648,
+      "parameter_bytes": 2147483648,
+      "automatic_maximum_bytes": 15090749440,
+      "version": "2.4.1-1ubuntu5.1"
+    }
+  },
+  "native_automatic_experiment": {
+    "checks": {
+      "custom_limit_changes_no_vm_capacity_or_grants": true,
+      "native_automatic_ceiling_applied_live": true
+    },
+    "pressure_samples": [
+      {
+        "memory": {
+          "MemTotal": 16164499456,
+          "MemAvailable": 358768640,
+          "SwapTotal": 4294963200,
+          "SwapFree": 1377357824
+        },
+        "vmstat": {
+          "pswpin": 22216,
+          "pswpout": 659835,
+          "oom_kill": 0
+        },
+        "arc": {
+          "size_bytes": 7456370128,
+          "minimum_bytes": 505140608,
+          "maximum_bytes": 15090757632,
+          "parameter_bytes": 15090757632,
+          "automatic_maximum_bytes": 15090757632,
+          "version": "2.4.1-1ubuntu5.1"
+        },
+        "pressure": "some avg10=2.33 avg60=0.50 avg300=0.14 total=1314101\nfull avg10=2.33 avg60=0.50 avg300=0.14 total=1250432",
+        "pool_healthy": true,
+        "proof_prepared": true,
+        "scan": "scan: scrub in progress since Thu Oct 29 01:33:52 2026",
+        "elapsed_seconds": 0.48
+      },
+      {
+        "memory": {
+          "MemTotal": 16164499456,
+          "MemAvailable": 1528774656,
+          "SwapTotal": 4294963200,
+          "SwapFree": 479928320
+        },
+        "vmstat": {
+          "pswpin": 212107,
+          "pswpout": 1006422,
+          "oom_kill": 0
+        },
+        "arc": {
+          "size_bytes": 5150549824,
+          "minimum_bytes": 505140608,
+          "maximum_bytes": 15090757632,
+          "parameter_bytes": 15090757632,
+          "automatic_maximum_bytes": 15090757632,
+          "version": "2.4.1-1ubuntu5.1"
+        },
+        "pressure": "some avg10=6.38 avg60=1.43 avg300=0.34 total=1836077\nfull avg10=6.19 avg60=1.40 avg300=0.33 total=1760845",
+        "pool_healthy": true,
+        "proof_prepared": true,
+        "scan": "scan: scrub in progress since Thu Oct 29 01:33:52 2026",
+        "elapsed_seconds": 3.8
+      },
+      {
+        "memory": {
+          "MemTotal": 16164499456,
+          "MemAvailable": 829960192,
+          "SwapTotal": 4294963200,
+          "SwapFree": 1252114432
+        },
+        "vmstat": {
+          "pswpin": 405888,
+          "pswpout": 1006422,
+          "oom_kill": 0
+        },
+        "arc": {
+          "size_bytes": 4871233464,
+          "minimum_bytes": 505140608,
+          "maximum_bytes": 15090757632,
+          "parameter_bytes": 15090757632,
+          "automatic_maximum_bytes": 15090757632,
+          "version": "2.4.1-1ubuntu5.1"
+        },
+        "pressure": "some avg10=5.40 avg60=1.42 avg300=0.35 total=1839280\nfull avg10=5.07 avg60=1.35 avg300=0.33 total=1763564",
+        "pool_healthy": true,
+        "proof_prepared": true,
+        "scan": "scan: scrub in progress since Thu Oct 29 01:33:52 2026",
+        "elapsed_seconds": 7.07
+      },
+      {
+        "memory": {
+          "MemTotal": 16164499456,
+          "MemAvailable": 599031808,
+          "SwapTotal": 4294963200,
+          "SwapFree": 1926402048
+        },
+        "vmstat": {
+          "pswpin": 562463,
+          "pswpout": 1006422,
+          "oom_kill": 0
+        },
+        "arc": {
+          "size_bytes": 4557804216,
+          "minimum_bytes": 505140608,
+          "maximum_bytes": 15090757632,
+          "parameter_bytes": 15090757632,
+          "automatic_maximum_bytes": 15090757632,
+          "version": "2.4.1-1ubuntu5.1"
+        },
+        "pressure": "some avg10=3.62 avg60=1.33 avg300=0.34 total=1840336\nfull avg10=3.40 avg60=1.27 avg300=0.33 total=1764567",
+        "pool_healthy": true,
+        "proof_prepared": true,
+        "scan": "scan: scrub in progress since Thu Oct 29 01:33:52 2026",
+        "elapsed_seconds": 10.34
+      },
+      {
+        "memory": {
+          "MemTotal": 16164499456,
+          "MemAvailable": 589651968,
+          "SwapTotal": 4294963200,
+          "SwapFree": 1926762496
+        },
+        "vmstat": {
+          "pswpin": 562572,
+          "pswpout": 1006422,
+          "oom_kill": 0
+        },
+        "arc": {
+          "size_bytes": 4543875400,
+          "minimum_bytes": 505140608,
+          "maximum_bytes": 15090757632,
+          "parameter_bytes": 15090757632,
+          "automatic_maximum_bytes": 15090757632,
+          "version": "2.4.1-1ubuntu5.1"
+        },
+        "pressure": "some avg10=2.42 avg60=1.24 avg300=0.34 total=1840511\nfull avg10=2.28 avg60=1.18 avg300=0.32 total=1764742",
+        "pool_healthy": true,
+        "proof_prepared": true,
+        "scan": "scan: scrub in progress since Thu Oct 29 01:33:52 2026",
+        "elapsed_seconds": 13.65
+      },
+      {
+        "memory": {
+          "MemTotal": 16164499456,
+          "MemAvailable": 586846208,
+          "SwapTotal": 4294963200,
+          "SwapFree": 1928114176
+        },
+        "vmstat": {
+          "pswpin": 562879,
+          "pswpout": 1006422,
+          "oom_kill": 0
+        },
+        "arc": {
+          "size_bytes": 4543875400,
+          "minimum_bytes": 505140608,
+          "maximum_bytes": 15090757632,
+          "parameter_bytes": 15090757632,
+          "automatic_maximum_bytes": 15090757632,
+          "version": "2.4.1-1ubuntu5.1"
+        },
+        "pressure": "some avg10=1.98 avg60=1.20 avg300=0.33 total=1841398\nfull avg10=1.86 avg60=1.14 avg300=0.32 total=1764868",
+        "pool_healthy": true,
+        "proof_prepared": true,
+        "scan": "scan: scrub in progress since Thu Oct 29 01:33:52 2026",
+        "elapsed_seconds": 16.95
+      },
+      {
+        "memory": {
+          "MemTotal": 16164499456,
+          "MemAvailable": 1017872384,
+          "SwapTotal": 4294963200,
+          "SwapFree": 1959809024
+        },
+        "vmstat": {
+          "pswpin": 569553,
+          "pswpout": 1006450,
+          "oom_kill": 0
+        },
+        "arc": {
+          "size_bytes": 4190439528,
+          "minimum_bytes": 505140608,
+          "maximum_bytes": 15090757632,
+          "parameter_bytes": 15090757632,
+          "automatic_maximum_bytes": 15090757632,
+          "version": "2.4.1-1ubuntu5.1"
+        },
+        "pressure": "some avg10=1.33 avg60=1.12 avg300=0.33 total=1846284\nfull avg10=1.25 avg60=1.07 avg300=0.31 total=1769612",
+        "pool_healthy": true,
+        "proof_prepared": true,
+        "scan": "scan: scrub in progress since Thu Oct 29 01:33:52 2026",
+        "elapsed_seconds": 20.27
+      },
+      {
+        "memory": {
+          "MemTotal": 16164499456,
+          "MemAvailable": 1547927552,
+          "SwapTotal": 4294963200,
+          "SwapFree": 1952038912
+        },
+        "vmstat": {
+          "pswpin": 569660,
+          "pswpout": 1008208,
+          "oom_kill": 0
+        },
+        "arc": {
+          "size_bytes": 3699370136,
+          "minimum_bytes": 505140608,
+          "maximum_bytes": 15090757632,
+          "parameter_bytes": 15090757632,
+          "automatic_maximum_bytes": 15090757632,
+          "version": "2.4.1-1ubuntu5.1"
+        },
+        "pressure": "some avg10=1.04 avg60=1.08 avg300=0.33 total=1879531\nfull avg10=0.98 avg60=1.03 avg300=0.32 total=1801222",
+        "pool_healthy": true,
+        "proof_prepared": true,
+        "scan": "scan: scrub in progress since Thu Oct 29 01:33:52 2026",
+        "elapsed_seconds": 23.57
+      },
+      {
+        "memory": {
+          "MemTotal": 16164499456,
+          "MemAvailable": 1741799424,
+          "SwapTotal": 4294963200,
+          "SwapFree": 1965846528
+        },
+        "vmstat": {
+          "pswpin": 573646,
+          "pswpout": 1008414,
+          "oom_kill": 0
+        },
+        "arc": {
+          "size_bytes": 3347101016,
+          "minimum_bytes": 505140608,
+          "maximum_bytes": 15090757632,
+          "parameter_bytes": 15090757632,
+          "automatic_maximum_bytes": 15090757632,
+          "version": "2.4.1-1ubuntu5.1"
+        },
+        "pressure": "some avg10=0.85 avg60=1.04 avg300=0.33 total=1886929\nfull avg10=0.80 avg60=1.00 avg300=0.31 total=1808566",
+        "pool_healthy": true,
+        "proof_prepared": true,
+        "scan": "scan: scrub in progress since Thu Oct 29 01:33:52 2026",
+        "elapsed_seconds": 26.9
+      },
+      {
+        "memory": {
+          "MemTotal": 16164499456,
+          "MemAvailable": 1755000832,
+          "SwapTotal": 4294963200,
+          "SwapFree": 1968095232
+        },
+        "vmstat": {
+          "pswpin": 574278,
+          "pswpout": 1008448,
+          "oom_kill": 0
+        },
+        "arc": {
+          "size_bytes": 3310659912,
+          "minimum_bytes": 505140608,
+          "maximum_bytes": 15090757632,
+          "parameter_bytes": 15090757632,
+          "automatic_maximum_bytes": 15090757632,
+          "version": "2.4.1-1ubuntu5.1"
+        },
+        "pressure": "some avg10=0.57 avg60=0.97 avg300=0.32 total=1888660\nfull avg10=0.54 avg60=0.93 avg300=0.31 total=1810296",
+        "pool_healthy": true,
+        "proof_prepared": true,
+        "scan": "scan: scrub in progress since Thu Oct 29 01:33:52 2026",
+        "elapsed_seconds": 30.16
+      },
+      {
+        "memory": {
+          "MemTotal": 16164499456,
+          "MemAvailable": 1693401088,
+          "SwapTotal": 4294963200,
+          "SwapFree": 1977995264
+        },
+        "vmstat": {
+          "pswpin": 576083,
+          "pswpout": 1008448,
+          "oom_kill": 0
+        },
+        "arc": {
+          "size_bytes": 3419392488,
+          "minimum_bytes": 505140608,
+          "maximum_bytes": 15090757632,
+          "parameter_bytes": 15090757632,
+          "automatic_maximum_bytes": 15090757632,
+          "version": "2.4.1-1ubuntu5.1"
+        },
+        "pressure": "some avg10=0.38 avg60=0.91 avg300=0.32 total=1888661\nfull avg10=0.36 avg60=0.87 avg300=0.30 total=1810298",
+        "pool_healthy": true,
+        "proof_prepared": true,
+        "scan": "scan: scrub in progress since Thu Oct 29 01:33:52 2026",
+        "elapsed_seconds": 33.43
+      },
+      {
+        "memory": {
+          "MemTotal": 16164499456,
+          "MemAvailable": 1574105088,
+          "SwapTotal": 4294963200,
+          "SwapFree": 1978118144
+        },
+        "vmstat": {
+          "pswpin": 576125,
+          "pswpout": 1008448,
+          "oom_kill": 0
+        },
+        "arc": {
+          "size_bytes": 3170472104,
+          "minimum_bytes": 505140608,
+          "maximum_bytes": 15090757632,
+          "parameter_bytes": 15090757632,
+          "automatic_maximum_bytes": 15090757632,
+          "version": "2.4.1-1ubuntu5.1"
+        },
+        "pressure": "some avg10=0.31 avg60=0.88 avg300=0.32 total=1888661\nfull avg10=0.29 avg60=0.84 avg300=0.30 total=1810298",
+        "pool_healthy": true,
+        "proof_prepared": true,
+        "scan": "scan: scrub in progress since Thu Oct 29 01:33:52 2026",
+        "elapsed_seconds": 36.74
+      },
+      {
+        "memory": {
+          "MemTotal": 16164499456,
+          "MemAvailable": 1384976384,
+          "SwapTotal": 4294963200,
+          "SwapFree": 1979142144
+        },
+        "vmstat": {
+          "pswpin": 576183,
+          "pswpout": 1008448,
+          "oom_kill": 0
+        },
+        "arc": {
+          "size_bytes": 3550081424,
+          "minimum_bytes": 505140608,
+          "maximum_bytes": 15090757632,
+          "parameter_bytes": 15090757632,
+          "automatic_maximum_bytes": 15090757632,
+          "version": "2.4.1-1ubuntu5.1"
+        },
+        "pressure": "some avg10=0.20 avg60=0.82 avg300=0.31 total=1888661\nfull avg10=0.19 avg60=0.79 avg300=0.30 total=1810298",
+        "pool_healthy": true,
+        "proof_prepared": true,
+        "scan": "scan: scrub in progress since Thu Oct 29 01:33:52 2026",
+        "elapsed_seconds": 40.34
+      },
+      {
+        "memory": {
+          "MemTotal": 16164499456,
+          "MemAvailable": 1390104576,
+          "SwapTotal": 4294963200,
+          "SwapFree": 1982103552
+        },
+        "vmstat": {
+          "pswpin": 576577,
+          "pswpout": 1008448,
+          "oom_kill": 0
+        },
+        "arc": {
+          "size_bytes": 3456024880,
+          "minimum_bytes": 505140608,
+          "maximum_bytes": 15090757632,
+          "parameter_bytes": 15090757632,
+          "automatic_maximum_bytes": 15090757632,
+          "version": "2.4.1-1ubuntu5.1"
+        },
+        "pressure": "some avg10=0.14 avg60=0.77 avg300=0.31 total=1888673\nfull avg10=0.13 avg60=0.74 avg300=0.29 total=1810308",
+        "pool_healthy": true,
+        "proof_prepared": true,
+        "scan": "scan: scrub in progress since Thu Oct 29 01:33:52 2026",
+        "elapsed_seconds": 43.65
+      },
+      {
+        "memory": {
+          "MemTotal": 16164499456,
+          "MemAvailable": 1379987456,
+          "SwapTotal": 4294963200,
+          "SwapFree": 1982840832
+        },
+        "vmstat": {
+          "pswpin": 576783,
+          "pswpout": 1008448,
+          "oom_kill": 0
+        },
+        "arc": {
+          "size_bytes": 3133466784,
+          "minimum_bytes": 505140608,
+          "maximum_bytes": 15090757632,
+          "parameter_bytes": 15090757632,
+          "automatic_maximum_bytes": 15090757632,
+          "version": "2.4.1-1ubuntu5.1"
+        },
+        "pressure": "some avg10=0.11 avg60=0.74 avg300=0.30 total=1888701\nfull avg10=0.10 avg60=0.71 avg300=0.29 total=1810335",
+        "pool_healthy": true,
+        "proof_prepared": true,
+        "scan": "scan: scrub in progress since Thu Oct 29 01:33:52 2026",
+        "elapsed_seconds": 46.97
+      },
+      {
+        "memory": {
+          "MemTotal": 16164499456,
+          "MemAvailable": 1724952576,
+          "SwapTotal": 4294963200,
+          "SwapFree": 1983328256
+        },
+        "vmstat": {
+          "pswpin": 576940,
+          "pswpout": 1008448,
+          "oom_kill": 0
+        },
+        "arc": {
+          "size_bytes": 2977746864,
+          "minimum_bytes": 505140608,
+          "maximum_bytes": 15090757632,
+          "parameter_bytes": 15090757632,
+          "automatic_maximum_bytes": 15090757632,
+          "version": "2.4.1-1ubuntu5.1"
+        },
+        "pressure": "some avg10=0.07 avg60=0.70 avg300=0.30 total=1888701\nfull avg10=0.07 avg60=0.67 avg300=0.29 total=1810335",
+        "pool_healthy": true,
+        "proof_prepared": true,
+        "scan": "scan: scrub in progress since Thu Oct 29 01:33:52 2026",
+        "elapsed_seconds": 50.24
+      },
+      {
+        "memory": {
+          "MemTotal": 16164499456,
+          "MemAvailable": 2908151808,
+          "SwapTotal": 4294963200,
+          "SwapFree": 1981980672
+        },
+        "vmstat": {
+          "pswpin": 577616,
+          "pswpout": 1009293,
+          "oom_kill": 0
+        },
+        "arc": {
+          "size_bytes": 2101272072,
+          "minimum_bytes": 505140608,
+          "maximum_bytes": 15090757632,
+          "parameter_bytes": 15090757632,
+          "automatic_maximum_bytes": 15090757632,
+          "version": "2.4.1-1ubuntu5.1"
+        },
+        "pressure": "some avg10=0.05 avg60=0.65 avg300=0.29 total=1898367\nfull avg10=0.04 avg60=0.62 avg300=0.28 total=1817934",
+        "pool_healthy": true,
+        "proof_prepared": true,
+        "scan": "scan: scrub in progress since Thu Oct 29 01:33:52 2026",
+        "elapsed_seconds": 53.61
+      },
+      {
+        "memory": {
+          "MemTotal": 16164499456,
+          "MemAvailable": 3270242304,
+          "SwapTotal": 4294963200,
+          "SwapFree": 1982582784
+        },
+        "vmstat": {
+          "pswpin": 577753,
+          "pswpout": 1009293,
+          "oom_kill": 0
+        },
+        "arc": {
+          "size_bytes": 1530754640,
+          "minimum_bytes": 505140608,
+          "maximum_bytes": 15090757632,
+          "parameter_bytes": 15090757632,
+          "automatic_maximum_bytes": 15090757632,
+          "version": "2.4.1-1ubuntu5.1"
+        },
+        "pressure": "some avg10=0.04 avg60=0.63 avg300=0.29 total=1898368\nfull avg10=0.03 avg60=0.60 avg300=0.28 total=1817936",
+        "pool_healthy": true,
+        "proof_prepared": true,
+        "scan": "scan: scrub in progress since Thu Oct 29 01:33:52 2026",
+        "elapsed_seconds": 56.94
+      },
+      {
+        "memory": {
+          "MemTotal": 16164499456,
+          "MemAvailable": 3467202560,
+          "SwapTotal": 4294963200,
+          "SwapFree": 2003734528
+        },
+        "vmstat": {
+          "pswpin": 584552,
+          "pswpout": 1009293,
+          "oom_kill": 0
+        },
+        "arc": {
+          "size_bytes": 1414604064,
+          "minimum_bytes": 505140608,
+          "maximum_bytes": 15090757632,
+          "parameter_bytes": 15090757632,
+          "automatic_maximum_bytes": 15090757632,
+          "version": "2.4.1-1ubuntu5.1"
+        },
+        "pressure": "some avg10=0.02 avg60=0.59 avg300=0.29 total=1898368\nfull avg10=0.02 avg60=0.56 avg300=0.27 total=1817936",
+        "pool_healthy": true,
+        "proof_prepared": true,
+        "scan": "scan: scrub in progress since Thu Oct 29 01:33:52 2026",
+        "elapsed_seconds": 60.22
+      },
+      {
+        "memory": {
+          "MemTotal": 16164499456,
+          "MemAvailable": 3198373888,
+          "SwapTotal": 4294963200,
+          "SwapFree": 2009681920
+        },
+        "vmstat": {
+          "pswpin": 587516,
+          "pswpout": 1009926,
+          "oom_kill": 0
+        },
+        "arc": {
+          "size_bytes": 1866393120,
+          "minimum_bytes": 505140608,
+          "maximum_bytes": 15090757632,
+          "parameter_bytes": 15090757632,
+          "automatic_maximum_bytes": 15090757632,
+          "version": "2.4.1-1ubuntu5.1"
+        },
+        "pressure": "some avg10=0.01 avg60=0.55 avg300=0.28 total=1905063\nfull avg10=0.01 avg60=0.52 avg300=0.27 total=1824418",
+        "pool_healthy": true,
+        "proof_prepared": true,
+        "scan": "scan: scrub in progress since Thu Oct 29 01:33:52 2026",
+        "elapsed_seconds": 63.54
+      },
+      {
+        "memory": {
+          "MemTotal": 16164499456,
+          "MemAvailable": 3049713664,
+          "SwapTotal": 4294963200,
+          "SwapFree": 2014556160
+        },
+        "vmstat": {
+          "pswpin": 589153,
+          "pswpout": 1009926,
+          "oom_kill": 0
+        },
+        "arc": {
+          "size_bytes": 1868124736,
+          "minimum_bytes": 505140608,
+          "maximum_bytes": 15090757632,
+          "parameter_bytes": 15090757632,
+          "automatic_maximum_bytes": 15090757632,
+          "version": "2.4.1-1ubuntu5.1"
+        },
+        "pressure": "some avg10=0.01 avg60=0.53 avg300=0.28 total=1905063\nfull avg10=0.01 avg60=0.51 avg300=0.27 total=1824418",
+        "pool_healthy": true,
+        "proof_prepared": true,
+        "scan": "scan: scrub in progress since Thu Oct 29 01:33:52 2026",
+        "elapsed_seconds": 66.83
+      },
+      {
+        "memory": {
+          "MemTotal": 16164499456,
+          "MemAvailable": 3104894976,
+          "SwapTotal": 4294963200,
+          "SwapFree": 2032746496
+        },
+        "vmstat": {
+          "pswpin": 594169,
+          "pswpout": 1009926,
+          "oom_kill": 0
+        },
+        "arc": {
+          "size_bytes": 1798176480,
+          "minimum_bytes": 505140608,
+          "maximum_bytes": 15090757632,
+          "parameter_bytes": 15090757632,
+          "automatic_maximum_bytes": 15090757632,
+          "version": "2.4.1-1ubuntu5.1"
+        },
+        "pressure": "some avg10=0.00 avg60=0.50 avg300=0.28 total=1905063\nfull avg10=0.00 avg60=0.47 avg300=0.26 total=1824418",
+        "pool_healthy": true,
+        "proof_prepared": true,
+        "scan": "scan: scrub in progress since Thu Oct 29 01:33:52 2026",
+        "elapsed_seconds": 70.12
+      },
+      {
+        "memory": {
+          "MemTotal": 16164499456,
+          "MemAvailable": 3202633728,
+          "SwapTotal": 4294963200,
+          "SwapFree": 2051821568
+        },
+        "vmstat": {
+          "pswpin": 600094,
+          "pswpout": 1010432,
+          "oom_kill": 0
+        },
+        "arc": {
+          "size_bytes": 1851537640,
+          "minimum_bytes": 505140608,
+          "maximum_bytes": 15090757632,
+          "parameter_bytes": 15090757632,
+          "automatic_maximum_bytes": 15090757632,
+          "version": "2.4.1-1ubuntu5.1"
+        },
+        "pressure": "some avg10=0.00 avg60=0.46 avg300=0.27 total=1908555\nfull avg10=0.00 avg60=0.44 avg300=0.26 total=1827802",
+        "pool_healthy": true,
+        "proof_prepared": true,
+        "scan": "scan: scrub in progress since Thu Oct 29 01:33:52 2026",
+        "elapsed_seconds": 73.41
+      },
+      {
+        "memory": {
+          "MemTotal": 16164499456,
+          "MemAvailable": 3077246976,
+          "SwapTotal": 4294963200,
+          "SwapFree": 2060476416
+        },
+        "vmstat": {
+          "pswpin": 601958,
+          "pswpout": 1010432,
+          "oom_kill": 0
+        },
+        "arc": {
+          "size_bytes": 1845714552,
+          "minimum_bytes": 505140608,
+          "maximum_bytes": 15090757632,
+          "parameter_bytes": 15090757632,
+          "automatic_maximum_bytes": 15090757632,
+          "version": "2.4.1-1ubuntu5.1"
+        },
+        "pressure": "some avg10=0.00 avg60=0.45 avg300=0.27 total=1908557\nfull avg10=0.00 avg60=0.43 avg300=0.26 total=1827803",
+        "pool_healthy": true,
+        "proof_prepared": true,
+        "scan": "scan: scrub in progress since Thu Oct 29 01:33:52 2026",
+        "elapsed_seconds": 76.7
+      },
+      {
+        "memory": {
+          "MemTotal": 16164499456,
+          "MemAvailable": 3075305472,
+          "SwapTotal": 4294963200,
+          "SwapFree": 2060648448
+        },
+        "vmstat": {
+          "pswpin": 602001,
+          "pswpout": 1010432,
+          "oom_kill": 0
+        },
+        "arc": {
+          "size_bytes": 1842810776,
+          "minimum_bytes": 505140608,
+          "maximum_bytes": 15090757632,
+          "parameter_bytes": 15090757632,
+          "automatic_maximum_bytes": 15090757632,
+          "version": "2.4.1-1ubuntu5.1"
+        },
+        "pressure": "some avg10=0.00 avg60=0.42 avg300=0.27 total=1908557\nfull avg10=0.00 avg60=0.40 avg300=0.25 total=1827803",
+        "pool_healthy": true,
+        "proof_prepared": true,
+        "scan": "scan: scrub in progress since Thu Oct 29 01:33:52 2026",
+        "elapsed_seconds": 80.0
+      },
+      {
+        "memory": {
+          "MemTotal": 16164499456,
+          "MemAvailable": 3012694016,
+          "SwapTotal": 4294963200,
+          "SwapFree": 2059530240
+        },
+        "vmstat": {
+          "pswpin": 602015,
+          "pswpout": 1010712,
+          "oom_kill": 0
+        },
+        "arc": {
+          "size_bytes": 2025952872,
+          "minimum_bytes": 505140608,
+          "maximum_bytes": 15090757632,
+          "parameter_bytes": 15090757632,
+          "automatic_maximum_bytes": 15090757632,
+          "version": "2.4.1-1ubuntu5.1"
+        },
+        "pressure": "some avg10=0.00 avg60=0.39 avg300=0.26 total=1910410\nfull avg10=0.00 avg60=0.37 avg300=0.25 total=1829610",
+        "pool_healthy": true,
+        "proof_prepared": true,
+        "scan": "scan: scrub in progress since Thu Oct 29 01:33:52 2026",
+        "elapsed_seconds": 83.41
+      },
+      {
+        "memory": {
+          "MemTotal": 16164499456,
+          "MemAvailable": 2931040256,
+          "SwapTotal": 4294963200,
+          "SwapFree": 2059530240
+        },
+        "vmstat": {
+          "pswpin": 602015,
+          "pswpout": 1010712,
+          "oom_kill": 0
+        },
+        "arc": {
+          "size_bytes": 2027392952,
+          "minimum_bytes": 505140608,
+          "maximum_bytes": 15090757632,
+          "parameter_bytes": 15090757632,
+          "automatic_maximum_bytes": 15090757632,
+          "version": "2.4.1-1ubuntu5.1"
+        },
+        "pressure": "some avg10=0.00 avg60=0.38 avg300=0.26 total=1910410\nfull avg10=0.00 avg60=0.36 avg300=0.25 total=1829610",
+        "pool_healthy": true,
+        "proof_prepared": true,
+        "scan": "scan: scrub in progress since Thu Oct 29 01:33:52 2026",
+        "elapsed_seconds": 86.68
+      },
+      {
+        "memory": {
+          "MemTotal": 16164499456,
+          "MemAvailable": 2930429952,
+          "SwapTotal": 4294963200,
+          "SwapFree": 2059902976
+        },
+        "vmstat": {
+          "pswpin": 602137,
+          "pswpout": 1010712,
+          "oom_kill": 0
+        },
+        "arc": {
+          "size_bytes": 2014878168,
+          "minimum_bytes": 505140608,
+          "maximum_bytes": 15090757632,
+          "parameter_bytes": 15090757632,
+          "automatic_maximum_bytes": 15090757632,
+          "version": "2.4.1-1ubuntu5.1"
+        },
+        "pressure": "some avg10=0.00 avg60=0.35 avg300=0.26 total=1910412\nfull avg10=0.00 avg60=0.34 avg300=0.25 total=1829612",
+        "pool_healthy": true,
+        "proof_prepared": true,
+        "scan": "scan: scrub in progress since Thu Oct 29 01:33:52 2026",
+        "elapsed_seconds": 89.99
+      },
+      {
+        "memory": {
+          "MemTotal": 16164499456,
+          "MemAvailable": 2822635520,
+          "SwapTotal": 4294963200,
+          "SwapFree": 2006929408
+        },
+        "vmstat": {
+          "pswpin": 603849,
+          "pswpout": 1024243,
+          "oom_kill": 0
+        },
+        "arc": {
+          "size_bytes": 2233147800,
+          "minimum_bytes": 505140608,
+          "maximum_bytes": 15090757632,
+          "parameter_bytes": 15090757632,
+          "automatic_maximum_bytes": 15090757632,
+          "version": "2.4.1-1ubuntu5.1"
+        },
+        "pressure": "some avg10=0.00 avg60=0.33 avg300=0.25 total=1929564\nfull avg10=0.00 avg60=0.31 avg300=0.24 total=1848711",
+        "pool_healthy": true,
+        "proof_prepared": true,
+        "scan": "scan: scrub in progress since Thu Oct 29 01:33:52 2026",
+        "elapsed_seconds": 93.32
+      },
+      {
+        "memory": {
+          "MemTotal": 16164499456,
+          "MemAvailable": 2768957440,
+          "SwapTotal": 4294963200,
+          "SwapFree": 2007502848
+        },
+        "vmstat": {
+          "pswpin": 603987,
+          "pswpout": 1024243,
+          "oom_kill": 0
+        },
+        "arc": {
+          "size_bytes": 2235528744,
+          "minimum_bytes": 505140608,
+          "maximum_bytes": 15090757632,
+          "parameter_bytes": 15090757632,
+          "automatic_maximum_bytes": 15090757632,
+          "version": "2.4.1-1ubuntu5.1"
+        },
+        "pressure": "some avg10=0.00 avg60=0.32 avg300=0.25 total=1929600\nfull avg10=0.00 avg60=0.30 avg300=0.24 total=1848741",
+        "pool_healthy": true,
+        "proof_prepared": true,
+        "scan": "scan: scrub in progress since Thu Oct 29 01:33:52 2026",
+        "elapsed_seconds": 96.59
+      },
+      {
+        "memory": {
+          "MemTotal": 16164499456,
+          "MemAvailable": 2759798784,
+          "SwapTotal": 4294963200,
+          "SwapFree": 2007601152
+        },
+        "vmstat": {
+          "pswpin": 603991,
+          "pswpout": 1024243,
+          "oom_kill": 0
+        },
+        "arc": {
+          "size_bytes": 2233968440,
+          "minimum_bytes": 505140608,
+          "maximum_bytes": 15090757632,
+          "parameter_bytes": 15090757632,
+          "automatic_maximum_bytes": 15090757632,
+          "version": "2.4.1-1ubuntu5.1"
+        },
+        "pressure": "some avg10=0.00 avg60=0.30 avg300=0.25 total=1929600\nfull avg10=0.00 avg60=0.28 avg300=0.24 total=1848741",
+        "pool_healthy": true,
+        "proof_prepared": true,
+        "scan": "scan: scrub in progress since Thu Oct 29 01:33:52 2026",
+        "elapsed_seconds": 99.92
+      },
+      {
+        "memory": {
+          "MemTotal": 16164499456,
+          "MemAvailable": 1309904896,
+          "SwapTotal": 4294963200,
+          "SwapFree": 1935675392
+        },
+        "vmstat": {
+          "pswpin": 604069,
+          "pswpout": 1039135,
+          "oom_kill": 0
+        },
+        "arc": {
+          "size_bytes": 3904569072,
+          "minimum_bytes": 505140608,
+          "maximum_bytes": 15090757632,
+          "parameter_bytes": 15090757632,
+          "automatic_maximum_bytes": 15090757632,
+          "version": "2.4.1-1ubuntu5.1"
+        },
+        "pressure": "some avg10=0.00 avg60=0.28 avg300=0.24 total=1956874\nfull avg10=0.00 avg60=0.26 avg300=0.23 total=1869556",
+        "pool_healthy": true,
+        "proof_prepared": true,
+        "scan": "scan: scrub in progress since Thu Oct 29 01:33:52 2026",
+        "elapsed_seconds": 103.71
+      },
+      {
+        "memory": {
+          "MemTotal": 16164499456,
+          "MemAvailable": 1328705536,
+          "SwapTotal": 4294963200,
+          "SwapFree": 1935847424
+        },
+        "vmstat": {
+          "pswpin": 604117,
+          "pswpout": 1039135,
+          "oom_kill": 0
+        },
+        "arc": {
+          "size_bytes": 3907259264,
+          "minimum_bytes": 505140608,
+          "maximum_bytes": 15090757632,
+          "parameter_bytes": 15090757632,
+          "automatic_maximum_bytes": 15090757632,
+          "version": "2.4.1-1ubuntu5.1"
+        },
+        "pressure": "some avg10=0.18 avg60=0.30 avg300=0.25 total=1958858\nfull avg10=0.18 avg60=0.29 avg300=0.24 total=1871500",
+        "pool_healthy": true,
+        "proof_prepared": true,
+        "scan": "scan: scrub in progress since Thu Oct 29 01:33:52 2026",
+        "elapsed_seconds": 107.02
+      },
+      {
+        "memory": {
+          "MemTotal": 16164499456,
+          "MemAvailable": 1506217984,
+          "SwapTotal": 4294963200,
+          "SwapFree": 1843200000
+        },
+        "vmstat": {
+          "pswpin": 604162,
+          "pswpout": 1058992,
+          "oom_kill": 0
+        },
+        "arc": {
+          "size_bytes": 3828679208,
+          "minimum_bytes": 505140608,
+          "maximum_bytes": 15090757632,
+          "parameter_bytes": 15090757632,
+          "automatic_maximum_bytes": 15090757632,
+          "version": "2.4.1-1ubuntu5.1"
+        },
+        "pressure": "some avg10=0.12 avg60=0.28 avg300=0.24 total=2002122\nfull avg10=0.12 avg60=0.27 avg300=0.23 total=1914047",
+        "pool_healthy": true,
+        "proof_prepared": true,
+        "scan": "scan: scrub in progress since Thu Oct 29 01:33:52 2026",
+        "elapsed_seconds": 110.43
+      },
+      {
+        "memory": {
+          "MemTotal": 16164499456,
+          "MemAvailable": 2167013376,
+          "SwapTotal": 4294963200,
+          "SwapFree": 1782706176
+        },
+        "vmstat": {
+          "pswpin": 604687,
+          "pswpout": 1072801,
+          "oom_kill": 0
+        },
+        "arc": {
+          "size_bytes": 3004540760,
+          "minimum_bytes": 505140608,
+          "maximum_bytes": 15090757632,
+          "parameter_bytes": 15090757632,
+          "automatic_maximum_bytes": 15090757632,
+          "version": "2.4.1-1ubuntu5.1"
+        },
+        "pressure": "some avg10=0.37 avg60=0.32 avg300=0.25 total=2020316\nfull avg10=0.37 avg60=0.31 avg300=0.24 total=1931793",
+        "pool_healthy": true,
+        "proof_prepared": true,
+        "scan": "scan: scrub in progress since Thu Oct 29 01:33:52 2026",
+        "elapsed_seconds": 113.79
+      },
+      {
+        "memory": {
+          "MemTotal": 16164499456,
+          "MemAvailable": 2127687680,
+          "SwapTotal": 4294963200,
+          "SwapFree": 1783365632
+        },
+        "vmstat": {
+          "pswpin": 604854,
+          "pswpout": 1072801,
+          "oom_kill": 0
+        },
+        "arc": {
+          "size_bytes": 2992133000,
+          "minimum_bytes": 505140608,
+          "maximum_bytes": 15090757632,
+          "parameter_bytes": 15090757632,
+          "automatic_maximum_bytes": 15090757632,
+          "version": "2.4.1-1ubuntu5.1"
+        },
+        "pressure": "some avg10=0.30 avg60=0.31 avg300=0.25 total=2022244\nfull avg10=0.30 avg60=0.30 avg300=0.24 total=1933720",
+        "pool_healthy": true,
+        "proof_prepared": true,
+        "scan": "scan: scrub in progress since Thu Oct 29 01:33:52 2026",
+        "elapsed_seconds": 117.16
+      }
+    ],
+    "initial": {
+      "memory": {
+        "MemTotal": 16164499456,
+        "MemAvailable": 799383552,
+        "SwapTotal": 4294963200,
+        "SwapFree": 3337334784
+      },
+      "vmstat": {
+        "pswpin": 1361,
+        "pswpout": 199851,
+        "oom_kill": 0
+      },
+      "arc": {
+        "size_bytes": 6074124504,
+        "minimum_bytes": 505140608,
+        "maximum_bytes": 15090757632,
+        "parameter_bytes": 15090757632,
+        "automatic_maximum_bytes": 15090757632,
+        "version": "2.4.1-1ubuntu5.1"
+      },
+      "pressure": "some avg10=0.00 avg60=0.12 avg300=0.04 total=783385\nfull avg10=0.00 avg60=0.12 avg300=0.04 total=732313",
+      "pool_healthy": true,
+      "proof_prepared": true,
+      "scan": "scan: scrub canceled on Thu Oct 29 01:26:49 2026"
+    },
+    "temporary_vm_ids": [
+      "4d7444f8-9a69-49d7-8a1e-66424d19368e",
+      "ac359cd8-8248-4aa7-b3e5-41409c95371b",
+      "cca62bd8-2542-4c84-9e86-01e02e1f940a",
+      "04e620fa-9a50-48cd-9247-615e3158b98c"
+    ],
+    "before_pressure": {
+      "memory": {
+        "MemTotal": 16164499456,
+        "MemAvailable": 716009472,
+        "SwapTotal": 4294963200,
+        "SwapFree": 2770059264
+      },
+      "vmstat": {
+        "pswpin": 1482,
+        "pswpout": 335200,
+        "oom_kill": 0
+      },
+      "arc": {
+        "size_bytes": 6709499560,
+        "minimum_bytes": 505140608,
+        "maximum_bytes": 15090757632,
+        "parameter_bytes": 15090757632,
+        "automatic_maximum_bytes": 15090757632,
+        "version": "2.4.1-1ubuntu5.1"
+      },
+      "pressure": "some avg10=0.00 avg60=0.06 avg300=0.04 total=917907\nfull avg10=0.00 avg60=0.06 avg300=0.04 total=860831",
+      "pool_healthy": true,
+      "proof_prepared": true,
+      "scan": "scan: scrub canceled on Thu Oct 29 01:26:49 2026"
+    },
+    "guest_pressure": {
+      "hc-e8acf92ed8294f44b844cc12d10c6344": {
+        "unit": "active",
+        "allocation": {
+          "allocated_bytes": 2348810240,
+          "reserve_bytes": 536870912
+        },
+        "oom_kill": 0
+      },
+      "hc-4d7444f89a6949d78a1e66424d19368e": {
+        "unit": "active",
+        "allocation": {
+          "allocated_bytes": 1342177280,
+          "reserve_bytes": 268435456
+        },
+        "oom_kill": 0
+      },
+      "hc-ac359cd882484aa7b3e541409c95371b": {
+        "unit": "active",
+        "allocation": {
+          "allocated_bytes": 301989888,
+          "reserve_bytes": 268435456
+        },
+        "oom_kill": 0
+      },
+      "hc-cca62bd825424c849e8601e02e1f940a": {
+        "unit": "active",
+        "allocation": {
+          "allocated_bytes": 1325400064,
+          "reserve_bytes": 268435456
+        },
+        "oom_kill": 0
+      },
+      "hc-04e620fa9a5048cd9247615e3158b98c": {
+        "unit": "active",
+        "allocation": {
+          "allocated_bytes": 1342177280,
+          "reserve_bytes": 268435456
+        },
+        "oom_kill": 0
+      }
+    },
+    "result": "Native Automatic pressure proof failed paging guard; all guest jobs healthy and no host OOM; not promoted as default",
+    "swap_out_delta_bytes": 3575603200
+  },
+  "disposable_vsock_repair": {
+    "only_unpaired_disposable_guest_restarted": true,
+    "observed_vsock_metadata_mismatch": true,
+    "configured_cid_before": "2393377393",
+    "running_cid_before": "1175899851",
+    "cid_matches_after_restart": true,
+    "cpu_gpu_claims_preserved": true,
+    "permanent_devbox_not_restarted": true
+  },
+  "initial_pressure_guard": {
+    "duration_seconds": 55,
+    "guard_bytes": 67108864,
+    "observed_swap_out_bytes": 75026432,
+    "result": "Guard exceeded; all five guest jobs healthy, no host OOM, ARC reclaimed. Cleanup restored the original grants and custom 2 GiB cap.",
+    "followup": "Longer native Automatic run failed with substantial paging, so the selected custom 2 GiB policy was tested separately; Automatic was not promoted."
+  },
+  "limits": [
+    "This pressure run validates one lab profile/workload; it is not a universal OOM or latency guarantee.",
+    "Lab floor is 4 GiB operating RAM and one complete physical core; final selected CPU reserve is two cores.",
+    "Guest memory budget is rounded down to whole GiB; residual physical memory remains unissued.",
+    "ARC maximum is elastic and not counted as an additional reservation.",
+    "Native Automatic caused substantial host paging under this workload and remains opt-in; the validated lab default is a custom 2 GiB cap.",
+    "Actual automatic zero-parameter module-load behavior is unit-tested, not tested by the final physical reboot, which verifies the selected custom cap.",
+    "Native Automatic defaults reviewed for Linux OpenZFS 2.0-2.4; a managed Automatic policy on an unknown version fails closed until local root review.",
+    "Pool floor is operating headroom, not a ZFS reservation or protection from arbitrary unmanaged writes.",
+    "Single connected host; fleet aggregation and off-host backup remain deferred.",
+    "Provider sign-in metadata and T3 reachability checked after this host reboot; no new paid provider task was submitted."
+  ],
+  "final_install": {
+    "installed_host_modules_match_tested_sources": true,
+    "controller_active_after_reboot": true,
+    "sha256": {
+      "host_runtime.py": "663e70b38b68d62782babf8719dcc57e6c722d91826e8c4e2fe8e1c4bda34727",
+      "resource_reserves.py": "9d1f292bc211c24424c6a249e3853c58bed94244d44ee1a67e9ce6916f1a5aeb",
+      "arc_policy.py": "215fc1570ecff9bf7b4d5ec5195de13b58481a67717d9b555fa00eac8e0cd10c"
+    }
+  }
+}

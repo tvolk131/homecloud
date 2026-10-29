@@ -1,0 +1,19 @@
+// Read/write lengths and return values only. Never capture buffers or arguments.
+tracepoint:syscalls:sys_enter_read
+/comm == "qemu-system-x86" && args.count == 1/
+{ @read_fd[tid] = args.fd + 1; printf("%llu read-enter pid=%d tid=%d fd=%d\n", nsecs, pid, tid, args.fd); }
+tracepoint:syscalls:sys_exit_read
+/@read_fd[tid]/
+{ printf("%llu read-return pid=%d tid=%d fd=%d ret=%ld\n", nsecs, pid, tid, @read_fd[tid]-1, args.ret); delete(@read_fd[tid]); }
+tracepoint:syscalls:sys_enter_write
+/comm == "qemu-system-x86" && args.count == 1/
+{ @write_fd[tid] = args.fd + 1; printf("%llu write-enter pid=%d tid=%d fd=%d\n", nsecs, pid, tid, args.fd); }
+tracepoint:syscalls:sys_exit_write
+/@write_fd[tid]/
+{ printf("%llu write-return pid=%d tid=%d fd=%d ret=%ld\n", nsecs, pid, tid, @write_fd[tid]-1, args.ret); delete(@write_fd[tid]); }
+tracepoint:sched:sched_process_fork
+/comm == "qemu-system-x86"/
+{ printf("%llu fork parent=%d child=%d\n", nsecs, args.parent_pid, args.child_pid); }
+tracepoint:sched:sched_process_exit
+/comm == "qemu-system-x86"/
+{ printf("%llu exit pid=%d tid=%d\n", nsecs, pid, tid); delete(@read_fd[tid]); delete(@write_fd[tid]); }

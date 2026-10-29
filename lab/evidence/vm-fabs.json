@@ -1,0 +1,58 @@
+{
+  "date": "2026-10-28",
+  "scope": "Desktop contextual VM FABs and action hierarchy",
+  "changes": [
+    "New VM extended FAB on Workspaces",
+    "VMs list heading",
+    "Edit VM extended FAB on workspace details",
+    "Outlined Open terminal in detail header",
+    "Scroll clearance and scrollbar-safe placement",
+    "Equal 24px FAB right/bottom insets",
+    "Page content, headers and inline banners share a reduced 24px right edge",
+    "Separate outer scrollbar gutter",
+    "Visible UI terminology consistently uses VM/VMs"
+  ],
+  "verification": {
+    "desktop_tests": 54,
+    "native_screenshot_comparisons": 94,
+    "interaction_coverage": [
+      "800x600, 1180x820, 2000x900 fixed placement",
+      "Scroll-stable FAB",
+      "Correct selected VM and page scoping",
+      "Empty-state creation",
+      "Background mouse click-through",
+      "Tab/Enter activation",
+      "Busy/offline/pending disabled state",
+      "Modal blocks FAB",
+      "Existing exit-animation frame retention",
+      "Equal 24px FAB right/bottom insets",
+      "Scrollbar does not overlap FAB",
+      "VM-specific delete-button target after renaming"
+    ],
+    "direct_visual_inspection": [
+      "Normal Workspaces",
+      "Small ready workspace",
+      "Small scrolled long VM list",
+      "Small advanced details scrolled to Delete",
+      "Small empty state",
+      "Small stopping state with disabled FAB",
+      "Small multi-GPU edit dialog",
+      "Live connected Mac Workspaces",
+      "Renamed VM page with reduced right inset",
+      "Renamed small Edit VM dialog",
+      "Small Hosts with reduced right inset",
+      "Small scrolled VM advanced actions with equal FAB insets",
+      "Live renamed VM page with matching card/FAB right edge and 24px FAB bottom inset"
+    ],
+    "inspection_fix": "Separated the 16px scrollbar gutter from the content inset; cards, header actions and FABs share a 24px right edge, with 24px FAB bottom spacing. The existing wide-window width cap is preserved.",
+    "commands": [
+      "cargo test --locked -p homecloud-desktop",
+      "cargo clippy --locked -p homecloud-desktop --all-targets -- -D warnings",
+      "sh scripts/package_mac.sh"
+    ],
+    "result": "passed"
+  },
+  "mac_app": "Rebuilt, reopened, and visually verified connected",
+  "backend_changes": false,
+  "vm_operations": false
+}

@@ -1,0 +1,603 @@
+{
+  "recorded_at_utc": "2026-10-27T21:08:14.047099+00:00",
+  "environment": {
+    "host": "resolvr-box",
+    "architecture": "x86_64",
+    "os": "Ubuntu Server 26.04.1",
+    "kernel": "7.0.0-38-generic",
+    "incus": "6.0.5",
+    "zfs": "2.4.1",
+    "cpu": "Intel Core i7-8700K (6 physical / 12 logical)",
+    "ram_approx_gib": 16,
+    "gpu": "NVIDIA GeForce GTX 1070 Ti",
+    "guest_image": "Ubuntu 24.04",
+    "guest_gpu_driver": "Ubuntu signed NVIDIA 580",
+    "t3_version": "0.1.2"
+  },
+  "automated_checks": {
+    "macos_workspace_rust_tests": 49,
+    "linux_without_desktop_rust_tests": 36,
+    "native_gui_screenshot_baselines": 33,
+    "final_python_host_adapter_cases_each_os": 10,
+    "clippy_both_os": true,
+    "formatting": true
+  },
+  "final_state": {
+    "controller": "active",
+    "database_and_endpoint_preserved": true,
+    "managed_capacity": {
+      "memory_gib": 4,
+      "physical_cores": 2,
+      "disk_gib": 128
+    },
+    "devbox": "running CPU-only; GPU preference retained",
+    "devbox_configured": {
+      "memory_gib": 4,
+      "physical_cores": 1,
+      "disk_gib": 24,
+      "backing_gib": 26
+    },
+    "disposable_vm": "deleted",
+    "test_devices": "revoked",
+    "test_account": "disabled with zero grant",
+    "legacy_vms": "stopped; autostart disabled",
+    "zfs_pool": "healthy",
+    "control_config_owner": "root:homecloud",
+    "control_config_mode": "0640",
+    "temporary_transport_logging": "removed; see managed-applications.json final runtime checks"
+  },
+  "checks": [
+    {
+      "check": "upgrade preserved account, VM, SSH identity and GPU intent",
+      "passed": true,
+      "time_utc": "2026-10-27T18:23:52.532063+00:00",
+      "vm_id": "e8acf92e-d829-4f44-b844-cc12d10c6344",
+      "transport_version": 1
+    },
+    {
+      "check": "CUDA works after host network move and backend upgrade",
+      "passed": true,
+      "time_utc": "2026-10-27T18:23:55.429007+00:00",
+      "gpu": "NVIDIA GeForce GTX 1070 Ti",
+      "compute_capability": "6.1",
+      "vector_elements": 262144,
+      "kernel_launches": 63072,
+      "correct_result": true,
+      "elapsed_seconds": 1.046,
+      "transport_version": 1
+    },
+    {
+      "check": "full stop releases compute and GPU only after hardware cleanup",
+      "passed": true,
+      "time_utc": "2026-10-27T18:24:06.372574+00:00",
+      "held": {
+        "memory_bytes": 0,
+        "cpu_cores": 0,
+        "disk_bytes": 23622320128
+      },
+      "remembered_gpu": "0000:01:00.0",
+      "host_gpu_driver": "nouveau",
+      "transport_version": 1
+    },
+    {
+      "check": "explicit CPU-only boot retains GPU preference and preserves data/SSH/T3",
+      "passed": true,
+      "time_utc": "2026-10-27T18:24:24.891209+00:00",
+      "cpu_ids": [
+        4,
+        10
+      ],
+      "transport_version": 1
+    },
+    {
+      "check": "normal restart reacquires remembered GPU and CUDA works again",
+      "passed": true,
+      "time_utc": "2026-10-27T18:24:56.330496+00:00",
+      "gpu": "NVIDIA GeForce GTX 1070 Ti",
+      "compute_capability": "6.1",
+      "vector_elements": 262144,
+      "kernel_launches": 58333,
+      "correct_result": true,
+      "elapsed_seconds": 1.086,
+      "transport_version": 1
+    },
+    {
+      "check": "failed guest provisioning retains its resource claims for explicit recovery",
+      "passed": true,
+      "time_utc": "2026-10-27T18:32:56.280479+00:00",
+      "vm_id": "db4c0201-d112-49d9-bbb9-d4da0d0a0ec8",
+      "operation_id": "43d7e49b-59c9-4464-9f19-f87c16b13d93",
+      "transport_version": 1
+    },
+    {
+      "check": "fresh VM with libatomic runtime dependency completes unattended T3 provisioning",
+      "passed": true,
+      "time_utc": "2026-10-27T18:34:10.080458+00:00",
+      "vm_id": "db4c0201-d112-49d9-bbb9-d4da0d0a0ec8",
+      "transport_version": 1
+    },
+    {
+      "check": "new VM provisions pinned T3 service without provider credentials",
+      "passed": true,
+      "time_utc": "2026-10-27T18:35:31.415894+00:00",
+      "vm_id": "db4c0201-d112-49d9-bbb9-d4da0d0a0ec8",
+      "transport_version": 1
+    },
+    {
+      "check": "running VM cannot attach a GPU claimed by another owner",
+      "passed": true,
+      "time_utc": "2026-10-27T18:35:33.064421+00:00",
+      "transport_version": 1
+    },
+    {
+      "check": "stopped GPU preference reserves no physical device",
+      "passed": true,
+      "time_utc": "2026-10-27T18:35:50.070924+00:00",
+      "transport_version": 1
+    },
+    {
+      "check": "simultaneous starts give one GPU owner and roll back all loser compute claims",
+      "passed": true,
+      "time_utc": "2026-10-27T18:35:51.218744+00:00",
+      "winner": "db4c0201-d112-49d9-bbb9-d4da0d0a0ec8",
+      "loser": "e8acf92e-d829-4f44-b844-cc12d10c6344",
+      "transport_version": 1
+    },
+    {
+      "check": "authenticated live control RPC succeeds with all direct Iroh transports disabled",
+      "passed": true,
+      "time_utc": "2026-10-27T18:42:36.885198+00:00",
+      "transport_version": 1
+    },
+    {
+      "check": "signed driver installation completes after transient-unit restart without reallocating the operation",
+      "passed": true,
+      "time_utc": "2026-10-27T19:00:46.480365+00:00",
+      "operation_id": "bae992b9-2f8b-4c13-ab0e-dce0b73281ec",
+      "transport_version": 1
+    },
+    {
+      "check": "GPU race winner performs real CUDA work",
+      "passed": true,
+      "time_utc": "2026-10-27T19:00:48.800719+00:00",
+      "gpu": "NVIDIA GeForce GTX 1070 Ti",
+      "compute_capability": "6.1",
+      "vector_elements": 262144,
+      "kernel_launches": 62080,
+      "correct_result": true,
+      "elapsed_seconds": 1.05,
+      "transport_version": 1
+    },
+    {
+      "check": "explicit fallback starts the losing VM CPU-only with disjoint CPU groups",
+      "passed": true,
+      "time_utc": "2026-10-27T19:01:29.543469+00:00",
+      "cpu_groups": {
+        "e8acf92e-d829-4f44-b844-cc12d10c6344": [
+          5,
+          11
+        ],
+        "db4c0201-d112-49d9-bbb9-d4da0d0a0ec8": [
+          4,
+          10
+        ]
+      },
+      "transport_version": 1
+    },
+    {
+      "check": "ordinary start on an already-running CPU-only VM does not steal the preferred GPU",
+      "passed": true,
+      "time_utc": "2026-10-27T19:01:35.403206+00:00",
+      "transport_version": 1
+    },
+    {
+      "check": "GPU permission revocation leaves the existing owner and running compute intact",
+      "passed": true,
+      "time_utc": "2026-10-27T19:01:39.035101+00:00",
+      "transport_version": 1
+    },
+    {
+      "check": "lowered RAM/CPU grants keep current claims and cannot reissue their backing",
+      "passed": true,
+      "time_utc": "2026-10-27T19:01:42.360366+00:00",
+      "transport_version": 1
+    },
+    {
+      "check": "partial GPU cleanup failure keeps RAM/CPU/GPU claims and blocks a competing start",
+      "passed": true,
+      "time_utc": "2026-10-27T19:04:55.198720+00:00",
+      "operation_id": "e6dcebaf-4d04-48b3-a6dc-b7a07c0bfe3b",
+      "physical_vm_stopped": true,
+      "transport_version": 1
+    },
+    {
+      "check": "explicit reviewed retry finishes hardware cleanup and releases claims",
+      "passed": true,
+      "time_utc": "2026-10-27T19:05:00.346207+00:00",
+      "transport_version": 1
+    },
+    {
+      "check": "controller crash after host effect replays one operation without duplicate VM or lost claims",
+      "passed": true,
+      "time_utc": "2026-10-27T19:05:34.334049+00:00",
+      "operation_id": "22e45a02-307a-4674-847b-6ab1b98677d4",
+      "transport_version": 1
+    },
+    {
+      "check": "internal GPU VM resize/restart retains all compute claims through observed shutdown",
+      "passed": true,
+      "time_utc": "2026-10-27T19:06:03.653157+00:00",
+      "samples": 305,
+      "min_cpu_threads": 2,
+      "min_gpu_claims": 1,
+      "min_memory_bytes": 4294967296,
+      "saw_stopped": true,
+      "phase": "succeeded",
+      "transport_version": 1
+    },
+    {
+      "check": "second live controller is refused by the durable process lock",
+      "passed": true,
+      "time_utc": "2026-10-27T19:06:04.097927+00:00",
+      "transport_version": 1
+    },
+    {
+      "check": "VM isolation blocks Comcast LAN, host and another live SSH VM while public HTTPS works",
+      "passed": true,
+      "time_utc": "2026-10-27T19:06:53.705547+00:00",
+      "public_https": 200,
+      "host_bridge": "blocked",
+      "host_lan": "blocked",
+      "comcast_router": "blocked",
+      "other_vm": "blocked",
+      "private_drop_packets": 4,
+      "transport_version": 1
+    },
+    {
+      "check": "ordinary user inventory and SSH ownership checks hold on the real controller",
+      "passed": true,
+      "time_utc": "2026-10-27T19:06:54.517958+00:00",
+      "transport_version": 1
+    },
+    {
+      "check": "ordinary OpenSSH SFTP transfers data through the Iroh tunnel",
+      "passed": true,
+      "time_utc": "2026-10-27T19:06:56.672342+00:00",
+      "transport_version": 1
+    },
+    {
+      "check": "wrong guest host key is rejected without modifying saved SSH trust",
+      "passed": true,
+      "time_utc": "2026-10-27T19:06:57.296976+00:00",
+      "transport_version": 1
+    },
+    {
+      "check": "authenticated control and authorized guest SSH byte stream work with direct IP transports disabled",
+      "passed": true,
+      "time_utc": "2026-10-27T19:06:58.412280+00:00",
+      "transport_version": 1
+    },
+    {
+      "check": "coworker VM is fully stopped before unattended host reboot",
+      "passed": true,
+      "time_utc": "2026-10-27T19:07:05.333637+00:00",
+      "transport_version": 1
+    },
+    {
+      "check": "lowered disk quota keeps real ZFS backing and permits disk-neutral lifecycle operations",
+      "passed": true,
+      "time_utc": "2026-10-27T19:09:01.391921+00:00",
+      "admission_gib": 16,
+      "retained_backing_gib": 26,
+      "other_user_overissue_rejected": true,
+      "disk_growth_rejected": true,
+      "transport_version": 1
+    },
+    {
+      "check": "concurrent GPU attachments from two running owners produce exactly one physical owner",
+      "passed": true,
+      "time_utc": "2026-10-27T19:10:04.697471+00:00",
+      "winner": "db4c0201-d112-49d9-bbb9-d4da0d0a0ec8",
+      "loser": "e8acf92e-d829-4f44-b844-cc12d10c6344",
+      "gpu": "NVIDIA GeForce GTX 1070 Ti",
+      "compute_capability": "6.1",
+      "vector_elements": 262144,
+      "kernel_launches": 62880,
+      "correct_result": true,
+      "elapsed_seconds": 1.046,
+      "transport_version": 1
+    },
+    {
+      "check": "unattended host reboot restores services, GPU VM, CUDA, disk data, SSH trust and T3 while stopped VM stays off",
+      "passed": true,
+      "time_utc": "2026-10-27T19:18:45.906309+00:00",
+      "old_boot_id": "452bc4d4-e5da-429b-ab16-753a62492da2",
+      "new_boot_id": "1f5478e5-7c1c-4482-8cbf-d17591286e89",
+      "gpu": "NVIDIA GeForce GTX 1070 Ti",
+      "compute_capability": "6.1",
+      "vector_elements": 262144,
+      "kernel_launches": 63072,
+      "correct_result": true,
+      "elapsed_seconds": 1.05,
+      "transport_version": 1
+    },
+    {
+      "check": "after reboot vCPUs remain on their dedicated SMT group, userspace helpers stay on housekeeping, and VM kernel workers stay within its cpuset",
+      "passed": true,
+      "time_utc": "2026-10-27T19:24:43.969571+00:00",
+      "threads": [
+        {
+          "name": "qemu-system-x86",
+          "allowed": "0-1,6-7",
+          "vcpu": false,
+          "kernel_worker": false
+        },
+        {
+          "name": "call_rcu",
+          "allowed": "0-1,6-7",
+          "vcpu": false,
+          "kernel_worker": false
+        },
+        {
+          "name": "IO mon_iothread",
+          "allowed": "0-1,6-7",
+          "vcpu": false,
+          "kernel_worker": false
+        },
+        {
+          "name": "CPU 0/KVM",
+          "allowed": "4",
+          "vcpu": true,
+          "kernel_worker": false
+        },
+        {
+          "name": "CPU 1/KVM",
+          "allowed": "10",
+          "vcpu": true,
+          "kernel_worker": false
+        },
+        {
+          "name": "vhost-2286",
+          "allowed": "0-1,6-7",
+          "vcpu": false,
+          "kernel_worker": true
+        },
+        {
+          "name": "SPICE Worker",
+          "allowed": "0-1,6-7",
+          "vcpu": false,
+          "kernel_worker": false
+        },
+        {
+          "name": "vhost-2286",
+          "allowed": "0-1,6-7",
+          "vcpu": false,
+          "kernel_worker": true
+        },
+        {
+          "name": "vhost-2286",
+          "allowed": "0-1,6-7",
+          "vcpu": false,
+          "kernel_worker": true
+        },
+        {
+          "name": "kvm-nx-lpage-re",
+          "allowed": "4",
+          "vcpu": false,
+          "kernel_worker": true
+        }
+      ],
+      "pre_exec_fence": {
+        "vm": "hc-e8acf92ed8294f44b844cc12d10c6344",
+        "launcher_pid": 2271,
+        "cpuset": "0,1,4,6,7,10",
+        "initial_affinity": "0,1,6,7",
+        "before_qemu_exec": true
+      },
+      "transport_version": 1
+    },
+    {
+      "check": "ZFS pool is healthy after the upgraded unattended reboot",
+      "passed": true,
+      "time_utc": "2026-10-27T19:24:44.216789+00:00",
+      "transport_version": 1
+    },
+    {
+      "check": "fully stopped disk-only VM deletes through the original reviewed operation after adapter guard fix",
+      "passed": true,
+      "time_utc": "2026-10-27T19:29:41.215918+00:00",
+      "operation_id": "ce6ee023-391b-4276-a2f1-64a663358a83",
+      "transport_version": 1
+    },
+    {
+      "check": "disposable test VM deleted, test devices revoked, account disabled, grants returned and devbox left CPU-only",
+      "passed": true,
+      "time_utc": "2026-10-27T19:30:37.612345+00:00",
+      "transport_version": 1
+    },
+    {
+      "check": "normal 4 GiB lab capacity restored with secure configuration and production adapter; pool healthy",
+      "passed": true,
+      "time_utc": "2026-10-27T19:31:07.767621+00:00",
+      "capacity": {
+        "memory_bytes": 4294967296,
+        "cpu_cores": 2,
+        "disk_bytes": 137438953472
+      },
+      "issued": {
+        "memory_bytes": 4294967296,
+        "cpu_cores": 2,
+        "disk_bytes": 137438953472
+      },
+      "controller": "active",
+      "config_mode": "0o640",
+      "adapter_sha256": "c7c277e32d9affb09ac188422ac5a8328b9053ce6276ee42dc0042b145fead4d",
+      "daemon_sha256": "0bf369d6c871598160cc0552811e1c7ac4f8db9b2a9d6f78ec3c963986372736",
+      "endpoint_key_bytes": 32,
+      "transport_version": 1
+    },
+    {
+      "check": "Mac phone-hotspot authenticated Iroh control, pinned guest SSH, SFTP and T3 readiness",
+      "passed": true,
+      "time_utc": "2026-10-27T19:46:50.230420+00:00",
+      "network": {
+        "gateway": "172.20.10.1",
+        "interface": "en0"
+      },
+      "transport_version": 1
+    },
+    {
+      "check": "Mac sleep-wake authenticated Iroh control, pinned guest SSH, SFTP and T3 readiness",
+      "passed": true,
+      "time_utc": "2026-10-27T19:57:57.694282+00:00",
+      "network": {
+        "gateway": "192.168.86.1",
+        "interface": "en0"
+      },
+      "transport_version": 1
+    },
+    {
+      "check": "transport v2 deployment preserves the existing device pairing and running devbox",
+      "passed": true,
+      "time_utc": "2026-10-27T20:00:07.700488+00:00",
+      "transport_version": 2
+    },
+    {
+      "check": "Mac home-relay authenticated Iroh control, pinned guest SSH, SFTP and T3 readiness",
+      "passed": true,
+      "time_utc": "2026-10-27T20:44:50.374044+00:00",
+      "network": {
+        "gateway": "192.168.86.1",
+        "interface": "en0"
+      },
+      "protocol": 2,
+      "elapsed_seconds": 4.66,
+      "transport_version": 2
+    },
+    {
+      "check": "transport v2 simultaneous GUI polling, two long SSH sessions, control RPC and SFTP complete with one enrolled device",
+      "passed": true,
+      "time_utc": "2026-10-27T20:46:13.565043+00:00",
+      "protocol": 2,
+      "overlapping_ssh_sessions": 2,
+      "phase": "home-relay",
+      "relay_only": true,
+      "transport_version": 2
+    },
+    {
+      "check": "Mac phone-hotspot authenticated Iroh control, pinned guest SSH, SFTP and T3 readiness",
+      "passed": true,
+      "time_utc": "2026-10-27T21:00:53.176315+00:00",
+      "network": {
+        "gateway": "172.20.10.1",
+        "interface": "en0"
+      },
+      "protocol": 2,
+      "elapsed_seconds": 8.46,
+      "transport_version": 2
+    },
+    {
+      "check": "transport v2 simultaneous GUI polling, two long SSH sessions, control RPC and SFTP complete with one enrolled device",
+      "passed": true,
+      "time_utc": "2026-10-27T21:02:10.307135+00:00",
+      "protocol": 2,
+      "overlapping_ssh_sessions": 2,
+      "phase": "phone-hotspot",
+      "relay_only": true,
+      "transport_version": 2
+    }
+  ],
+  "manual_checks": {
+    "gpu_conflict_gui": "not completed: overlapped cleanup",
+    "phone_hotspot": "passed in relay-only mode; automatic mode remains open",
+    "mac_sleep_wake": "baseline passed; Mac automatically rejoined home Wi-Fi",
+    "owner_provider_session": "pending"
+  },
+  "limitations": [
+    "Single lab machine; clean install on other hardware remains untested.",
+    "VM kernel workers can run on their VM cores; this is not hard real-time CPU isolation.",
+    "Forced-relay diagnostic verifies control RPC and authorized SSH banner; full guest SSH/SFTP tested separately.",
+    "User snapshots, thin provisioning and off-host backup/restore remain deferred."
+  ],
+  "hardware_proof_source_sha256": {
+    "Cargo.lock": "2cf1c76896be2510e9c37e611efd03dcb27c5c3d37ba95028defe8ab4c6a737a",
+    "crates/core/src/lib.rs": "12bdd40b40b2ea796607191196f16ea00325894f0dc010e91229a8e29ae39953",
+    "crates/store/src/lib.rs": "48113dacb55b115f94aa29b91d9c9bb169b575bdfc85dde4611e39d30091918b",
+    "crates/store/src/schema.sql": "9eee634d648aae8d572fa3b391f1fb962e7ac1b7ed006bb70fb3c1af8da5bd16",
+    "crates/daemon/src/lib.rs": "4f3d4df4fb7eeb733df965ef3de74f465fe76a2799ae66526ed52a1da79844fd",
+    "crates/host/host_runtime.py": "c7c277e32d9affb09ac188422ac5a8328b9053ce6276ee42dc0042b145fead4d",
+    "crates/host/tests/test_lifecycle.py": "7f5cc1d695d4683b939b7b34ab5611d828fb44709e9c8dcb5e8a2a6805f821e8",
+    "scripts/install_host.py": "8ecf9812bbcecbf3f7b7fc2ab31b848694992c6c5aa65d07bb13b477314c558b",
+    "crates/client/examples/relay_probe.rs": "464817520efcbe1527cd1fb46dab8f254c1c83ce005b24cc637702c5400af416"
+  },
+  "final_source_sha256": {
+    "Cargo.lock": "2bd07ee550be9c491a469842cf42061d1ca96164859b570cf4492e0be263aa8f",
+    "Cargo.toml": "63f891fb23619617a17881f8437911a33ea7cd5abf999dda5eab82829ac1ba6c",
+    "crates/cli/Cargo.toml": "5fdcd997544cdf6a634987f579674653f0b471281fab51126942c29f0a485d37",
+    "crates/cli/src/main.rs": "c9951048178fac56acd27087cff5cf63ae6683b91a4926f042d30b9ce47187ed",
+    "crates/client/Cargo.toml": "e91e83d998c17880e55671fa719dd67da0aa39803bb2fc0651c746b4d3ed1ca0",
+    "crates/client/examples/relay_probe.rs": "35c2d611ef6cad749b41cd969e60e14db1e928c1803e2759df5e63b6ff187416",
+    "crates/client/src/lib.rs": "61557aa28186faf4e05a46959b9d795c1fb0a272e72db02bfc54ab721f9b3bf0",
+    "crates/core/Cargo.toml": "b55f8f071dff06a43fcd6ffac1bb3de11c9333f2fc98ccd9968404b61b7e0fc3",
+    "crates/core/src/lib.rs": "ce570211bb95fa821be013b4594ca3e140f7813cb653d77590d3bd3d7eb49c54",
+    "crates/daemon/Cargo.toml": "e3c278ee4374af624dfc8c2e0eae44afed639d5a3af70aee31de4937860f123a",
+    "crates/daemon/src/lib.rs": "11fd44a637a097b5e3b407f967a72738a6fbee6afb8ce6b8d813673594135470",
+    "crates/daemon/src/main.rs": "34daad8d7d9a5fd0070aa5ccba149d1a3480338d219a2cde77f21afb7830a851",
+    "crates/daemon/tests/transport.rs": "6c6672b47eaf178b4970c44ccbec8596a5247bb5d0fe73e6d3aa62f522e60222",
+    "crates/desktop/Cargo.toml": "2f379a88830c4d15cbfe41fc653ee3a9af31d8020c2efc093d4e6b29cf5ed96a",
+    "crates/desktop/src/allocation.rs": "1447822c8650e8339e2a373a6139dcd7e401443a4be512321303b4a07465d34f",
+    "crates/desktop/src/main.rs": "27048658a080a605659f6040daf8f48427f3fa5f0cc79efe7565375e69844db1",
+    "crates/desktop/src/ui.rs": "69f666ce8d26e8a2dc21c644b57458b1af02cbd50ed4ef43a62325279100690c",
+    "crates/desktop/src/ui/hosts.rs": "3538152aa4c3e94ab2593cd0af0fc83ad92480301c225a361aa9f41c93d595a7",
+    "crates/desktop/src/visual_tests.rs": "cabbeb3770bb1c6267d19428363035dda3caf75c1a7ce105e89f670c0efb1669",
+    "crates/host/Cargo.toml": "b9f53b6c37803871c0987f6c8902706f825d621761b2515f334bef07551ca68f",
+    "crates/host/host_runtime.py": "c7c277e32d9affb09ac188422ac5a8328b9053ce6276ee42dc0042b145fead4d",
+    "crates/host/src/lib.rs": "225567aa4456b4dc3227b666fe5b14b70dbd0d3fa5cff7bc85036bd7f6f45498",
+    "crates/host/tests/runtime.rs": "8f8aca5e052f17f0703a1b38bffa009dbaddb6182145ab4671249c64ebb5c67f",
+    "crates/host/tests/test_lifecycle.py": "7f5cc1d695d4683b939b7b34ab5611d828fb44709e9c8dcb5e8a2a6805f821e8",
+    "crates/store/Cargo.toml": "7bd5dbc847055a60408b6f12dd137086d23b7fff34ca3bd75b52003fadffde5b",
+    "crates/store/src/lib.rs": "48113dacb55b115f94aa29b91d9c9bb169b575bdfc85dde4611e39d30091918b",
+    "crates/store/src/schema.sql": "9eee634d648aae8d572fa3b391f1fb962e7ac1b7ed006bb70fb3c1af8da5bd16",
+    "crates/store/src/tests.rs": "69f01e6123a791950392e733ae39e2e307a4b7138648bcd7577ccfa56ec93e11",
+    "guest/setup-t3.sh": "c97db932002c9c363eda1a03ea0ed6fc92e9d308df75b5ae3739ef3929f028b8",
+    "scripts/install_host.py": "8ecf9812bbcecbf3f7b7fc2ab31b848694992c6c5aa65d07bb13b477314c558b",
+    "scripts/package_mac.sh": "b67c8729e3dfc8eba3fd2ea7c3de3e7e36a57034c22c0fa66d4f3d7c454abe4a",
+    "scripts/test_ui.sh": "9f39bbabb42edbf71bd017445e08f3003e2f8fcef0bccbe443cfea932508d939"
+  },
+  "base_git_commit": "5edaad3eac7f3a0cbfe5cf71edb00771cdc72749",
+  "source_has_uncommitted_changes": true,
+  "mobile_comparison": [
+    {
+      "mode": "automatic",
+      "returncode": 1,
+      "elapsed_seconds": 122.68
+    },
+    {
+      "mode": "relay-only",
+      "returncode": 0,
+      "elapsed_seconds": 93.2
+    }
+  ],
+  "mobile_comparison_notes": {
+    "automatic": "RPC and guest readiness succeeded slowly; the fixed 90-second hold ended before SFTP overlap. Earlier attempts included a 12-second SSH banner timeout and one connection closed by peer. Automatic mobile reliability/performance remains open.",
+    "relay_only": "Full hotspot control, pinned SSH, SFTP and two overlapping 90-second SSH sessions passed; access checks took 8.46 seconds.",
+    "server_grace_hypothesis": "Not confirmed: a 456 KB flow-controlled response read after six seconds passed unchanged. No speculative server grace-period patch was applied.",
+    "timing": "One paired sample measured response/shutdown times of 6.98/7.48 seconds in automatic mode and 6.88/1.45 seconds relay-only. Shutdown drain contributes to observed CLI latency; this does not establish the cause of earlier peer-close errors."
+  },
+  "cli_timing_diagnostic": [
+    {
+      "relay_only": false,
+      "first_output_seconds": 6.98,
+      "shutdown_seconds": 7.48,
+      "total_seconds": 14.46
+    },
+    {
+      "relay_only": true,
+      "first_output_seconds": 6.88,
+      "shutdown_seconds": 1.45,
+      "total_seconds": 8.34
+    }
+  ],
+  "owner_session_fixture": "/home/dev/workspace/homecloud-session-proof",
+  "managed_application_followup": "managed-applications.json"
+}

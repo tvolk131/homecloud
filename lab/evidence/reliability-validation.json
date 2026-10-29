@@ -1,0 +1,190 @@
+{
+  "recorded_at_utc": "2026-10-29T06:38:10.451917+00:00",
+  "startup": {
+    "fresh_vms_completed": 51,
+    "stop_start_checks": 17,
+    "immediate_create_cancellations": 6,
+    "new_deployed_backend_creations": 2,
+    "last_live_ui_smoke_creations": 1,
+    "vsock_mismatches": 0,
+    "nonpending_errors": [],
+    "prior_orphan_reproduced": false,
+    "prior_orphan_root_cause": "Unresolved; guards retain claims and prevent duplicate starts.",
+    "launcher_or_apparmor_modified": false,
+    "observer": {
+      "events": 768,
+      "read_returns": 46,
+      "write_returns": 13,
+      "non_one_byte_returns": 0,
+      "buffer_contents_captured": false,
+      "stopped": true
+    }
+  },
+  "interface": {
+    "durable_setup_stages": true,
+    "owner_admin_only_on_demand_logs": true,
+    "log_tail_bytes_per_file": 12000,
+    "guest_log_timeout_seconds": 8,
+    "logs_persisted_in_controller": false,
+    "retry_does_not_rerun_failed_cloud_init": true,
+    "unfinished_operations_survive_recent_history_limit": true,
+    "incomplete_delete_confirmed": true,
+    "native_small_normal_screenshots_inspected": true,
+    "live_provisioning_details_button_and_real_logs_verified": true
+  },
+  "persistence": {
+    "scope": "Marked disposable VM; real OpenZFS/initramfs; CPU placement excluded; virtual hard power-off is not physical power loss.",
+    "cases": [
+      {
+        "kind": "config-readonly",
+        "checkpoint": null,
+        "real_vm_reboot": true,
+        "recovered_cap_bytes": 268435456,
+        "temporary_reclaim_restored": true,
+        "applied_after_persistence": true
+      },
+      {
+        "kind": "boot-full",
+        "checkpoint": null,
+        "real_vm_reboot": true,
+        "recovered_cap_bytes": 268435456,
+        "temporary_reclaim_restored": true,
+        "applied_after_persistence": true
+      },
+      {
+        "kind": "virtual-hard-power-off",
+        "checkpoint": "before-initramfs",
+        "real_vm_reboot": true,
+        "recovered_cap_bytes": 268435456,
+        "temporary_reclaim_restored": true,
+        "applied_after_persistence": true
+      },
+      {
+        "kind": "virtual-hard-power-off",
+        "checkpoint": "during-initramfs",
+        "real_vm_reboot": true,
+        "recovered_cap_bytes": 268435456,
+        "temporary_reclaim_restored": true,
+        "applied_after_persistence": true
+      },
+      {
+        "kind": "virtual-hard-power-off",
+        "checkpoint": "after-initramfs",
+        "real_vm_reboot": true,
+        "recovered_cap_bytes": 268435456,
+        "temporary_reclaim_restored": true,
+        "applied_after_persistence": true
+      }
+    ]
+  },
+  "memory": {
+    "scope": "disposable nested worker, stock guest distro Incus/QEMU",
+    "nested_versions": {
+      "incus": "Client version: 6.0.0\nServer version: 6.0.0",
+      "qemu": "QEMU emulator version 8.2.2 (Debian 1:8.2.2+ds-0ubuntu1.18)\nCopyright (c) 2003-2023 Fabrice Bellard and the QEMU Project developers",
+      "zfs": "zfs-2.2.2-0ubuntu9.5\nzfs-kmod-2.2.2-0ubuntu9.5",
+      "kernel": "6.8.0-147-generic"
+    },
+    "outer_vm_memory_gib": 7,
+    "outer_vm_disk_gib": 32,
+    "operating_floor_bytes": 2147483648,
+    "system_reserve_bytes": 4294967296,
+    "guest_budget_bytes": 2147483648,
+    "swap_available_bytes": 2147479552,
+    "direct_io_verified": true,
+    "rounds": [
+      {
+        "mode": "automatic",
+        "nominal_seconds": 600,
+        "last_sample_seconds": 598.56,
+        "samples": 114,
+        "guest_backing_checks": 20,
+        "minimum_per_guest_resident_bytes": 1073741824,
+        "swap_out_bytes": 0,
+        "new_oom_kills": 0,
+        "final_memory_psi_avg10": 0.0
+      },
+      {
+        "mode": "custom",
+        "nominal_seconds": 600,
+        "last_sample_seconds": 597.76,
+        "samples": 113,
+        "guest_backing_checks": 20,
+        "minimum_per_guest_resident_bytes": 1073741824,
+        "swap_out_bytes": 0,
+        "new_oom_kills": 0,
+        "final_memory_psi_avg10": 0.0
+      }
+    ],
+    "cache_release": {
+      "allowance_bytes": 1073741824,
+      "observed": {
+        "size_bytes": 1049460872,
+        "minimum_bytes": 225008384,
+        "maximum_bytes": 1073741824,
+        "parameter_bytes": 1073741824,
+        "automatic_maximum_bytes": 3600134144,
+        "version": "2.2.2-0ubuntu9.5"
+      }
+    },
+    "nested_resources_cleaned": true,
+    "cleanup_recovery": "Swapfile path/counter variable shadowing corrected; explicit swapoff and removal verified.",
+    "rejected_regular_file_fixture": {
+      "last_sample_seconds": 533.09,
+      "swap_out_bytes": 645726208,
+      "extra_linux_cached_minus_shmem_bytes": 2641358848,
+      "accepted": false
+    },
+    "full_physical_host_resident_saturation_proven": false
+  },
+  "verification": {
+    "rust_workspace_tests": 158,
+    "desktop_tests": 68,
+    "native_screenshot_cases": 118,
+    "host_python_mac_tests": 103,
+    "host_python_mac_skips": 2,
+    "host_python_linux_tests": 103,
+    "host_python_linux_skips": 0,
+    "lab_harness_tests": 7,
+    "linux_rust_tests": 90,
+    "clippy_warnings_denied": true,
+    "formatting": true
+  },
+  "cleanup": {
+    "all_recorded_disposable_vms_deleted": true,
+    "original_grants_restored": true
+  },
+  "remaining": [
+    "Underlying prior QEMU orphan cause remains unproven.",
+    "Full resident saturation and maximum VM density on the eventual physical machine.",
+    "Abrupt physical power loss and real disk write-cache failure are outside virtual hard-power-off coverage.",
+    "Hotspot repeat checks and off-host backups remain deferred."
+  ],
+  "final_host": {
+    "controller": "active",
+    "pool_health": "ONLINE",
+    "t3_service_running": true,
+    "original_grant_restored": true,
+    "pending_vm_operations": 0,
+    "reserve_revision": 26,
+    "physical_arc_mode": {
+      "mode": "custom",
+      "max_bytes": 2147483648
+    },
+    "temporary_arc_reclaim_target": 0,
+    "installed_binaries_and_helpers_match_source": true,
+    "new_physical_host_kernel_oom_events": 0,
+    "linux_rust_tests": 90,
+    "permanent_vms": [
+      {
+        "name": "homecloud-devbox",
+        "observed": "running"
+      },
+      {
+        "name": "t3-devbox",
+        "observed": "stopped"
+      }
+    ],
+    "physical_pool_leaf_vdevs_are_block_devices": true
+  }
+}

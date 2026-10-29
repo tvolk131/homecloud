@@ -1,0 +1,45 @@
+{
+  "recorded_at": "2026-10-28T22:06:43.038832+00:00",
+  "cause": "Logical close cleared form ranges while the retained dialog was still rendering its exit. Resource controls disappeared and the panel remeasured shorter.",
+  "fix": [
+    "Retain form ranges through exit; render retained panel context independently of active input context",
+    "Preserve the outgoing error message",
+    "Duplicate Close leaves the retained panel intact",
+    "New forms capture fresh ranges; inactive resource events remain ignored"
+  ],
+  "tests": {
+    "desktop": 50,
+    "ordinary_native_screenshot_comparisons": 90,
+    "closing_geometry_checked_for": [
+      "Edit workspace",
+      "Create workspace",
+      "Invite coworker",
+      "Resource grants"
+    ],
+    "sizes": [
+      [
+        1180,
+        820
+      ],
+      [
+        800,
+        600
+      ]
+    ],
+    "covers_validation_errors_and_duplicate_dismissal": true,
+    "initial_exit_frame_pixel_identical_to_open": true
+  },
+  "actual_runtime_frames_sha256": {
+    "open": "a24382b878bd6994d97ac7f89ffd65e24d3d2b91111a994ed181f9381e85c9b7",
+    "start": "a24382b878bd6994d97ac7f89ffd65e24d3d2b91111a994ed181f9381e85c9b7",
+    "32ms": "311946d80824f4c0fa32c281cf004779073c4e1eb3cbd094ea566c7e4d11f67b",
+    "64ms": "dba80dd258c38ff3d12b9005363415eba4cccaa7fe5349c155e8d4da9bac2c25"
+  },
+  "directly_inspected_frames": [
+    "open",
+    "32ms"
+  ],
+  "mac_app_rebuilt_and_reopened": true,
+  "backend_changed": false,
+  "vm_operations_performed": false
+}

@@ -80,7 +80,6 @@ async fn main() -> Result<()> {
             );
         }
         Command::Serve => {
-            let secret = load_secret(&args.state_dir.join("endpoint.secret"))?;
             let backend: Arc<dyn Backend> = if args.simulate {
                 Arc::new(Simulator::new(args.state_dir.join("observed.json")))
             } else {
@@ -89,7 +88,8 @@ async fn main() -> Result<()> {
                     sudo: config.sudo,
                 })
             };
-            let service = Service::new(store, backend);
+            let service = Service::new(store, backend)?;
+            let secret = load_secret(&args.state_dir.join("endpoint.secret"))?;
             let endpoint = homecloud_daemon::endpoint(secret).await?;
             let _ = tokio::time::timeout(Duration::from_secs(15), endpoint.online()).await;
             private_write(
@@ -97,6 +97,15 @@ async fn main() -> Result<()> {
                 &serde_json::to_vec_pretty(&endpoint.addr())?,
             )?;
             tracing::info!(host=%endpoint.id(),"Homecloud listening; public connection ticket is server.json");
+            let app_worker = service.clone();
+            let applications = tokio::spawn(async move {
+                loop {
+                    if let Err(error) = app_worker.reconcile_applications_once().await {
+                        tracing::warn!(%error, "Application observation pending");
+                    }
+                    tokio::time::sleep(Duration::from_secs(3)).await;
+                }
+            });
             let worker = service.clone();
             let reconcile = tokio::spawn(async move {
                 loop {
@@ -108,6 +117,7 @@ async fn main() -> Result<()> {
             });
             tokio::select! {result=homecloud_daemon::serve(service,endpoint.clone())=>result?,_=tokio::signal::ctrl_c()=>{},}
             reconcile.abort();
+            applications.abort();
             endpoint.close().await;
         }
     }

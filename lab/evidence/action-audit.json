@@ -1,0 +1,78 @@
+{
+  "recorded_at_utc": "2026-10-29T15:07:25.087768+00:00",
+  "scope": "Repeated-action source audit, regression tests and two disposable unpaired physical-lab fixtures.",
+  "fixed": [
+    "Unchanged legacy Resize is a durable local completion, without host Apply.",
+    "Redundant GPU detach and stopped GPU preference changes complete locally.",
+    "Launch guard survives completed setup/host acknowledgement until confirmed stop or verified deletion."
+  ],
+  "regressions": {
+    "before_fix_failures_observed": true,
+    "concurrent_conflicting_mutations": 28,
+    "mutation_types": 7,
+    "daemon_noop_requests_without_host_apply": 24,
+    "genuine_resize_positive_control": true,
+    "lost_ack_empty_process_window": true,
+    "explicit_stop_start_positive_control": true
+  },
+  "verification": {
+    "rust_workspace_tests": 164,
+    "desktop_tests_included": 68,
+    "native_screenshot_comparisons": 118,
+    "linux_rust_tests": 90,
+    "python_host_tests": 104,
+    "mac_python_skips": 2,
+    "linux_python_skips": 0,
+    "formatting": true,
+    "clippy_warnings_denied": true
+  },
+  "physical_lab": {
+    "noop_command_attempts": 62,
+    "local_completions": 56,
+    "unchanged_edit_cli_rejections": 6,
+    "guest_reboot_burst_rounds": 3,
+    "exactly_one_launch_per_guest_reboot": true,
+    "actual_guest_cid_checked": true,
+    "stopped_gpu_preferences_no_physical_change": true,
+    "host_replay_fixture": {
+      "guard_retained_after_setup": true,
+      "guest_reboot_new_launches": 1,
+      "settled_replay_no_new_launch": true,
+      "explicit_stop_start_new_launches": 1,
+      "delete_removed_guard": true
+    }
+  },
+  "harness_limits": [
+    "Unchanged Edit is rejected before RPC; first harness counted it as failure and was corrected. Original evidence retained.",
+    "Agent recovery does not imply immediately completed host setup. Replay harness was resumed after a readiness assertion, first checking launch count. Initial replay result was not saved; its precise pending stage is not claimed.",
+    "Host-boundary replay was exercised; no actual controller crash was injected in this pass. The unit test models the precise empty-process window."
+  ],
+  "deployment": {
+    "daemon_backup_and_database_backup": true,
+    "helpers_replaced_under_host_operation_lock": true,
+    "no_incus_or_qemu_upgrade": true,
+    "no_launcher_or_apparmor_change": true,
+    "permanent_workloads_not_restarted": true
+  },
+  "cleanup": {
+    "permanent_vm_and_t3_processes_unchanged": true,
+    "nondeleted_vms": 2,
+    "pending_vm_operations": 0,
+    "gpu_leases": 0,
+    "cpu_leases_only_permanent_devbox": true,
+    "untracked_homecloud_qemu": 0,
+    "original_grant_restored": true,
+    "pool_health": "ONLINE",
+    "controller": "active",
+    "installed_daemon_matches_tested_build": true,
+    "arc_cap": "2147483648",
+    "arc_sys_free": "0"
+  },
+  "remaining": [
+    "Desktop manual retry after an ambiguous transport failure currently generates a fresh idempotency key; Create can become a second distinct VM if quota allows. Physical resource admission remains transactional.",
+    "Genuine sequential changes are accepted; there is no global command cooldown.",
+    "All crash points and Incus-internal transitions are not exhaustively proven.",
+    "Original deleted-instance orphan exact cause remains unproven.",
+    "Final-hardware density, hotspot repeat tests and off-host backups remain separately tracked."
+  ]
+}

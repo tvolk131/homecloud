@@ -9,9 +9,15 @@ use tokio::{io::AsyncWriteExt, process::Command, sync::Mutex};
 pub struct Observation {
     pub state: String,
     pub ssh_host_key: Option<String>,
+    /// Explicit adapter confirmation after shutdown and GPU/CPU cleanup.
+    /// Older adapters omit it and cannot authorize compute release.
+    #[serde(default)]
+    pub compute_released: bool,
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct VmObservation {
+    #[serde(default)]
+    pub progress: Option<VmSetupProgress>,
     pub id: uuid::Uuid,
     pub state: String,
     pub error: Option<String>,
@@ -19,7 +25,30 @@ pub struct VmObservation {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "snake_case")]
 pub enum HostRequest {
+    Diagnostics {
+        vm: Vm,
+    },
+    Application {
+        vm: Vm,
+        application: Box<ManagedApplication>,
+        command: ApplicationCommand,
+    },
     Inventory,
+    CancelMemoryCapacity {
+        operation: MemoryCapacityOperation,
+    },
+    AdoptMemoryCapacity {
+        operation: MemoryCapacityOperation,
+    },
+    ReserveStatus,
+    DiscardReserves {
+        operation: HostReserveOperation,
+    },
+    ApplyReserves {
+        operation: HostReserveOperation,
+        vms: Vec<Vm>,
+        users: Vec<User>,
+    },
     Observe {
         vms: Vec<Vm>,
     },
@@ -39,7 +68,19 @@ pub enum HostRequest {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "kind", content = "data", rename_all = "snake_case")]
 pub enum HostResponse {
+    Diagnostics(VmDiagnostics),
+    Application(ApplicationReport),
     Inventory(HostInventory),
+    MemoryCapacity(MemoryCapacityStatus),
+    MemoryCapacityCancelled {
+        operation_id: uuid::Uuid,
+        status: MemoryCapacityStatus,
+    },
+    ReservePolicy(Option<HostReservePolicy>),
+    DiscardedReserves {
+        operation_id: uuid::Uuid,
+        policy: HostReservePolicy,
+    },
     Observations(Vec<VmObservation>),
     Applied(Observation),
     Ok,
@@ -122,6 +163,24 @@ impl Backend for Simulator {
     async fn request(&self, request: HostRequest) -> Result<HostResponse> {
         let _guard = self.lock.lock().await;
         match request {
+            HostRequest::CancelMemoryCapacity { .. } => {
+                anyhow::bail!("Memory capacity recovery requires a real host")
+            }
+            HostRequest::AdoptMemoryCapacity { .. } => {
+                anyhow::bail!("Memory capacity adoption requires a real host")
+            }
+            HostRequest::Diagnostics { .. } => {
+                anyhow::bail!("Guest setup logs require a real Linux host")
+            }
+            HostRequest::Application { .. } => Ok(HostResponse::Application(ApplicationReport {
+                observation: ApplicationObservation {
+                    service: "unavailable".into(),
+                    setup: "required".into(),
+                    message: "Simulation does not execute guest applications".into(),
+                    ..Default::default()
+                },
+                job: None,
+            })),
             HostRequest::Observe { .. } => Ok(HostResponse::Observations(vec![])),
             HostRequest::Inventory => Ok(HostResponse::Inventory(HostInventory {
                 hostname: "Simulator — local development".into(),
@@ -134,6 +193,10 @@ impl Backend for Simulator {
                 warnings: vec!["Simulation: these instances do not execute guest workloads".into()],
                 ..Default::default()
             })),
+            HostRequest::ReserveStatus => Ok(HostResponse::ReservePolicy(None)),
+            HostRequest::DiscardReserves { .. } | HostRequest::ApplyReserves { .. } => {
+                anyhow::bail!("Reserve enforcement requires a capable host backend")
+            }
             HostRequest::Backing { .. } => Ok(HostResponse::Ok),
             HostRequest::VerifySsh { .. } => anyhow::bail!("SSH requires a real Linux host"),
             HostRequest::Apply { vm, .. } => {
@@ -160,6 +223,7 @@ impl Backend for Simulator {
                 Ok(HostResponse::Applied(Observation {
                     state: state.into(),
                     ssh_host_key: None,
+                    compute_released: vm.desired != Lifecycle::Running,
                 }))
             }
         }

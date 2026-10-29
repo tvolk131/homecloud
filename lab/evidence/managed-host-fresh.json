@@ -1,0 +1,298 @@
+{
+  "date": "2026-10-29",
+  "scope": "Clean managed host installation, first application/VM/ARC operation, deliberately degraded management, and cold-boot recovery",
+  "worker_id": "486cf506-85fb-475a-924a-86040e5e7ce3",
+  "fresh_install": {
+    "installed": {
+      "application": {
+        "id": "9afaf706-644b-45d9-91e4-7adc339c57a7",
+        "vm_id": "486cf506-85fb-475a-924a-86040e5e7ce3",
+        "kind": "homecloud_host",
+        "desired_version": "0.1.0",
+        "start_on_boot": true,
+        "observation": {
+          "accounts": [],
+          "installed_version": "0.1.0",
+          "components": [
+            {
+              "name": "Homecloud",
+              "version": "active",
+              "ready": true,
+              "account": ""
+            },
+            {
+              "name": "Incus",
+              "version": "active",
+              "ready": true,
+              "account": ""
+            },
+            {
+              "name": "ZFS pool",
+              "version": "ONLINE",
+              "ready": true,
+              "account": ""
+            }
+          ],
+          "service": "running",
+          "setup": "ready",
+          "message": "Host is ready. Bootstrap its independent administrator from its terminal.",
+          "observed_at": 1793301353,
+          "action": null,
+          "operation_message": "Installed. Workload startup and fault recovery use the guest\u2019s own services.",
+          "operation_id": null,
+          "operation_stage": "ready"
+        }
+      },
+      "operation": {
+        "id": "58931107-07cf-4ca9-9260-95b648269d86",
+        "application_id": "9afaf706-644b-45d9-91e4-7adc339c57a7",
+        "actor": "fe91b9c2-ef0a-49e3-80be-27a3c1a4697d",
+        "kind": "install",
+        "setup_action": "connect_t3",
+        "phase": "succeeded"
+      }
+    },
+    "enrolled": {
+      "enrolled": true,
+      "owner": "ca21d4de-3ebf-44a4-aea0-b628a9ddc347"
+    },
+    "baseline": {
+      "boot_id": "f5dd3848-7355-426b-abfe-d058b4d75190",
+      "memory": 8251068416,
+      "arc": {
+        "size": 1982232,
+        "c_min": 257845888,
+        "c_max": 2147483648
+      },
+      "arc_parameters": {
+        "zfs_arc_max": "2147483648",
+        "zfs_arc_min": "0"
+      },
+      "versions": {
+        "zfs": "2.4.1-1ubuntu5.1",
+        "incus": "Client version: 6.0.5\nServer version: 6.0.5",
+        "kernel": "7.0.0-38-generic",
+        "qemu": "QEMU emulator version 10.2.1 (Debian 1:10.2.1+ds-1ubuntu3.3)"
+      },
+      "pool": "ONLINE",
+      "vms": [],
+      "swap": {
+        "pswpin": 0,
+        "pswpout": 0
+      }
+    },
+    "create_key": "32167645-7f6b-4573-947f-1b6c71a9c6d3",
+    "inner_id": "52990a32-be01-4359-9787-969c54af29a2",
+    "first-vm": {
+      "boot_id": "f5dd3848-7355-426b-abfe-d058b4d75190",
+      "memory": 8251068416,
+      "arc": {
+        "size": 1058065976,
+        "c_min": 257845888,
+        "c_max": 2147483648
+      },
+      "arc_parameters": {
+        "zfs_arc_max": "2147483648",
+        "zfs_arc_min": "0"
+      },
+      "versions": {
+        "zfs": "2.4.1-1ubuntu5.1",
+        "incus": "Client version: 6.0.5\nServer version: 6.0.5",
+        "kernel": "7.0.0-38-generic",
+        "qemu": "QEMU emulator version 10.2.1 (Debian 1:10.2.1+ds-1ubuntu3.3)"
+      },
+      "pool": "ONLINE",
+      "vms": [
+        {
+          "id": "52990a32-be01-4359-9787-969c54af29a2",
+          "status": "Running",
+          "pid": 16628,
+          "boot_autostart": "false",
+          "memory": "2GiB"
+        }
+      ],
+      "swap": {
+        "pswpin": 0,
+        "pswpout": 0
+      }
+    },
+    "first-arc-change": {
+      "boot_id": "f5dd3848-7355-426b-abfe-d058b4d75190",
+      "memory": 8251068416,
+      "arc": {
+        "size": 1055710672,
+        "c_min": 257845888,
+        "c_max": 1073741824
+      },
+      "arc_parameters": {
+        "zfs_arc_max": "1073741824",
+        "zfs_arc_min": "0"
+      },
+      "versions": {
+        "zfs": "2.4.1-1ubuntu5.1",
+        "incus": "Client version: 6.0.5\nServer version: 6.0.5",
+        "kernel": "7.0.0-38-generic",
+        "qemu": "QEMU emulator version 10.2.1 (Debian 1:10.2.1+ds-1ubuntu3.3)"
+      },
+      "pool": "ONLINE",
+      "vms": [
+        {
+          "id": "52990a32-be01-4359-9787-969c54af29a2",
+          "status": "Running",
+          "pid": 16628,
+          "boot_autostart": "false",
+          "memory": "2GiB"
+        }
+      ],
+      "swap": {
+        "pswpin": 0,
+        "pswpout": 0
+      }
+    },
+    "profile": {
+      "transport": "agent",
+      "excluded_network_slots": [
+        3
+      ]
+    },
+    "passed": true
+  },
+  "recovery": {
+    "incus-unavailable": {
+      "seconds": 7.81,
+      "warnings": [
+        "Incus inventory unavailable: incus query: Error: The incus daemon doesn't appear to be started (socket path: /var/lib/incus/unix.socket)"
+      ],
+      "held": {
+        "memory_bytes": 0,
+        "cpu_cores": 0,
+        "disk_bytes": 12884901888
+      }
+    },
+    "arc-drift": {
+      "memory": {
+        "revision": 0,
+        "reviewed_bytes": 3221225472,
+        "safe_bytes": 3221225472,
+        "physical_bytes": 8251068416,
+        "minimum_system_bytes": 4294967296,
+        "boot_id": "f5dd3848-7355-426b-abfe-d058b4d75190",
+        "observed_at": 1793301638,
+        "arc_ready": false,
+        "error": "ARC policy is not enforced; VM starts are blocked. Repair cache policy before retrying."
+      },
+      "denied": {
+        "accepted": false,
+        "message": "Error: Host reserve enforcement is in progress; retry shortly\n"
+      },
+      "outer_components": [
+        {
+          "name": "Homecloud",
+          "version": "active",
+          "ready": true,
+          "account": ""
+        },
+        {
+          "name": "Incus",
+          "version": "active",
+          "ready": true,
+          "account": ""
+        },
+        {
+          "name": "ZFS pool",
+          "version": "ONLINE",
+          "ready": true,
+          "account": ""
+        },
+        {
+          "name": "Memory policy",
+          "version": "needs review",
+          "ready": false,
+          "account": ""
+        }
+      ],
+      "inspection_did_not_repair": true
+    },
+    "cold-boot": {
+      "before": {
+        "boot_id": "87d9e3c0-e69c-45ea-be0d-125e43cd7664",
+        "memory": 8251076608,
+        "arc": {
+          "size": 170195712,
+          "c_min": 257846144,
+          "c_max": 1073741824
+        },
+        "arc_parameters": {
+          "zfs_arc_max": "1073741824",
+          "zfs_arc_min": "0"
+        },
+        "versions": {
+          "zfs": "2.4.1-1ubuntu5.1",
+          "incus": "Client version: 6.0.5\nServer version: 6.0.5",
+          "kernel": "7.0.0-38-generic",
+          "qemu": "QEMU emulator version 10.2.1 (Debian 1:10.2.1+ds-1ubuntu3.3)"
+        },
+        "pool": "ONLINE",
+        "vms": [
+          {
+            "id": "52990a32-be01-4359-9787-969c54af29a2",
+            "status": "Running",
+            "pid": 6196,
+            "boot_autostart": "false",
+            "memory": "2GiB"
+          }
+        ],
+        "swap": {
+          "pswpin": 0,
+          "pswpout": 0
+        }
+      },
+      "after": {
+        "boot_id": "d7a1a4e0-0f8c-4434-8f7e-fb06c2678a43",
+        "memory": 8251068416,
+        "arc": {
+          "size": 167733760,
+          "c_min": 257845888,
+          "c_max": 1073741824
+        },
+        "arc_parameters": {
+          "zfs_arc_max": "1073741824",
+          "zfs_arc_min": "0"
+        },
+        "versions": {
+          "zfs": "2.4.1-1ubuntu5.1",
+          "incus": "Client version: 6.0.5\nServer version: 6.0.5",
+          "kernel": "7.0.0-38-generic",
+          "qemu": "QEMU emulator version 10.2.1 (Debian 1:10.2.1+ds-1ubuntu3.3)"
+        },
+        "pool": "ONLINE",
+        "vms": [
+          {
+            "id": "52990a32-be01-4359-9787-969c54af29a2",
+            "status": "Running",
+            "pid": 1409,
+            "boot_autostart": "false",
+            "memory": "2GiB"
+          }
+        ],
+        "swap": {
+          "pswpin": 0,
+          "pswpout": 0
+        }
+      },
+      "data": {
+        "fsynced_and_buffered_proofs_preserved": true
+      }
+    },
+    "passed": true
+  },
+  "manual_guest_repairs_during_install": false,
+  "fixture_correction": "The service-fault fixture originally stopped incus.socket (which also stopped its dependent incus-startup shutdown hook) but restored only the socket and daemon. A subsequent unflushed test file was lost. Recovery now restores all three units. The repeated normal shutdown preserved both explicitly fsynced and ordinary buffered files.",
+  "incus_sigkill_reproduced_on_fresh_boots": false,
+  "cleanup": {
+    "worker_deleted": true,
+    "owned_test_volume_deleted": true,
+    "original_outer_grant_restored": true,
+    "no_disposable_compute_or_network_leases": true
+  }
+}

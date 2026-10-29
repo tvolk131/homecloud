@@ -1,0 +1,84 @@
+{
+  "recorded_at_utc": "2026-10-28T17:07:08.810110+00:00",
+  "overall_hotspot_acceptance": "incomplete: unobserved switch to home Wi-Fi during the session",
+  "initial_network": {
+    "gateway": "172.20.10.1",
+    "interface": "en0"
+  },
+  "final_network": {
+    "gateway": "192.168.86.1",
+    "interface": "en0"
+  },
+  "owner_report": "Phone died and Mac rejoined home Wi-Fi a few minutes before reporting; exact handover time unknown.",
+  "initial_authenticated_control": [
+    {
+      "mode": "automatic",
+      "passed": true,
+      "exit_code": 0,
+      "elapsed_seconds": 18.51
+    },
+    {
+      "mode": "relay-only",
+      "passed": true,
+      "exit_code": 0,
+      "elapsed_seconds": 13.28
+    }
+  ],
+  "comparison_runs": [
+    {
+      "mode": "automatic",
+      "all_operations_succeeded": true,
+      "hotspot_network_continuity_verified": false,
+      "counts_as_hotspot_acceptance": false,
+      "control_payload_seconds": [
+        8.961,
+        8.541,
+        7.006,
+        13.137
+      ],
+      "sftp_roundtrip_bytes": 65536,
+      "ssh_sessions_open_during_transfer": true
+    },
+    {
+      "mode": "relay-only",
+      "all_operations_succeeded": true,
+      "hotspot_network_continuity_verified": false,
+      "counts_as_hotspot_acceptance": false,
+      "control_payload_seconds": [
+        9.46,
+        7.649,
+        7.864,
+        7.419
+      ],
+      "sftp_roundtrip_bytes": 65536,
+      "ssh_sessions_open_during_transfer": true
+    }
+  ],
+  "late_persistent_probe_network": "Home Wi-Fi; automatic-mode logs include a private LAN path. Excluded from hotspot acceptance and any cold-versus-reused-client performance conclusion.",
+  "manual_terminal_check": {
+    "owner_report": "worked promptly",
+    "network_attribution": "uncertain; excluded from hotspot acceptance"
+  },
+  "runner_changes": [
+    "Control long SSH sessions through stdin instead of expiring fixed-duration sleeps.",
+    "Record payload delivery independently of endpoint shutdown.",
+    "Require expected gateway before opening connections.",
+    "Monitor default gateway/interface every second, invalidate network changes, and terminate owned test processes.",
+    "Keep each guarded run in its own artifact directory."
+  ],
+  "guard_verification": {
+    "expected_gateway": "172.20.10.1",
+    "actual_gateway": "192.168.86.1",
+    "exit_code": 2,
+    "requests_started": false,
+    "passed_negative_control": true
+  },
+  "production_transport_changes": false,
+  "diagnostic_example": "crates/client/examples/connection_probe.rs",
+  "diagnostic_build_and_clippy_passed": true,
+  "remaining": [
+    "Repeat automatic and relay-only concurrency/SFTP checks with monitored hotspot routing.",
+    "Investigate startup latency only from samples with verified network attribution."
+  ],
+  "followup_status": "Deferred at operator request while returning to UI cleanup."
+}

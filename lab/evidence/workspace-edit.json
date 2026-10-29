@@ -1,0 +1,93 @@
+{
+  "date": "2026-10-28",
+  "feature": "Unified workspace editing with restart consent",
+  "rust_workspace_tests_passed": 96,
+  "store_tests_passed": 46,
+  "desktop_tests_passed": 36,
+  "native_screenshot_comparisons_passed": 80,
+  "python_tests_linux": {
+    "passed": 58,
+    "skipped": 0
+  },
+  "python_tests_macos": {
+    "total": 58,
+    "skipped": 2
+  },
+  "checks": [
+    "workspace Clippy all-targets -D warnings",
+    "cargo fmt --all --check",
+    "git diff --check"
+  ],
+  "source_sha256": {
+    "crates/core/src/lib.rs": "e60b60df1fa5161a1530b13d3a7a22cf4ccd49b11c5148aa8c51729e499e828c",
+    "crates/core/src/edit.rs": "ebfe59247e5bcb5b2e070dead4a01741379c743031261486b0800b042f49209e",
+    "crates/store/src/lib.rs": "165d5a839daeade4c83e1d66a9cdcf5ac065b078b4c750ef3d1480b08250f246",
+    "crates/store/src/schema.sql": "35323130b39f7293974b234ba8520da8ddc9a26cc0ef4cd8b7d8d0999895c208",
+    "crates/store/src/edit.rs": "a8aafe6df3381d559d8fc62cbd362925642b34ccf8b6e340ec230df45bd862ef",
+    "crates/store/src/tests.rs": "8a35c59168571ad8c8e9107bbfda6a8c0f2898e275602fc35389fdef6b1f69a0",
+    "crates/host/host_runtime.py": "75e4122de0f321256aee148cc97b66ec63d4e5fb1bedde29322a62cbaf217cbb",
+    "crates/host/tests/test_lifecycle.py": "271aedd6e88e7c102a249f8874869f851c0671a03cd33b28a23d2c2aa7d64dc1",
+    "crates/desktop/src/main.rs": "3ee970b1dbdf73b1186f2cebcd5dff50f474c80fb40e35cc35db88960fac7ebb",
+    "crates/desktop/src/ui.rs": "f8604cc75f15e2207369c062239e19052e7c631950aee4828afe18e98df19945",
+    "crates/desktop/src/ui/editor.rs": "5cfad391ce2536c3e290a1bc541d58d1d02112fb990fe0bc00439b736164846e",
+    "crates/desktop/src/ui/workspace.rs": "0d35b055e155765a6a697a56291845ac0ae0112f69c0ca5d0f67d6f078b9bf68",
+    "crates/desktop/src/ui/hosts.rs": "4ea3d372babbda6174e56d01e9727c338bd159bc68a4939160bfbeccae5edbf2",
+    "crates/desktop/src/ui/lifecycle.rs": "2f2f3c8d64c201d7b72b6f41e0405882985f119bee6a196463ee7d359e697b9f",
+    "crates/desktop/src/visual_tests.rs": "3dcdadd3c4eeb521724c9ea00c4c9945f9e2163416070e324a52a9051e160735",
+    "crates/desktop/assets/material/edit.svg": "f3f51206ef9bf7d34db55058aa6be3e4f307c2d749fb8071785c360a84fa1622",
+    "crates/desktop/assets/material/README.md": "5a96622295347af576c31302acdef77d5707c6068a2ed51be3359bea534d1d13",
+    "crates/cli/src/main.rs": "258b718e1b948fb13e4118d3d5c1d3a4a956d16c1f8169a962d3de09fc05317a"
+  },
+  "directly_inspected": [
+    "workspace-edit-restart",
+    "workspace-edit-restart-small",
+    "workspace-edit-confirmation-small",
+    "workspace-edit-rename",
+    "workspace-edit-stopped-small",
+    "workspace-edit-gpu-small"
+  ],
+  "invariants": [
+    "server checks restart consent against current state",
+    "one transaction admits CPU/RAM/disk/GPU and persists name/intent",
+    "rename-only does not call the host",
+    "stopped compute is admitted on start",
+    "both GPUs remain exclusively claimed during replacement until verified completion",
+    "larger backing is retained through failure and restart",
+    "display rename preserves SSH and application identity",
+    "no automatic force shutdown"
+  ],
+  "deployment": {
+    "controller_active": true,
+    "resource_claims_preserved": true,
+    "vm_and_application_ids_preserved": true,
+    "gpu_transition_schema_ready": true,
+    "guest_pids_and_states_preserved": true,
+    "t3_service_pid_preserved": true,
+    "endpoint_identity_preserved": true,
+    "backup_directory": "/var/lib/homecloud/test-runs/workspace-edit/1793219676",
+    "sha256": {
+      "/usr/local/bin/homecloudd": "8b63f207a404b65721bbc4b2836161f3016349c0fe9def9d8bc5cc6f415067e0",
+      "/usr/local/bin/homecloud": "2ad0364ba5f102fa1a3844fbb8fb7ff55176d575ed4be750b4b1c03a7230ea14",
+      "/usr/local/libexec/homecloud/host_runtime.py": "75e4122de0f321256aee148cc97b66ec63d4e5fb1bedde29322a62cbaf217cbb"
+    }
+  },
+  "live_api_proofs": {
+    "running_vm_renamed_and_restored": true,
+    "stopped_vm_memory_edited_and_restored": true,
+    "stopped_vm_compute_claims_remained_zero": true,
+    "all_guest_states_and_pids_preserved": true,
+    "t3_service_pid_preserved": true,
+    "ssh_and_vm_identities_preserved": true,
+    "managed_application_ids_preserved": true,
+    "original_specifications_and_claims_restored": true,
+    "running_resource_edits_performed": false,
+    "gpu_changes_performed": false
+  },
+  "native_app_rebuilt_reopened": true,
+  "provider_authentication_operations": 0,
+  "pending": [
+    "live running combined resize/GPU-switch hardware proof",
+    "physical force-stop/GPU-reset proof",
+    "attributable hotspot repeat"
+  ]
+}

@@ -1,0 +1,108 @@
+{
+  "recorded_at_utc": "2026-10-29T14:06:37.728195+00:00",
+  "scope": "Targeted bare-metal launch investigation; only manifest-recorded unpaired proof VMs modified.",
+  "packages": {
+    "incus": "6.0.5-8",
+    "qemu-system-x86": "1:10.2.1+ds-1ubuntu3.3",
+    "kernel": "7.0.0-38-generic"
+  },
+  "source_audit": {
+    "exact_ubuntu_orig_and_debian_hashes_checked": true,
+    "launch_files_match_upstream_tags": true,
+    "launcher_or_apparmor_changed": false,
+    "incus_or_qemu_upgraded": false
+  },
+  "reproduced_failure": {
+    "fresh_vms_completed": 3,
+    "trigger": "Guest reboot plus concurrent redundant Start API request.",
+    "trace": {
+      "vm_launches": 9,
+      "readiness_acknowledged": 8,
+      "matched_pipe_writes": 2,
+      "parent_statuses": {
+        "0": 8,
+        "256": 1
+      },
+      "pipe_read_returns": {
+        "1": 8,
+        "0": 1
+      }
+    },
+    "failed_launch_pipe_return": 0,
+    "failed_launch_exit_code": 1,
+    "error": "Cannot lock pid file: Resource temporarily unavailable",
+    "survivor_belongs_to_earlier_successful_launch": true,
+    "survivor_belongs_to_failed_launch": false,
+    "metadata_cids_agreed_but_actual_guest_cid_differed": true,
+    "claims_retained_and_review_required": true,
+    "explicit_graceful_fixture_repair": true,
+    "all_first_run_fixtures_normally_deleted": true,
+    "original_deleted_instance_orphan_reproduced": false
+  },
+  "fix": {
+    "repeated_running_intent_is_durable_noop": true,
+    "both_start_api_forms_covered": true,
+    "retains_existing_errors_and_all_claims": true,
+    "normal_stopped_admission_unchanged": true,
+    "daemon_deployed": true
+  },
+  "post_fix": {
+    "completed_cycles": 8,
+    "full_fresh_provisions": 24,
+    "create_intents_total": 36,
+    "stop_start_checks": 8,
+    "guest_reboot_concurrent_start_checks": 8,
+    "guest_agent_actual_cid_checks": 8,
+    "active_create_cancellations": 8,
+    "immediate_create_cancellations": 4,
+    "seconds": 1753.66,
+    "trace": {
+      "vm_launches": 76,
+      "readiness_acknowledged": 76,
+      "matched_pipe_writes": 11,
+      "parent_statuses": {
+        "0": 76
+      },
+      "pipe_read_returns": {
+        "1": 76
+      }
+    }
+  },
+  "observation_limits": {
+    "payloads_captured": false,
+    "complete_child_write_coverage_claimed": false,
+    "witness_sqlite_handle_leak_fixed": true,
+    "real_database_handle_regression_samples": 500,
+    "userspace_witness_gap_recorded": true,
+    "kernel_trace_continuous_during_witness_replacement": true,
+    "witness_errors": {
+      "incus_http_500": 37,
+      "timeout": 6,
+      "sqlite_open": 28
+    },
+    "witness_final_fd_count": 4,
+    "trace_dropped_event_messages": 0
+  },
+  "verification": {
+    "rust_workspace_tests": 160,
+    "native_screenshot_cases": 118,
+    "linux_rust_tests": 86,
+    "lab_tool_tests": 11,
+    "clippy_warnings_denied": true,
+    "formatting": true
+  },
+  "cleanup": {
+    "original_grant_restored": true,
+    "pending_vm_operations": 0,
+    "permanent_vm_and_t3_preserved": true,
+    "no_untracked_homecloud_qemu": true,
+    "observers_stopped": true,
+    "pool_health": "ONLINE",
+    "new_kernel_oom_events": 0,
+    "installed_daemon_matches_tested_build": true
+  },
+  "remaining": [
+    "The earlier deleted-instance orphan itself was not reproduced; its exact cause remains unproven.",
+    "Current-main lifecycle safeguards and newer Incus versions have not been validated on this host."
+  ]
+}

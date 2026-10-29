@@ -12,3 +12,7 @@ tokio.workspace = true
 iroh.workspace = true
 hex.workspace = true
 uuid.workspace = true
+tracing.workspace = true
+
+[dev-dependencies]
+tracing-subscriber.workspace = true

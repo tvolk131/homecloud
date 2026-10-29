@@ -1,0 +1,70 @@
+// Startup/process metadata only: never read syscall buffers or argument vectors.
+// Track descendants after exec so QEMU thread/process renaming cannot hide events.
+BEGIN { printf("ready ns=%llu\n", nsecs); }
+
+tracepoint:sched:sched_process_exec
+/comm == "qemu-system-x86" || @tracked[pid]/
+{
+    @tracked[pid] = 1;
+    printf("exec ns=%llu pid=%d tid=%d ppid=%d cg=%llu file=%s\n",
+           nsecs, pid, tid, curtask->real_parent->tgid, cgroup, str(args.filename));
+}
+
+tracepoint:sched:sched_process_fork
+/@tracked[pid] || @tracked[tid]/
+{
+    @tracked[args.child_pid] = 1;
+    printf("fork ns=%llu pid=%d tid=%d parent=%d child=%d cg=%llu\n",
+           nsecs, pid, tid, args.parent_pid, args.child_pid, cgroup);
+}
+
+tracepoint:syscalls:sys_enter_read,
+tracepoint:syscalls:sys_enter_write
+/(@tracked[pid] || @tracked[tid]) && args.count == 1/
+{
+    @fd[tid] = args.fd + 1;
+    $inode = 0;
+    $mode = 0;
+    if ((uint64)args.fd < (uint64)curtask->files->fdt->max_fds) {
+        $f = curtask->files->fdt->fd[args.fd];
+        if ($f != 0) {
+            $inode = $f->f_inode->i_ino;
+            $mode = $f->f_inode->i_mode;
+        }
+    }
+    printf("io-enter ns=%llu pid=%d tid=%d cg=%llu op=%s fd=%d ino=%llu mode=%u\n",
+           nsecs, pid, tid, cgroup, probe, args.fd, $inode, $mode);
+}
+
+tracepoint:syscalls:sys_exit_read,
+tracepoint:syscalls:sys_exit_write
+/@fd[tid]/
+{
+    printf("io-return ns=%llu pid=%d tid=%d op=%s fd=%d ret=%ld\n",
+           nsecs, pid, tid, probe, @fd[tid]-1, args.ret);
+    $removed = delete(@fd[tid]);
+}
+
+tracepoint:syscalls:sys_enter_close
+/(@tracked[pid] || @tracked[tid]) && args.fd < 64/
+{
+    printf("close ns=%llu pid=%d tid=%d fd=%d\n", nsecs, pid, tid, args.fd);
+}
+
+tracepoint:signal:signal_generate
+/@tracked[args.pid] && args.sig != 10/
+{
+    printf("signal ns=%llu sender=%d target=%d sig=%d code=%d result=%d\n",
+           nsecs, pid, args.pid, args.sig, args.code, args.result);
+}
+
+tracepoint:sched:sched_process_exit
+/@tracked[pid] || @tracked[tid]/
+{
+    printf("exit ns=%llu pid=%d tid=%d cg=%llu raw_status=%d group_dead=%d\n",
+           nsecs, pid, tid, cgroup, curtask->exit_code, args.group_dead);
+    $removed = delete(@tracked[tid]);
+    $removed_fd = delete(@fd[tid]);
+}
+
+END { clear(@tracked); clear(@fd); }

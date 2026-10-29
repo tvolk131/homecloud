@@ -1,0 +1,33 @@
+{
+  "check": "provider_reboot_recovery",
+  "passed": true,
+  "recorded_at_utc": "2026-10-28T15:08:13.989541+00:00",
+  "guest_boot_id_changed": true,
+  "guest_machine_identity_preserved": true,
+  "ssh_host_key_preserved": true,
+  "t3_auto_started_and_listening_only_on_loopback": true,
+  "same_t3_account_and_relay": true,
+  "t3_remote_reachability": "reachable",
+  "codex_account": "signed_in",
+  "claude_account": "signed_in",
+  "versions": {
+    "t3": "t3 v0.1.2",
+    "codex": "codex-cli 0.165.0",
+    "claude": "2.1.308 (Claude Code)"
+  },
+  "existing_t3_threads_preserved": 2,
+  "existing_t3_message_records_preserved": 14,
+  "workspace_files_verified": 3,
+  "resource_claims_unchanged": true,
+  "no_new_authorization_or_setup_operation": true,
+  "controller_observation_healthy": true,
+  "recovery_seconds": 69.05,
+  "owner_provider_followup_messages": "Owner confirmed both existing threads replied without reauthorization.",
+  "ssh_after_reboot": {
+    "ssh_reachable": true,
+    "guest_uid": 1000,
+    "workspace_present": true,
+    "existing_ssh_alias_and_host_key_check": true
+  },
+  "message_preservation_check": "Compared persisted message record identifiers only; no message bodies or credentials were read."
+}

@@ -23,10 +23,13 @@ The current development Mac is already paired with the lab host. The default
 private credential is `~/.config/homecloud/client.json`. `HOMECLOUD_PROFILE` selects
 another profile; `HOMECLOUD_CLI` overrides the SSH helper path.
 
-Use **Open Terminal** for ordinary SSH. **Set up T3 SSH alias** adds a managed
-`Include` to `~/.ssh/config` while preserving existing entries. Add that alias
-under T3 Code's **Settings → Environments → Add environment → SSH**. Guest SSH
-authentication and strict VM-specific host-key checking remain enabled.
+Use **Open Terminal** for ordinary SSH over Iroh. In **New VM**, select
+**Install T3 Code**, or open **Details → Overview** on an existing VM. Homecloud installs
+T3's boot service and native Codex/Claude provider CLIs, then guides browser account
+authorization. Sign
+into the same T3 Connect account on your Mac to select the backend; guest IPs and
+SSH environment setup are unnecessary for that path. See
+[managed applications](docs/managed-apps.md) for setup, recovery, and CLI commands.
 
 ## CLI
 
@@ -40,9 +43,13 @@ target/debug/homecloud ssh-config VM_UUID --install
 ```
 
 Sizes use GiB. The initial image requires at least 10 GiB of disk; each VM also
-commits the configured physical disk overhead (currently 2 GiB). GPU VMs require
-at least 4 GiB RAM on the initial implementation. Resize/GPU changes can restart
-the guest. Stopped VMs keep their CPU, RAM, disk and GPU commitments.
+commits the configured physical disk overhead (currently 2 GiB). VMs use the same
+1 GiB RAM minimum with or without GPUs; size memory for the guest image, drivers
+and workload. Resize/GPU changes can restart the guest. A full stop releases CPU, RAM and GPU only after confirmed shutdown
+and host cleanup; disk remains allocated. Starts atomically reacquire compute.
+A busy remembered GPU leaves the VM stopped and offers an explicit CPU-only
+start in the GUI, or `homecloud start VM_UUID --without-gpu`. That choice keeps
+the GPU preference for the next boot. Internal resize restarts retain claims.
 
 ## Development
 

@@ -17,7 +17,12 @@ current implementation boundary. It is the implementation spec for the first hos
 
 ## Identity and access
 
-A stable user UUID owns resources; each device has an independent Iroh key.
+A stable user UUID owns resources; each device has an independent Ed25519 signing key.
+Each GUI/CLI/SSH process creates a fresh Iroh transport endpoint. The device signs
+a domain-separated TLS exporter bound to the connection and ALPN; the controller
+verifies possession before handling enrollment, control requests or SSH routing.
+This lets simultaneous processes authenticate as the same device without competing
+for one relay endpoint registration. The server endpoint identity stays pinned.
 Bootstrap and administrator recovery run through local privileged host access.
 Invitations are random 256-bit secrets, hashed at rest, expiring and atomically
 single-use. Revocation is permanent for that device key; recovery enrolls a fresh key.
@@ -36,7 +41,28 @@ All admission, CPU/network/GPU leases and idempotency records commit in one SQLi
 `BEGIN IMMEDIATE` transaction before an external effect. The first host uses a
 fixed, reviewed resource budget; changing its total capacity needs an explicit migration.
 
-Configured guest RAM counts, including stopped VMs. Each CPU credit selects a
+The durable `Vm.resources` record is the RAM/disk commitment, not measured usage.
+CPU rows uniquely claim every SMT sibling; GPU rows uniquely claim a PCI address
+case-insensitively. Admission recomputes commitments under the SQLite write lock,
+including requests whose host operations have not finished. A rejected request
+rolls back all its claims, VM intent and operation together. Grant changes use the
+same lock and count the larger of each user's grant and existing commitment.
+
+Only one controller may apply host changes for a database: an OS file lock is held
+for its lifetime, and reconciliation calls within it are serialized. Each apply
+captures its operation, VM, inventory of managed VMs and current user grants in
+one database transaction. This is a single-host constraint, not distributed locking.
+The root host adapter also serializes physical changes. A busy/failed database
+transaction rejects admission; it never falls back to unlocked allocation.
+
+A late completion of an already successful operation is a no-op. It cannot release
+claims held for a newer resize or detach. Unexpected lifecycle confirmations and
+operations awaiting review retain their backing. Passive observations cannot mark
+resources deleted; explicit deletion must complete. One unfinished operation per
+VM is enforced both by admission and a unique database index.
+
+Configured guest RAM counts while compute is claimed, including pending startup
+and shutdown. A fully deprovisioned stopped VM holds disk only. Each CPU credit selects a
 complete physical core, including all SMT siblings. QEMU starts through a static
 pre-exec wrapper which checks a root-owned policy, moves into a pre-created VM
 cgroup, verifies its effective cpuset, and restricts helper affinity before exec.
@@ -62,8 +88,9 @@ They do not stop guests or release existing backing. Resize holds the larger old
 commitment until the host confirms completion. Deletion holds leases and backing
 until Incus deletion is confirmed. GPU detach holds the lease until physical release.
 
-Each physical GPU is exclusively leased. A stopped VM retains it; permission
-revocation only blocks new attachments. Host display handoff is a local operator
+Each physical GPU is exclusively leased while claimed. A fully stopped VM keeps
+its preference but relinquishes ownership. Permission revocation blocks new
+attachments and reacquisition, without interrupting a running attachment. Host display handoff is a local operator
 policy. IOMMU evidence, group members, offered devices and next steps are visible.
 Missing groups prompt firmware/kernel checks; they do not prove unsupported hardware.
 
@@ -71,6 +98,40 @@ GPU telemetry queries the existing Incus guest agent for `nvidia-smi` output.
 No separate guest monitoring daemon is installed. Utilization, VRAM and temperature
 are guest-reported, and unavailable telemetry is shown as unavailable. This is a
 basic responsiveness check, not an independent fault detector.
+
+`Vm.spec` is configured size; `Vm.resources` is charged backing. `preferred_gpu`
+is remembered intent; `gpu` is a durable claim. A stop keeps CPU/RAM/GPU claims
+until Incus confirms shutdown, GPU detach/driver handoff finishes, and the CPU
+launcher policy is removed. Remaining VM host processes prevent release. The
+adapter must explicitly return `compute_released=true`; an older adapter's
+ordinary stopped-state response cannot authorize unallocation. One final database
+transaction releases compute and completes the operation. Disk, network identity
+and each user's host-backed grant remain held. A guest-initiated shutdown alone
+does not release resources; explicit stop/cleanup is required.
+
+Start atomically acquires RAM, complete physical cores and the preferred GPU.
+A GPU conflict rolls back every new claim and leaves the VM stopped. The GUI
+offers Go back or Start without GPU, which is a fresh request with current quota
+and authorization checks. It records the CPU-only boot in the operation and
+preserves the preference. Reconciliation and internal resize restarts use the
+active claim, so they cannot silently reattach the remembered GPU. A later full
+stop/start requests the preferred GPU again. Stopped resizes claim disk only;
+running resizes retain the larger old/new backing through interruption.
+
+Legacy GPU preferences are migrated additively. Old stopped VMs keep historical
+claims until explicit cleanup confirms release; the GUI exposes Finish stopping
+for that case. Ambiguous failures and operations needing review retain claims.
+No expiration timer or observed idleness can release hardware ownership.
+
+Database tests use independent connections and simultaneous contenders for each
+resource, grant increases, resizes, GPU ownership across users, idempotent retries
+and atomic stopped-VM start admission. Fault injection
+checks rollback after claims are written; recovery and delayed completion tests
+check retained backing. A subprocess verifies controller exclusion and lock release.
+Host-adapter failure tests run through `cargo test` using Python 3 without root.
+They verify cleanup order, shutdown confirmation, remaining host-process refusal,
+GPU handoff failure, and CPU-only boot intent. These mocks do not replace real
+Incus/GPU lifecycle testing on the Linux lab.
 
 ## Networking
 
@@ -105,9 +166,18 @@ persistence, transport, clients and reconciliation are Rust. The CPU launcher is
 
 ## Next work before coworker release
 
-- Verify a real T3 provider session survives disconnect/reconnect; the pinned
-  background service is provisioned, while provider login belongs to the guest's owner.
-- Exercise off-LAN Iroh transport and Mac sleep/network-change recovery.
+The full-stop/reacquire, competing GPU start/attach, cleanup-failure retention,
+controller crash replay, real disk-quota backing, isolation, forced relay and
+unattended host reboot proofs passed on the lab. See [validation](validation.md)
+and its recorded evidence. Real provider-workflow acceptance is also complete:
+both existing Claude/Codex threads resumed after VM reboot without reauthorization,
+and the owner confirmed disconnect/reconnect plus actual Mac sleep/wake task
+continuity. Remaining work:
+- Resolve slow/intermittent automatic-mode mobile connections. Relay-only hotspot
+  control/SSH/SFTP concurrency passed; baseline sleep/network-change recovery passed.
+  Provider continuity is verified separately; automatic-mode hotspot behavior
+  remains unresolved. The October 28 full runs have uncertain network attribution
+  after the phone died; repeat with the network guard when mobile testing resumes.
 - Add operation cancellation/recovery UX, better forms/navigation, activity history,
   persistent alerts, SMART/disk inventory, and idle-GPU advisories.
 - Harden the host installer with package/version checks, migration/rollback paths,
@@ -116,3 +186,71 @@ persistence, transport, clients and reconciliation are Rust. The CPU launcher is
 - Broaden crash/fault injection, hostile guest/network cases, and device reset/reboot tests.
 - Design off-host backup/restore, schema migration and image-update policy before
   treating the system as durable storage for important work.
+
+
+T3 is the first [managed guest application](managed-apps.md), selected per VM.
+Installation and account setup have independent durable operations; they do not
+hold the VM resource-operation lane. The Mac uses native T3 Connect account
+discovery for the backend, while ordinary SSH continues through Iroh.
+
+
+## Admin host reserve editing
+
+Administrators edit total host reserves in Hosts → host → Overview → Edit reserves.
+The root-reviewed profile exposes explicit minimum memory, complete physical CPU
+cores and pool free-space floor. The VM envelope is physical managed capacity
+minus those minimums; the durable reserve record stores the amount above each
+minimum. The GUI and public request use totals. Lowering the former conservative
+lab reserve therefore releases real unissued capacity. Unmanaged workloads must
+be separately budgeted or retired before expanding that envelope.
+
+Admission protects the sum of each user's component-wise `max(grant, committed)`,
+including disabled users, stopped VM disks and operations still cleaning up.
+Unused grants remain promises. Stopping a VM returns compute to its owner's unused
+grant. Reserve increases use only unpromised capacity; a decrease does not
+implicitly issue a larger user grant. Complete CPU groups are moved only when
+unclaimed, and existing running guests keep their vCPU pins.
+
+Total system memory reserves contain a reviewed operating floor for Linux,
+services and VM overhead, plus an ARC allowance. The allowance equals total system
+reserve minus that floor. ARC occupancy is never charged twice, and guest grants
+never change based on RSS. The lab's 4-GiB system minimum contains a 2-GiB
+operating floor and 2-GiB cache allowance, with one complete housekeeping core as
+its CPU minimum. Other hardware and VM-density profiles require validation.
+
+Admin cache modes are Automatic (Homecloud) and Custom limit. Automatic chooses
+the root-reviewed per-host recommendation within the protected allowance. Both
+modes persist a positive numeric cap and verify the effective `c_max`. Automatic
+never restores ZFS's native zero/default or borrows tenant promises. Native-default
+calculations remain read-only telemetry. Actual cache size can temporarily exceed
+its cap; a cap-only reduction can complete, but releasing system reserve waits for
+actual reclamation before that capacity becomes available for new promises.
+
+The helper rejects conflicting external modprobe settings, journals intent,
+rebuilds initramfs and verifies enforcement. A temporary, journaled
+`zfs_arc_sys_free` target asks ARC to reclaim before reserve release and is restored
+on completion or recovery. A timeout leaves Applying with capacity held. Swap
+remains emergency fallback; this is not a promise of zero paging under arbitrary
+workloads. The earlier native-Automatic experiments are historical evidence in
+`lab/evidence/host-memory-policy.json`; the bounded policy and recovery proofs
+supersede their configuration recommendations.
+
+SQLite serializes grants, VM claims and reserve intent. Pending changes retain
+the stricter old/target capacity and union of reserved core groups until root
+confirmation. The private fsynced journal precedes effects and is replayed at
+boot. Unknown/mismatched policy fails admission closed. Recovery retains claims;
+only a provably unapplied operation can be durably discarded. The pool floor
+remains operating headroom, not a ZFS reservation or protection from foreign writes.
+
+Fleet inventory and stable host identifiers must precede editing another host's
+reserves from a shared controller; the current directory lists the connected host.
+
+
+### Memory-policy reliability follow-up
+
+The implementation now uses one cloud-init seed transport for each pinned image,
+a durable launch fence across the image's first-boot reboot, bounded agent/setup
+waits, cancellable incomplete creations, and an explicit system-backed ARC budget.
+The lab harness retains manifests and claims on failures. See the current
+reliability evidence in [validation](validation.md) for actual fault cases,
+limitations and remaining upstream compatibility risks.

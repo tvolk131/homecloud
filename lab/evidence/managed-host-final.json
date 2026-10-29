@@ -1,0 +1,61 @@
+{
+  "date": "2026-10-29",
+  "scope": "Final verification after managed-host memory campaigns and cleanup",
+  "host_health": {
+    "permanent_devbox_pid": 3361,
+    "t3_service": "active",
+    "disposable_leases": {
+      "cpu_leases": 0,
+      "gpu_leases": 0,
+      "network_leases": 0
+    },
+    "test_volumes_removed": true,
+    "daemon_sha256": "b254d2b6d5ade6576e8f85ccecc7dd2607f773416665f0d12c87606232f40164",
+    "bundle_sha256": "b374133ba94be30498885045a034aec8aeef839191370f29df3f6ba94216347a"
+  },
+  "capacity": {
+    "memory_bytes": 44023414784,
+    "cpu_cores": 4,
+    "disk_bytes": 137438953472
+  },
+  "original_grant": {
+    "memory_bytes": 4294967296,
+    "cpu_cores": 2,
+    "disk_bytes": 137438953472
+  },
+  "committed": {
+    "memory_bytes": 4294967296,
+    "cpu_cores": 1,
+    "disk_bytes": 51539607552
+  },
+  "vms": [
+    {
+      "id": "e8acf92e-d829-4f44-b844-cc12d10c6344",
+      "name": "homecloud-devbox",
+      "observed": "running",
+      "desired": "running",
+      "error": null
+    },
+    {
+      "id": "400009d6-9c98-4224-a929-beb7a4bb4067",
+      "name": "t3-devbox",
+      "observed": "stopped",
+      "desired": "stopped",
+      "error": null
+    }
+  ],
+  "unfinished_vm_operations": 0,
+  "pool_health": "ONLINE",
+  "warnings": [],
+  "verification": {
+    "rust_workspace_passed": 190,
+    "python_tests_run": 119,
+    "python_passed": 117,
+    "python_skipped": 2,
+    "native_screenshot_comparisons": 126,
+    "format_check": true,
+    "diff_check": true,
+    "mac_bundle_codesign_check": true,
+    "mac_app_reopened_and_visually_inspected": true
+  }
+}

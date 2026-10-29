@@ -1955,6 +1955,7 @@ dependencies = [
  "serde",
  "serde_json",
  "tokio",
+ "tracing-subscriber",
  "uuid",
 ]
 
@@ -1969,6 +1970,8 @@ dependencies = [
  "serde",
  "serde_json",
  "tokio",
+ "tracing",
+ "tracing-subscriber",
  "uuid",
 ]
 
@@ -1987,6 +1990,7 @@ name = "homecloud-daemon"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "async-trait",
  "clap",
  "hex",
  "homecloud-client",
@@ -2010,12 +2014,14 @@ dependencies = [
  "anyhow",
  "homecloud-client",
  "homecloud-core",
+ "homecloud-store",
  "iced",
  "iced-m3",
  "iced_test",
  "image",
  "serde",
  "serde_json",
+ "tempfile",
  "tokio",
  "uuid",
 ]

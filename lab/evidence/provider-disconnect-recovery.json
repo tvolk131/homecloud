@@ -1,0 +1,9 @@
+{
+  "recorded_at_utc": "2026-10-28T16:09:13.410019+00:00",
+  "evidence_source": "Owner report",
+  "method": "Mac internet turned off and restored; Mac was not put to sleep",
+  "provider_thread_replies_received_after_reconnect": true,
+  "owner_reported_workflow_success": true,
+  "actual_os_sleep_wake_exercised": false,
+  "duration_seconds": "not recorded"
+}

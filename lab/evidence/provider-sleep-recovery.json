@@ -1,0 +1,9 @@
+{
+  "recorded_at_utc": "2026-10-28T16:14:38.580134+00:00",
+  "evidence_source": "Owner report",
+  "method": "Owner completed the requested waiting-task, Mac sleep/wake and follow-up workflow",
+  "actual_os_sleep_wake_exercised": true,
+  "owner_reported_workflow_success": true,
+  "duration": "Approximately 30 seconds requested; exact duration not independently measured",
+  "independent_instrumentation": false
+}

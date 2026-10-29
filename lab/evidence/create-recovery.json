@@ -1,0 +1,72 @@
+{
+  "recorded_at_utc": "2026-10-29T15:44:22.321898+00:00",
+  "scope": "Desktop/client Create recovery plus durable server-side rejection receipts; no new physical VM or provider task.",
+  "behavior": {
+    "immutable_payload_and_key_saved_before_rpc": true,
+    "atomic_private_journal_fsync_before_send": true,
+    "profile_host_device_binding": true,
+    "one_creation_manager_per_profile": true,
+    "automatic_replay_after_restart": true,
+    "retry_bypasses_fresh_quota_validation": true,
+    "generic_errors_retain_uncertainty": true,
+    "committed_rejection_clears_request_for_amendment": true,
+    "rejected_keys_fence_delayed_legacy_copies": true,
+    "partial_admission_rolled_back_before_rejection_receipt": true,
+    "new_creation_after_resolution_uses_new_key": true
+  },
+  "regressions": [
+    "Discard accepted acknowledgement, reopen client and database, return the same VM/operation at full quota.",
+    "Eight concurrent independent database connections replay one accepted key.",
+    "Persist rejection across database reopen and quota growth; reject changed payload and legacy delayed copies.",
+    "Injected application admission failure rolls back VM, CPU, network and application claims before the rejection commits.",
+    "Real QUIC sends Create, waits for commit, closes without reading, reconnects and replays one VM.",
+    "Revoked-device errors remain generic errors rather than definitive creation rejection.",
+    "Corrupt/mismatched journals and competing windows fail closed.",
+    "Late or mismatched replies do not resolve another key or alter another VM editor.",
+    "Confirmation dialog remains actionable at full quota/offline observation and retains its dismissal body."
+  ],
+  "verification": {
+    "rust_workspace_tests": 176,
+    "desktop_tests_included": 75,
+    "linux_rust_tests": 101,
+    "new_native_screenshot_comparisons": 3,
+    "total_native_screenshot_comparisons": 121,
+    "new_screenshots_directly_visually_inspected": true,
+    "final_desktop_suite_and_navigation_regression_passed": true,
+    "formatting": true,
+    "clippy_warnings_denied": true,
+    "signed_bundle_build_uuid": "D76F3D1F-2A03-33C1-AF24-3F5353D866BF"
+  },
+  "deployment": {
+    "deployed_daemon_sha256": "95dfddbeea7b0a95e2dc6224060f16c210ab4e5d215f6977e2a473f95786d5cf",
+    "controller": "active",
+    "permanent_processes_claims_endpoint_and_policy_preserved": true,
+    "backup": "/var/lib/homecloud/test-runs/create-recovery-20261029/deployment"
+  },
+  "mac_launch": {
+    "relaunched": true,
+    "processes": 1,
+    "create_recovery_lock_initialized": true,
+    "lock_permissions": "0o600",
+    "unresolved_real_creation": false
+  },
+  "final_host_state": {
+    "permanent_vm_and_t3_processes_unchanged": true,
+    "nondeleted_vms": 2,
+    "pending_vm_operations": 0,
+    "gpu_leases": 0,
+    "cpu_leases_only_permanent_devbox": true,
+    "untracked_homecloud_qemu": 0,
+    "original_grant_restored": true,
+    "pool_health": "ONLINE",
+    "controller": "active",
+    "installed_daemon_matches_tested_build": true,
+    "arc_cap": "2147483648",
+    "arc_sys_free": "0"
+  },
+  "limits": [
+    "Fault-injection tests use temporary databases and simulated host execution; the dropped-response transport test uses real local QUIC.",
+    "This does not change or validate hotspot connectivity, off-host backup durability, or all underlying Incus/QEMU lifecycle interleavings.",
+    "Do not discard unresolved journals or server rejection receipts while delayed requests may replay."
+  ]
+}

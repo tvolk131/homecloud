@@ -1,0 +1,42 @@
+[
+  {
+    "name": "plain",
+    "terminal": "https://claude.com/cai/oauth/authorize?code=true&client_id=demo-client&response_type=code&redirect_uri=http%3A%2F%2Flocalhost%3A12345%2Fcallback&scope=user%3Ainference&code_challenge=DEMO-CHALLENGE&code_challenge_method=S256&state=DEMO-STATE\nPaste code here if prompted >",
+    "url": "https://claude.com/cai/oauth/authorize?code=true&client_id=demo-client&response_type=code&redirect_uri=http%3A%2F%2Flocalhost%3A12345%2Fcallback&scope=user%3Ainference&code_challenge=DEMO-CHALLENGE&code_challenge_method=S256&state=DEMO-STATE"
+  },
+  {
+    "name": "csi_color",
+    "terminal": "\u001b[1;34mhttps://claude.com/cai/oauth/authorize?code=true&client_id=demo-client&response_type=code&redirect_uri=http%3A%2F%2Flocalhost%3A12345%2Fcallback&scope=user%3Ainference&code_challenge=DEMO-CHALLENGE&code_challenge_method=S256&state=DEMO-STATE\u001b[0m\nPaste code here if prompted >",
+    "url": "https://claude.com/cai/oauth/authorize?code=true&client_id=demo-client&response_type=code&redirect_uri=http%3A%2F%2Flocalhost%3A12345%2Fcallback&scope=user%3Ainference&code_challenge=DEMO-CHALLENGE&code_challenge_method=S256&state=DEMO-STATE"
+  },
+  {
+    "name": "osc8_bel",
+    "terminal": "\u001b]8;;https://claude.com/cai/oauth/authorize?code=true&client_id=demo-client&response_type=code&redirect_uri=http%3A%2F%2Flocalhost%3A12345%2Fcallback&scope=user%3Ainference&code_challenge=DEMO-CHALLENGE&code_challenge_method=S256&state=DEMO-STATE\u0007https://claude.com/cai/oauth/authorize?code=true&client_id=demo-client&response_type=code&redirect_uri=http%3A%2F%2Flocalhost%3A12345%2Fcallback&scope=user%3Ainference&code_challenge=DEMO-CHALLENGE&code_challenge_method=S256&state=DEMO-STATE\u001b]8;;\u0007\nPaste code here if prompted >",
+    "url": "https://claude.com/cai/oauth/authorize?code=true&client_id=demo-client&response_type=code&redirect_uri=http%3A%2F%2Flocalhost%3A12345%2Fcallback&scope=user%3Ainference&code_challenge=DEMO-CHALLENGE&code_challenge_method=S256&state=DEMO-STATE"
+  },
+  {
+    "name": "osc8_st",
+    "terminal": "\u001b]8;;https://claude.com/cai/oauth/authorize?code=true&client_id=demo-client&response_type=code&redirect_uri=http%3A%2F%2Flocalhost%3A12345%2Fcallback&scope=user%3Ainference&code_challenge=DEMO-CHALLENGE&code_challenge_method=S256&state=DEMO-STATE\u001b\\https://claude.com/cai/oauth/authorize?code=true&client_id=demo-client&response_type=code&redirect_uri=http%3A%2F%2Flocalhost%3A12345%2Fcallback&scope=user%3Ainference&code_challenge=DEMO-CHALLENGE&code_challenge_method=S256&state=DEMO-STATE\u001b]8;;\u001b\\\nPaste code here if prompted >",
+    "url": "https://claude.com/cai/oauth/authorize?code=true&client_id=demo-client&response_type=code&redirect_uri=http%3A%2F%2Flocalhost%3A12345%2Fcallback&scope=user%3Ainference&code_challenge=DEMO-CHALLENGE&code_challenge_method=S256&state=DEMO-STATE"
+  },
+  {
+    "name": "osc8_label",
+    "terminal": "\u001b]8;id=demo;https://claude.com/cai/oauth/authorize?code=true&client_id=demo-client&response_type=code&redirect_uri=http%3A%2F%2Flocalhost%3A12345%2Fcallback&scope=user%3Ainference&code_challenge=DEMO-CHALLENGE&code_challenge_method=S256&state=DEMO-STATE\u0007Open sign-in page\u001b]8;;\u0007\nPaste code here if prompted >",
+    "url": "https://claude.com/cai/oauth/authorize?code=true&client_id=demo-client&response_type=code&redirect_uri=http%3A%2F%2Flocalhost%3A12345%2Fcallback&scope=user%3Ainference&code_challenge=DEMO-CHALLENGE&code_challenge_method=S256&state=DEMO-STATE"
+  },
+  {
+    "name": "partial_osc",
+    "terminal": "\u001b]8;;https://claude.com/cai/oauth/authorize?code=true&client_id=demo-client&response_type=code&redirect_uri=http%3A%2F%2Flocalhost%3A12345%2Fcallback&scope=user%3Ainference&code_challenge=DEMO-CHALLENGE&code_challenge_method=S256&state=DEMO-STATE",
+    "url": null
+  },
+  {
+    "name": "unrelated_osc",
+    "terminal": "\u001b]0;https://claude.com/cai/oauth/authorize?code=true&client_id=demo-client&response_type=code&redirect_uri=http%3A%2F%2Flocalhost%3A12345%2Fcallback&scope=user%3Ainference&code_challenge=DEMO-CHALLENGE&code_challenge_method=S256&state=DEMO-STATE\u0007Other title",
+    "url": null
+  },
+  {
+    "name": "osc_untrusted_host",
+    "terminal": "\u001b]8;;https://evil.invalid/cai/oauth/authorize?code=true&client_id=demo-client&response_type=code&redirect_uri=http%3A%2F%2Flocalhost%3A12345%2Fcallback&scope=user%3Ainference&code_challenge=DEMO-CHALLENGE&code_challenge_method=S256&state=DEMO-STATE\u0007Open\u001b]8;;\u0007",
+    "url": null
+  }
+]

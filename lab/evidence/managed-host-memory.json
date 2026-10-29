@@ -1,0 +1,345 @@
+{
+  "date": "2026-10-29",
+  "scope": "Full managed Homecloud host; cold-boot RAM growth and shrink; independent inner controller and real KVM VM",
+  "worker_id": "d9b37154-de35-49c9-9f48-ee998dde5d9e",
+  "inner_id": "70b44aaf-6c10-4b27-9d21-8255be2a7d93",
+  "campaign_passed": true,
+  "stages": {
+    "initialized": {
+      "enrolled": true,
+      "owner": "4b7d98fa-28a4-4a64-bb94-ffed6627bc1b"
+    },
+    "baseline": {
+      "boot_id": "d7e67c10-51b1-4ffb-a921-e9ed5d511ab4",
+      "memory": 8251076608,
+      "arc": {
+        "size": 1053134744,
+        "c_min": 257846144,
+        "c_max": 2147483648
+      },
+      "arc_parameters": {
+        "zfs_arc_max": "2147483648",
+        "zfs_arc_min": "0"
+      },
+      "versions": {
+        "zfs": "2.4.1-1ubuntu5.1",
+        "incus": "Client version: 6.0.5\nServer version: 6.0.5",
+        "kernel": "7.0.0-38-generic",
+        "qemu": "QEMU emulator version 10.2.1 (Debian 1:10.2.1+ds-1ubuntu3.3)"
+      },
+      "pool": "ONLINE",
+      "vms": [
+        {
+          "id": "70b44aaf-6c10-4b27-9d21-8255be2a7d93",
+          "status": "Running",
+          "pid": 28379,
+          "boot_autostart": "false",
+          "memory": "2GiB"
+        }
+      ],
+      "swap": {
+        "pswpin": 0,
+        "pswpout": 0
+      }
+    },
+    "nested-vm-created": {
+      "boot_id": "d7e67c10-51b1-4ffb-a921-e9ed5d511ab4",
+      "memory": 8251076608,
+      "arc": {
+        "size": 1051255360,
+        "c_min": 257846144,
+        "c_max": 2147483648
+      },
+      "arc_parameters": {
+        "zfs_arc_max": "2147483648",
+        "zfs_arc_min": "0"
+      },
+      "versions": {
+        "zfs": "2.4.1-1ubuntu5.1",
+        "incus": "Client version: 6.0.5\nServer version: 6.0.5",
+        "kernel": "7.0.0-38-generic",
+        "qemu": "QEMU emulator version 10.2.1 (Debian 1:10.2.1+ds-1ubuntu3.3)"
+      },
+      "pool": "ONLINE",
+      "vms": [
+        {
+          "id": "70b44aaf-6c10-4b27-9d21-8255be2a7d93",
+          "status": "Running",
+          "pid": 28379,
+          "boot_autostart": "false",
+          "memory": "2GiB"
+        }
+      ],
+      "swap": {
+        "pswpin": 0,
+        "pswpout": 0
+      }
+    },
+    "outer-36-3": {
+      "boot_id": "8a9cf45d-862d-42d5-b05f-67ae0dcb456a",
+      "memory": 37757984768,
+      "arc": {
+        "size": 15578296,
+        "c_min": 1179937024,
+        "c_max": 2147483648
+      },
+      "arc_parameters": {
+        "zfs_arc_max": "2147483648",
+        "zfs_arc_min": "0"
+      },
+      "versions": {
+        "zfs": "2.4.1-1ubuntu5.1",
+        "incus": "Client version: 6.0.5\nServer version: 6.0.5",
+        "kernel": "7.0.0-38-generic",
+        "qemu": "QEMU emulator version 10.2.1 (Debian 1:10.2.1+ds-1ubuntu3.3)"
+      },
+      "pool": "ONLINE",
+      "vms": [
+        {
+          "id": "70b44aaf-6c10-4b27-9d21-8255be2a7d93",
+          "status": "Running",
+          "pid": 1348,
+          "boot_autostart": "false",
+          "memory": "2GiB"
+        }
+      ],
+      "swap": {
+        "pswpin": 0,
+        "pswpout": 0
+      }
+    },
+    "growth-unissued": {
+      "memory": {
+        "revision": 0,
+        "reviewed_bytes": 3221225472,
+        "safe_bytes": 33285996544,
+        "physical_bytes": 37757984768,
+        "minimum_system_bytes": 4294967296,
+        "boot_id": "8a9cf45d-862d-42d5-b05f-67ae0dcb456a",
+        "observed_at": 1793298525,
+        "arc_ready": true,
+        "error": null
+      },
+      "grant": {
+        "memory_bytes": 3221225472,
+        "cpu_cores": 1,
+        "disk_bytes": 25769803776
+      }
+    },
+    "growth-admission-blocked": {
+      "accepted": false,
+      "message": "Error: Memory quota exceeded\n"
+    },
+    "coordinated-arc": {
+      "before": {
+        "size": 15578296,
+        "c_min": 1179937024,
+        "c_max": 2147483648
+      },
+      "after": {
+        "size": 190527624,
+        "c_min": 536870912,
+        "c_max": 1073741824
+      },
+      "parameters": {
+        "zfs_arc_max": "1073741824",
+        "zfs_arc_min": "536870912"
+      }
+    },
+    "growth-adopted": {
+      "revision": 1,
+      "reviewed_bytes": 33285996544,
+      "safe_bytes": 33285996544,
+      "physical_bytes": 37757984768,
+      "minimum_system_bytes": 4294967296,
+      "boot_id": "8a9cf45d-862d-42d5-b05f-67ae0dcb456a",
+      "observed_at": 1793299547,
+      "arc_ready": true,
+      "error": null
+    },
+    "held-before-shrink": {
+      "memory": 6442450944,
+      "probe": {
+        "boot_id": "8a9cf45d-862d-42d5-b05f-67ae0dcb456a",
+        "memory": 37757984768,
+        "arc": {
+          "size": 191691264,
+          "c_min": 536870912,
+          "c_max": 1073741824
+        },
+        "arc_parameters": {
+          "zfs_arc_max": "1073741824",
+          "zfs_arc_min": "536870912"
+        },
+        "versions": {
+          "zfs": "2.4.1-1ubuntu5.1",
+          "incus": "Client version: 6.0.5\nServer version: 6.0.5",
+          "kernel": "7.0.0-38-generic",
+          "qemu": "QEMU emulator version 10.2.1 (Debian 1:10.2.1+ds-1ubuntu3.3)"
+        },
+        "pool": "ONLINE",
+        "vms": [
+          {
+            "id": "70b44aaf-6c10-4b27-9d21-8255be2a7d93",
+            "status": "Running",
+            "pid": 15140,
+            "boot_autostart": "false",
+            "memory": "6GiB"
+          }
+        ],
+        "swap": {
+          "pswpin": 0,
+          "pswpout": 0
+        }
+      }
+    },
+    "management-with-incus-unhealthy": {
+      "seconds": 8.86,
+      "memory": {
+        "revision": 1,
+        "reviewed_bytes": 33285996544,
+        "safe_bytes": 3221225472,
+        "physical_bytes": 8251072512,
+        "minimum_system_bytes": 4294967296,
+        "boot_id": "b44e91e1-9546-45af-a38d-fc303669f0d8",
+        "observed_at": 1793300170,
+        "arc_ready": true,
+        "error": null
+      },
+      "capacity": {
+        "memory_bytes": 3221225472,
+        "cpu_cores": 1,
+        "disk_bytes": 25769803776
+      },
+      "committed": {
+        "memory_bytes": 6442450944,
+        "cpu_cores": 1,
+        "disk_bytes": 12884901888
+      },
+      "warnings": [
+        "Incus inventory unavailable: Command '('incus', 'query', '-X', 'GET', '/1.0/instances?recursion=1')' timed out after 8 seconds"
+      ]
+    },
+    "shrink-kept-claims-blocked-autostart": {
+      "memory": {
+        "revision": 1,
+        "reviewed_bytes": 33285996544,
+        "safe_bytes": 3221225472,
+        "physical_bytes": 8251072512,
+        "minimum_system_bytes": 4294967296,
+        "boot_id": "b44e91e1-9546-45af-a38d-fc303669f0d8",
+        "observed_at": 1793300259,
+        "arc_ready": true,
+        "error": null
+      },
+      "grant": {
+        "memory_bytes": 8589934592,
+        "cpu_cores": 1,
+        "disk_bytes": 25769803776
+      },
+      "held": {
+        "memory_bytes": 6442450944,
+        "cpu_cores": 1,
+        "disk_bytes": 12884901888
+      },
+      "probe": {
+        "boot_id": "b44e91e1-9546-45af-a38d-fc303669f0d8",
+        "memory": 8251072512,
+        "arc": {
+          "size": 4355656,
+          "c_min": 536870912,
+          "c_max": 1073741824
+        },
+        "arc_parameters": {
+          "zfs_arc_max": "1073741824",
+          "zfs_arc_min": "536870912"
+        },
+        "versions": {
+          "zfs": "2.4.1-1ubuntu5.1",
+          "incus": "Client version: 6.0.5\nServer version: 6.0.5",
+          "kernel": "7.0.0-38-generic",
+          "qemu": "QEMU emulator version 10.2.1 (Debian 1:10.2.1+ds-1ubuntu3.3)"
+        },
+        "pool": "ONLINE",
+        "vms": [
+          {
+            "id": "70b44aaf-6c10-4b27-9d21-8255be2a7d93",
+            "status": "Stopped",
+            "pid": 0,
+            "boot_autostart": "false",
+            "memory": "6GiB"
+          }
+        ],
+        "swap": {
+          "pswpin": 0,
+          "pswpout": 0
+        }
+      }
+    },
+    "unsafe-edit-blocked-before-intent": {
+      "accepted": false,
+      "message": "Error: Held memory exceeds current capacity. Stop this VM first, then edit it while stopped\n"
+    },
+    "released-after-shrink": true,
+    "stopped-resize-after-shrink": true,
+    "promise-deficit-blocks-new-claim": {
+      "accepted": false,
+      "message": "Error: Memory promises exceed physical capacity; reduce grants or review capacity before allocating more\n"
+    },
+    "recovered-data": {
+      "proof_preserved": true
+    },
+    "shrink-recovered": {
+      "boot_id": "b44e91e1-9546-45af-a38d-fc303669f0d8",
+      "memory": 8251072512,
+      "arc": {
+        "size": 172608232,
+        "c_min": 536870912,
+        "c_max": 1073741824
+      },
+      "arc_parameters": {
+        "zfs_arc_max": "1073741824",
+        "zfs_arc_min": "536870912"
+      },
+      "versions": {
+        "zfs": "2.4.1-1ubuntu5.1",
+        "incus": "Client version: 6.0.5\nServer version: 6.0.5",
+        "kernel": "7.0.0-38-generic",
+        "qemu": "QEMU emulator version 10.2.1 (Debian 1:10.2.1+ds-1ubuntu3.3)"
+      },
+      "pool": "ONLINE",
+      "vms": [
+        {
+          "id": "70b44aaf-6c10-4b27-9d21-8255be2a7d93",
+          "status": "Running",
+          "pid": 3610,
+          "boot_autostart": "false",
+          "memory": "2GiB"
+        }
+      ],
+      "swap": {
+        "pswpin": 0,
+        "pswpout": 0
+      }
+    }
+  },
+  "anomalies": [
+    "Fresh installer inherited restrictive umask; fixed explicit parent directory permissions and endpoint readiness check.",
+    "Ubuntu 26.04 image already included ZFS modules; removed nonexistent linux-modules-extra package assumption.",
+    "Cloud-init seed disks required mkisofs; genisoimage added and installer validates it.",
+    "First ARC change exposed absent-vs-null initial journal state; normalized and regression tested.",
+    "Read-only probe raced shutdown state; now records unavailable observation instead of failing JSON parsing.",
+    "Incus exited with SIGKILL on shrink boot; no kernel OOM event and inner autostart false. Explicit Incus restart recovered it. Cause not established.",
+    "Removed remaining controller After=incus dependency and bounded read-only Incus calls; management returned in 8.86s with claim/deficit intact while Incus was unhealthy."
+  ],
+  "limitations": [
+    "Nested test does not prove physical-host density, GPU/IOMMU behavior or hardware power-loss durability.",
+    "ARC model covers OpenZFS 2.4.1 tuning boundaries and explicit events, not cache performance or full filesystem semantics."
+  ],
+  "cleanup": {
+    "worker_deleted": true,
+    "owned_test_volume_deleted": true,
+    "original_outer_grant_restored": true,
+    "no_disposable_compute_or_network_leases": true
+  }
+}

@@ -1,0 +1,70 @@
+{
+  "date": "2026-10-28",
+  "provider_usage_management": "T3",
+  "t3_fallback_copy": "Linked to T3",
+  "usage_gui_removed": true,
+  "usage_polling_removed": true,
+  "provider_identity_retained": true,
+  "rust_tests_passed": 84,
+  "desktop_tests_passed": 33,
+  "screenshot_comparisons_passed": 73,
+  "python_linux": {
+    "passed": 55,
+    "skipped": 0
+  },
+  "python_macos": {
+    "total": 55,
+    "skipped": 2
+  },
+  "checks": [
+    "workspace Clippy all-targets -D warnings",
+    "cargo fmt --check",
+    "git diff --check"
+  ],
+  "directly_inspected": [
+    "workspace-accounts",
+    "workspace-accounts-small"
+  ],
+  "native_app_rebuilt_reopened": true,
+  "live_controller": {
+    "provider_identity_preserved": true,
+    "usage_fields_absent": true,
+    "t3_linked": true,
+    "t3_running": true
+  },
+  "deployment": {
+    "controller_active": true,
+    "guest_pids_and_states_preserved": true,
+    "t3_service_pid_preserved": true,
+    "endpoint_identity_preserved": true,
+    "backup_directory": "/var/lib/homecloud/test-runs/identity-cleanup/1793215769",
+    "sha256": {
+      "/usr/local/bin/homecloudd": "9b634b08c57ffa1413eb9dc06710ddf4476391f8915ef66c03f7900c845381e3",
+      "/usr/local/bin/homecloud": "1df043b26f48895d0e8451c98e25ae9a069918a49c6b5b6e6ebd6af49dd07cca",
+      "/usr/local/libexec/homecloud/managed_apps.py": "18aca53084b1a1ef35579d1769fe6899f8b6169bfa67144c560c4779e2dddd8c",
+      "/usr/local/libexec/homecloud/managed-app.py": "55b571937a1e56796f7f51feb446b518ae8f7357e0e4175458c2c35ca3429d9b",
+      "/usr/local/libexec/homecloud/codex_auth.py": "58da6a4dce683716347ad158abff631bcef513bc478b98e8360d52a5eb0b8c43",
+      "/usr/local/libexec/homecloud/claude_auth.py": "15aa74d6c3189f5bdb5b408aff21e0109f2785ae7edcb95d53ec6fabbc61e307",
+      "/usr/local/libexec/homecloud/account_metadata.py": "c145b6eeb966f3e3665aaf66fd304bfde67613625c605606c77729f4d4a426c5"
+    }
+  },
+  "source_sha256": {
+    "crates/core/src/apps.rs": "28b2016506f080ae60240396a0527030c7d2cbe7fe21e50f834170824573cd90",
+    "crates/daemon/src/lib.rs": "dbca234d86be6deb74f15cc0f515f20c63df004e29183e0b6e94e470cfe8b7aa",
+    "crates/desktop/src/main.rs": "4c3ba69c66713d8284a2d732c7b494663fb0e06e98e513e8606b4e55a904a680",
+    "crates/desktop/src/ui/applications.rs": "4cf72d1e37b312cf2be2967edc24bbc6c7fb2efc3c585346f7fd808d6f848948",
+    "crates/desktop/src/visual_tests.rs": "445785b630482d731754fd318b1e8c2977f9d7e01370c68e2c0a2115456421e0",
+    "guest/account_metadata.py": "c145b6eeb966f3e3665aaf66fd304bfde67613625c605606c77729f4d4a426c5",
+    "guest/codex_auth.py": "58da6a4dce683716347ad158abff631bcef513bc478b98e8360d52a5eb0b8c43",
+    "guest/managed-app.py": "55b571937a1e56796f7f51feb446b518ae8f7357e0e4175458c2c35ca3429d9b",
+    "crates/host/tests/test_account_metadata.py": "d265229509994dd078803ef8708012f3320c3096822ebe11ee3e4d2441564707",
+    "crates/host/tests/test_codex_auth.py": "8cba0583f7c161f8b089d5e1738d4c089e6cd86644823f0259fd8ee74f7837b2"
+  },
+  "guest_restarts": 0,
+  "inference_requests": 0,
+  "account_changes": 0,
+  "pending": [
+    "physical force-stop/GPU-reset proof",
+    "attributable hotspot repeat"
+  ]
+}

@@ -1,6 +1,9 @@
 use anyhow::{Context, Result, ensure};
 use homecloud_core::*;
-use iroh::{Endpoint, EndpointAddr, SecretKey, endpoint::presets};
+use iroh::{
+    Endpoint, EndpointAddr, SecretKey,
+    endpoint::{Connection, presets},
+};
 use serde::{Deserialize, Serialize};
 use std::{
     path::{Path, PathBuf},
@@ -104,9 +107,52 @@ pub async fn read_frame<R: AsyncRead + Unpin, T: serde::de::DeserializeOwned>(
     Ok(serde_json::from_slice(&data)?)
 }
 
+/// Possession of the enrolled device key, bound to this QUIC/TLS connection.
+/// A process uses its own transport endpoint; GUI and SSH helpers can coexist
+/// without replacing one another's registration on an Iroh relay.
+#[derive(Clone, Serialize, Deserialize)]
+pub struct DeviceProof {
+    pub device: iroh::PublicKey,
+    pub signature: iroh::Signature,
+}
+impl DeviceProof {
+    fn message(connection: &Connection) -> Result<Vec<u8>> {
+        let mut binding = [0u8; 32];
+        connection
+            .export_keying_material(
+                &mut binding,
+                b"EXPORTER-homecloud-device-auth-v1",
+                connection.alpn(),
+            )
+            .map_err(|_| anyhow::anyhow!("Cannot bind device authentication to TLS"))?;
+        let mut message = b"homecloud/device-proof/v1\0".to_vec();
+        message.extend_from_slice(&binding);
+        Ok(message)
+    }
+    pub fn sign(connection: &Connection, device: &SecretKey) -> Result<Self> {
+        Ok(Self {
+            device: device.public(),
+            signature: device.sign(&Self::message(connection)?),
+        })
+    }
+    pub fn verify(&self, connection: &Connection) -> Result<String> {
+        self.device
+            .verify(&Self::message(connection)?, &self.signature)
+            .context("Invalid device proof")?;
+        Ok(self.device.to_string())
+    }
+}
+
+#[derive(Clone, Copy, Default)]
+pub struct ConnectionOptions {
+    /// Diagnostic fallback for networks whose UDP paths are unreliable.
+    pub relay_only: bool,
+}
+
 #[derive(Clone)]
 pub struct Client {
     endpoint: Endpoint,
+    device: SecretKey,
     server: EndpointAddr,
 }
 
@@ -118,6 +164,21 @@ pub fn export_ssh(
     vm: &Vm,
     executable: &Path,
     install: bool,
+) -> Result<(PathBuf, String)> {
+    export_ssh_with_options(
+        profile,
+        vm,
+        executable,
+        install,
+        ConnectionOptions::default(),
+    )
+}
+pub fn export_ssh_with_options(
+    profile: &Path,
+    vm: &Vm,
+    executable: &Path,
+    install: bool,
+    options: ConnectionOptions,
 ) -> Result<(PathBuf, String)> {
     ensure!(
         vm.ssh_host_key.is_some(),
@@ -161,11 +222,16 @@ pub fn export_ssh(
         ))
     };
     let contents = format!(
-        "Host {alias}\n    HostName {}\n    User dev\n    IdentitiesOnly yes\n    StrictHostKeyChecking yes\n    HostKeyAlias {trust}\n    UserKnownHostsFile {}\n    ProxyCommand {} --profile {} ssh-proxy {}\n",
+        "Host {alias}\n    HostName {}\n    User dev\n    IdentitiesOnly yes\n    StrictHostKeyChecking yes\n    HostKeyAlias {trust}\n    UserKnownHostsFile {}\n    ProxyCommand {} --profile {} {}ssh-proxy {}\n",
         vm.address(),
         config_quote(&known)?,
         shell_quote(executable.to_str().context("Executable path")?),
         shell_quote(profile.to_str().context("Profile path")?),
+        if options.relay_only {
+            "--relay-only "
+        } else {
+            ""
+        },
         vm.id
     );
     private_write(&config, contents.as_bytes())?;
@@ -189,22 +255,30 @@ pub fn export_ssh(
 impl std::fmt::Debug for Client {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("Client")
-            .field("device", &self.endpoint.id())
+            .field("device", &self.device.public())
             .field("server", &self.server.id)
             .finish()
     }
 }
 impl Client {
     pub async fn from_profile(profile: Profile) -> Result<Arc<Self>> {
+        Self::with_options(profile, ConnectionOptions::default()).await
+    }
+    pub async fn with_options(profile: Profile, options: ConnectionOptions) -> Result<Arc<Self>> {
         let bytes: [u8; 32] = hex::decode(&profile.device_secret)?
             .try_into()
             .map_err(|_| anyhow::anyhow!("Invalid device credential"))?;
-        let endpoint = Endpoint::builder(presets::N0)
-            .secret_key(SecretKey::from_bytes(&bytes))
-            .bind()
-            .await?;
+        let device = SecretKey::from_bytes(&bytes);
+        let builder = Endpoint::builder(presets::N0);
+        let builder = if options.relay_only {
+            builder.clear_ip_transports()
+        } else {
+            builder
+        };
+        let endpoint = builder.bind().await?;
         Ok(Arc::new(Self {
             endpoint,
+            device,
             server: profile.server,
         }))
     }
@@ -215,6 +289,14 @@ impl Client {
         path: &Path,
         server: EndpointAddr,
         token: String,
+    ) -> Result<(Arc<Self>, User)> {
+        Self::enroll_with_options(path, server, token, ConnectionOptions::default()).await
+    }
+    pub async fn enroll_with_options(
+        path: &Path,
+        server: EndpointAddr,
+        token: String,
+        options: ConnectionOptions,
     ) -> Result<(Arc<Self>, User)> {
         let profile = if path.exists() {
             let old = Profile::load(path)?;
@@ -232,29 +314,48 @@ impl Client {
         // Persist possession before redeeming a single-use token. Lost replies
         // can reconnect with the same device instead of stranding enrollment.
         profile.save(path)?;
-        let client = Self::from_profile(profile).await?;
+        let client = Self::with_options(profile, options).await?;
         match client.rpc(Request::Enroll { token }).await? {
             Response::Enrolled(user) => Ok((client, user)),
             other => anyhow::bail!("Unexpected enrollment response: {other:?}"),
         }
     }
     pub fn device_id(&self) -> String {
-        self.endpoint.id().to_string()
+        self.device.public().to_string()
+    }
+    pub async fn close(&self) {
+        self.endpoint.close().await;
+    }
+    pub fn transport_id(&self) -> iroh::EndpointId {
+        self.endpoint.id()
+    }
+    pub fn server_id(&self) -> String {
+        self.server.id.to_string()
     }
     pub async fn rpc(&self, request: Request) -> Result<Response> {
+        match self.rpc_response(request).await? {
+            Response::Error { message } | Response::CreateRejected { message, .. } => {
+                anyhow::bail!("{message}")
+            }
+            response => Ok(response),
+        }
+    }
+    /// Keep an authenticated server rejection distinct from transport uncertainty.
+    pub async fn rpc_response(&self, request: Request) -> Result<Response> {
         tokio::time::timeout(Duration::from_secs(45), async {
             let conn = self
                 .endpoint
                 .connect(self.server.clone(), CONTROL_ALPN)
                 .await?;
+            tracing::debug!(transport=%self.endpoint.id(), paths=?conn.paths(), "Control connection established");
             let (mut send, mut recv) = conn.open_bi().await?;
+            write_frame(&mut send, &DeviceProof::sign(&conn, &self.device)?).await?;
             write_frame(&mut send, &request).await?;
             send.finish()?;
-            let response: Response = read_frame(&mut recv).await?;
+            let response: Response = read_frame(&mut recv).await.inspect_err(|error| {
+                tracing::debug!(%error, paths=?conn.paths(), close_reason=?conn.close_reason(), "Control response failed");
+            })?;
             conn.close(0u32.into(), b"complete");
-            if let Response::Error { message } = response {
-                anyhow::bail!("{message}");
-            }
             Ok(response)
         })
         .await
@@ -269,14 +370,21 @@ impl Client {
     /// Binary-clean OpenSSH ProxyCommand: protocol metadata is consumed here,
     /// and only guest SSH bytes reach stdout.
     pub async fn ssh_stdio(&self, vm_id: uuid::Uuid) -> Result<()> {
-        let conn = self.endpoint.connect(self.server.clone(), SSH_ALPN).await?;
-        let (mut send, mut recv) = conn.open_bi().await?;
-        write_frame(&mut send, &Request::Ssh { vm_id }).await?;
-        match read_frame::<_, Response>(&mut recv).await? {
-            Response::SshReady => {}
-            Response::Error { message } => anyhow::bail!("{message}"),
-            _ => anyhow::bail!("Invalid SSH gateway response"),
-        }
+        let (conn, mut send, mut recv) = tokio::time::timeout(Duration::from_secs(45), async {
+            let conn = self.endpoint.connect(self.server.clone(), SSH_ALPN).await?;
+            tracing::debug!(transport=%self.endpoint.id(), paths=?conn.paths(), "SSH connection established");
+            let (mut send, mut recv) = conn.open_bi().await?;
+            write_frame(&mut send, &DeviceProof::sign(&conn, &self.device)?).await?;
+            write_frame(&mut send, &Request::Ssh { vm_id }).await?;
+            match read_frame::<_, Response>(&mut recv).await? {
+                Response::SshReady => {}
+                Response::Error { message } => anyhow::bail!("{message}"),
+                _ => anyhow::bail!("Invalid SSH gateway response"),
+            }
+            anyhow::Ok((conn, send, recv))
+        })
+        .await
+        .context("SSH gateway authorization timed out")??;
         let upload = async {
             tokio::io::copy(&mut tokio::io::stdin(), &mut send).await?;
             send.finish()?;

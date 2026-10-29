@@ -1,0 +1,94 @@
+{
+  "date": "2026-10-28",
+  "rust_tests_passed": 84,
+  "desktop_tests_passed": 33,
+  "native_screenshot_comparisons_passed": 73,
+  "python_tests_linux": {
+    "passed": 57,
+    "skipped": 0
+  },
+  "python_tests_macos": {
+    "total": 57,
+    "skipped": 2
+  },
+  "clippy": "workspace/all-targets -D warnings passed",
+  "format_and_diff": "passed",
+  "source_sha256": {
+    "crates/core/src/apps.rs": "a3434a96d5760d1aa164e650244bbbd9b73642889447680e74963aac7ec439b0",
+    "crates/daemon/src/lib.rs": "8cc269578adb0c5f03787a5b54a4f30caa24a107da4587101dd5eb61ede9132c",
+    "crates/desktop/src/main.rs": "642f59b62c6b902e021a64cb8fef3a654b4f22e65e0f53a8cc6ae25a041639de",
+    "crates/desktop/src/ui.rs": "d9818072e34e085b69a19561491f8fc33856025715c388c7248919155050cbde",
+    "crates/desktop/src/ui/workspace.rs": "39d986a13e8d3c91b413c033fb89ea45fcf25405c46dba7c0e715a4b4e2cadc0",
+    "crates/desktop/src/ui/workspaces.rs": "e467f7303033f2a39305874d715f43824717d03fcc7edb43a18b2007b4db8dfc",
+    "crates/desktop/src/ui/lifecycle.rs": "06e5e61082a86ed6b068a8f12b1a6076e4b6b716e92388b2e0264a5f7257453a",
+    "crates/desktop/src/ui/applications.rs": "2c578e47cdb72ab0b7b03f68c6eb6b3016f364d16f8802f312742ad558dd923e",
+    "crates/desktop/src/visual_tests.rs": "b2d158962b1d6a2cb9364d7a14e2bb0274f679abe90e17ff51c8e950f89e372a",
+    "guest/managed-app.py": "28632a9973fe40a7e6a74535d0a8ae5a0fbc24d73fd32fa7993582b4bfbe5262",
+    "guest/codex_auth.py": "5e5e7f40258d8e56c5ae8a7845ff689770ffb4e3f318a40e08c61e0e725636ca",
+    "guest/claude_auth.py": "15aa74d6c3189f5bdb5b408aff21e0109f2785ae7edcb95d53ec6fabbc61e307",
+    "crates/host/tests/test_applications.py": "b9b4ad047cea64ba581d5fc14e851eb94d3b01d94ddec2bad7e693afb3656697",
+    "crates/host/tests/test_codex_auth.py": "ea39e6e8e97bb97fc8f0b2023f6d7b41fd50f6abf2c8bc6d9cc4babf6a67c551",
+    "crates/host/tests/test_claude_auth.py": "d3583c308ca9f1f818e83fda3076d155bd20bbdf007274790d35006d1b0a10b1",
+    "crates/host/tests/test_account_metadata.py": "db9f70539b1561eb244fe5ea1c5c9dd55fe060e4c584397c0e4c3e958bedf7f5",
+    "guest/account_metadata.py": "ed8243f0b78af9de7a8a14850dbc5cce5f3a6f651abd7193638b9b4f4deaeecb",
+    "crates/host/managed_apps.py": "18aca53084b1a1ef35579d1769fe6899f8b6169bfa67144c560c4779e2dddd8c",
+    "scripts/install_host.py": "bce125e5a1d366bc277f1ccaa72821b40ae1aa74ef5463cc69e17ba8a65a466a"
+  },
+  "capabilities": {
+    "t3_version": "0.1.2",
+    "t3_email_available": false,
+    "claude_version": "2.1.308",
+    "claude_email_plan_available": true,
+    "claude_machine_readable_usage_established": false,
+    "codex_version": "0.165.0",
+    "codex_email_plan_available": true,
+    "codex_usage_windows_observed": 1
+  },
+  "live_controller_observation": {
+    "metadata_persisted": true,
+    "codex_email_available": true,
+    "claude_email_available": true,
+    "t3_email_available": false,
+    "codex_usage_window_count": 1
+  },
+  "account_privacy": "daemon snapshot strips accounts for everyone except VM owner; regression test passed",
+  "usage_cache_seconds": 60,
+  "account_cache_seconds": 10,
+  "directly_inspected_synthetic_screenshots": [
+    "workspace-name-hover",
+    "workspace-accounts",
+    "workspace-accounts-small",
+    "stop-confirmation-small",
+    "workspace-settings-lower-small",
+    "t3-claude-waiting-small"
+  ],
+  "deployment": {
+    "controller_active": true,
+    "guest_pids_and_states_preserved": true,
+    "t3_service_pid_preserved": true,
+    "endpoint_identity_preserved": true,
+    "backup_directory": "/var/lib/homecloud/test-runs/workspace-accounts/1793214934",
+    "sha256": {
+      "/usr/local/bin/homecloudd": "621661a7881d82638a5a14261dd48ba9d08176589c57ce81b2c371e6dc6d11e0",
+      "/usr/local/bin/homecloud": "559a588eb1deb06c84fba814a420f9acc8d011e3e8741ee1e6e242d9ba05690e",
+      "/usr/local/libexec/homecloud/managed_apps.py": "18aca53084b1a1ef35579d1769fe6899f8b6169bfa67144c560c4779e2dddd8c",
+      "/usr/local/libexec/homecloud/managed-app.py": "28632a9973fe40a7e6a74535d0a8ae5a0fbc24d73fd32fa7993582b4bfbe5262",
+      "/usr/local/libexec/homecloud/codex_auth.py": "5e5e7f40258d8e56c5ae8a7845ff689770ffb4e3f318a40e08c61e0e725636ca",
+      "/usr/local/libexec/homecloud/claude_auth.py": "15aa74d6c3189f5bdb5b408aff21e0109f2785ae7edcb95d53ec6fabbc61e307",
+      "/usr/local/libexec/homecloud/account_metadata.py": "ed8243f0b78af9de7a8a14850dbc5cce5f3a6f651abd7193638b9b4f4deaeecb"
+    }
+  },
+  "native_app": {
+    "rebuilt_reopened": true,
+    "actual_workspaces_inspected": true,
+    "coordinate_navigation_limitation": "noWindowsAvailable; interactions covered by iced Simulator"
+  },
+  "guest_restarts": 0,
+  "provider_sign_ins": 0,
+  "inference_requests": 0,
+  "pending": [
+    "physical force-stop and GPU reset proof",
+    "attributable phone-hotspot repeat",
+    "native VoiceOver integration"
+  ]
+}

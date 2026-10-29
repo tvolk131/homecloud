@@ -1,10 +1,23 @@
+mod setup;
+pub use setup::*;
+mod apps;
+mod edit;
+mod memory_health;
+mod reserves;
+pub use memory_health::*;
+mod vm;
+pub use apps::*;
+pub use edit::*;
+pub use reserves::*;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
+pub use vm::*;
 
-pub const CONTROL_ALPN: &[u8] = b"homecloud/control/1";
-pub const SSH_ALPN: &[u8] = b"homecloud/ssh/1";
+pub const CONTROL_ALPN: &[u8] = b"homecloud/control/2";
+pub const SSH_ALPN: &[u8] = b"homecloud/ssh/2";
 pub const MAX_FRAME: usize = 1024 * 1024;
 pub const GIB: u64 = 1024 * 1024 * 1024;
+pub const MANAGED_HOST_DISK_GIB: u64 = 32;
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Resources {
@@ -35,6 +48,13 @@ impl Resources {
             memory_bytes: self.memory_bytes.max(other.memory_bytes),
             cpu_cores: self.cpu_cores.max(other.cpu_cores),
             disk_bytes: self.disk_bytes.max(other.disk_bytes),
+        }
+    }
+    pub fn disk_only(self) -> Self {
+        Self {
+            memory_bytes: 0,
+            cpu_cores: 0,
+            disk_bytes: self.disk_bytes,
         }
     }
     /// An over-quota allocation may stay unchanged or shrink in each dimension.
@@ -97,6 +117,8 @@ pub enum Lifecycle {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct VmSpec {
+    #[serde(default)]
+    pub applications: Vec<ApplicationKind>,
     pub name: String,
     pub memory_gib: u64,
     pub cores: u64,
@@ -104,6 +126,16 @@ pub struct VmSpec {
     pub ssh_public_key: String,
 }
 impl VmSpec {
+    pub fn managed_host(&self) -> bool {
+        self.applications.contains(&ApplicationKind::HomecloudHost)
+    }
+    pub fn application_disk_gib(&self) -> u64 {
+        if self.managed_host() {
+            MANAGED_HOST_DISK_GIB
+        } else {
+            0
+        }
+    }
     pub fn resources(&self, overhead_gib: u64) -> Result<Resources, String> {
         if !(1..=1024).contains(&self.memory_gib)
             || !(1..=256).contains(&self.cores)
@@ -117,13 +149,22 @@ impl VmSpec {
         {
             return Err("VM name must contain 1–80 characters".into());
         }
+        if self.applications.len() > 1 {
+            return Err("Only one instance of each supported application is allowed".into());
+        }
+        if self.managed_host() && (self.memory_gib < 8 || self.cores < 2 || self.disk_gib < 32) {
+            return Err(
+                "Homecloud hosts need at least 8 GiB RAM, two cores, and a 32 GiB root disk".into(),
+            );
+        }
         validate_ssh_key(&self.ssh_public_key)?;
         Ok(Resources {
             memory_bytes: self.memory_gib * GIB,
             cpu_cores: self.cores,
             disk_bytes: self
                 .disk_gib
-                .checked_add(overhead_gib)
+                .checked_add(self.application_disk_gib())
+                .and_then(|x| x.checked_add(overhead_gib))
                 .and_then(|x| x.checked_mul(GIB))
                 .ok_or("Disk overflow")?,
         })
@@ -147,33 +188,9 @@ pub fn validate_ssh_key(key: &str) -> Result<(), String> {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Vm {
-    pub id: Uuid,
-    pub owner: Uuid,
-    pub spec: VmSpec,
-    pub resources: Resources,
-    pub cpu_ids: Vec<u32>,
-    pub network_slot: u16,
-    pub desired: Lifecycle,
-    pub observed: String,
-    pub ssh_host_key: Option<String>,
-    pub gpu: Option<String>,
-    pub error: Option<String>,
-}
-impl Vm {
-    pub fn incus_name(&self) -> String {
-        format!("hc-{}", self.id.simple())
-    }
-    pub fn bridge(&self) -> String {
-        format!("hcvm{}", self.network_slot)
-    }
-    pub fn address(&self) -> String {
-        format!("10.78.{}.10", self.network_slot)
-    }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Operation {
+    #[serde(default)]
+    pub progress: Option<VmSetupProgress>,
     pub id: Uuid,
     pub vm_id: Uuid,
     pub actor: Uuid,
@@ -192,6 +209,20 @@ pub enum Mutation {
         vm_id: Uuid,
         desired: Lifecycle,
     },
+    Start {
+        vm_id: Uuid,
+        /// Explicit consent for this boot; preserve the remembered preference.
+        without_gpu: bool,
+    },
+    /// Explicit, user-confirmed power-off. Never inferred from a timeout.
+    ForceStop {
+        vm_id: Uuid,
+    },
+    Edit {
+        vm_id: Uuid,
+        changes: WorkspaceEdit,
+        restart_confirmed: bool,
+    },
     Resize {
         vm_id: Uuid,
         memory_gib: u64,
@@ -202,6 +233,26 @@ pub enum Mutation {
         vm_id: Uuid,
         pci: Option<String>,
     },
+}
+impl Mutation {
+    pub fn stops_vm(&self) -> bool {
+        matches!(
+            self,
+            Self::ForceStop { .. }
+                | Self::State {
+                    desired: Lifecycle::Stopped,
+                    ..
+                }
+        )
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, thiserror::Error)]
+#[error("GPU {pci} is unavailable: {reason}")]
+pub struct GpuUnavailable {
+    pub vm_id: Uuid,
+    pub pci: String,
+    pub reason: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -231,6 +282,10 @@ pub struct HostInventory {
     pub memory_bytes: u64,
     pub pool: String,
     pub pool_available_bytes: u64,
+    /// Root-owned host policy; omitted by older adapters. This is an operating
+    /// free-space floor, not a dataset reservation or total pool capacity.
+    #[serde(default)]
+    pub minimum_pool_available_bytes: Option<u64>,
     pub pool_health: String,
     pub iommu: Option<Readiness>,
     pub gpus: Vec<Gpu>,
@@ -239,6 +294,19 @@ pub struct HostInventory {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Snapshot {
+    /// Scoped condition for every user; aggregate details are admin-only.
+    #[serde(default)]
+    pub memory_health: Option<HostMemoryHealth>,
+    /// Admin-only reserve configuration and recovery state.
+    #[serde(default)]
+    pub host_reserves: Option<HostReserveView>,
+    /// Admission overhead per VM, separate from guest-visible disk capacity.
+    #[serde(default = "legacy_disk_overhead_gib")]
+    pub disk_overhead_gib_per_vm: u64,
+    #[serde(default)]
+    pub applications: Vec<ManagedApplication>,
+    #[serde(default)]
+    pub application_operations: Vec<ApplicationOperation>,
     pub me: User,
     pub users: Vec<User>,
     pub devices: Vec<Device>,
@@ -246,6 +314,9 @@ pub struct Snapshot {
     pub operations: Vec<Operation>,
     pub inventory: HostInventory,
     pub capacity: Resources,
+}
+fn legacy_disk_overhead_gib() -> u64 {
+    2
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -255,6 +326,43 @@ pub enum Request {
         token: String,
     },
     Snapshot,
+    CancelMemoryCapacity {
+        operation_id: Uuid,
+    },
+    AdoptMemoryCapacity {
+        expected_revision: u64,
+        target_bytes: u64,
+        idempotency_key: Uuid,
+    },
+    SetHostReserves {
+        reserves: Resources,
+        #[serde(default)]
+        arc: Option<ArcMode>,
+        expected_revision: u64,
+        idempotency_key: Uuid,
+    },
+    RetryHostReserves {
+        operation_id: Uuid,
+    },
+    DiscardHostReserves {
+        operation_id: Uuid,
+    },
+    EnsureApplication {
+        vm_id: Uuid,
+        application_kind: ApplicationKind,
+        idempotency_key: Uuid,
+    },
+    StartApplicationSetup {
+        application_id: Uuid,
+        #[serde(default)]
+        setup_action: ApplicationSetupAction,
+        idempotency_key: Uuid,
+    },
+    SubmitApplicationCode {
+        application_id: Uuid,
+        operation_id: Uuid,
+        code: AuthorizationCode,
+    },
     Invite {
         name: String,
         role: Role,
@@ -278,9 +386,17 @@ pub enum Request {
         user_id: Uuid,
         active: bool,
     },
+    /// Recoverable creation with durable acceptance/rejection receipts.
+    CreateVm {
+        idempotency_key: Uuid,
+        spec: VmSpec,
+    },
     Mutate {
         idempotency_key: Uuid,
         mutation: Mutation,
+    },
+    VmDiagnostics {
+        vm_id: Uuid,
     },
     RetryOperation {
         operation_id: Uuid,
@@ -292,7 +408,9 @@ pub enum Request {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "kind", content = "data", rename_all = "snake_case")]
 pub enum Response {
+    VmDiagnostics(VmDiagnostics),
     Enrolled(User),
+    HostReserveOperation(HostReserveOperation),
     Snapshot(Box<Snapshot>),
     Invitation {
         token: String,
@@ -300,6 +418,12 @@ pub enum Response {
         expires_at: u64,
     },
     Operation(Operation),
+    CreateRejected {
+        idempotency_key: Uuid,
+        message: String,
+    },
+    ApplicationOperation(ApplicationOperation),
+    GpuUnavailable(GpuUnavailable),
     SshReady,
     Ok,
     Error {
@@ -317,6 +441,31 @@ impl Response {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn older_inventory_does_not_invent_a_pool_free_space_floor() {
+        let mut inventory = serde_json::to_value(HostInventory::default()).unwrap();
+        inventory
+            .as_object_mut()
+            .unwrap()
+            .remove("minimum_pool_available_bytes");
+        let old: HostInventory = serde_json::from_value(inventory.clone()).unwrap();
+        assert_eq!(old.minimum_pool_available_bytes, None);
+        inventory["minimum_pool_available_bytes"] = serde_json::json!(30 * GIB);
+        let updated: HostInventory = serde_json::from_value(inventory).unwrap();
+        assert_eq!(updated.minimum_pool_available_bytes, Some(30 * GIB));
+    }
+
+    #[test]
+    fn provider_return_codes_are_redacted_in_request_and_host_command_diagnostics() {
+        let code = AuthorizationCode("PRIVATE-AUTHORIZATION-CODE".into());
+        let request = Request::SubmitApplicationCode {
+            application_id: Uuid::nil(),
+            operation_id: Uuid::nil(),
+            code: code.clone(),
+        };
+        assert!(!format!("{request:?}").contains(&code.0));
+        assert!(serde_json::to_string(&request).unwrap().contains(&code.0));
+    }
     #[test]
     fn quota_reductions_are_per_dimension_and_prospective() {
         let before = Resources {

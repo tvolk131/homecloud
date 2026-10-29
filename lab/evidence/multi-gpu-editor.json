@@ -1,0 +1,79 @@
+{
+  "recorded_at": "2026-10-28T21:06:45.483943+00:00",
+  "scope": "Stable Edit workspace form and exclusive multi-GPU sets",
+  "rust": {
+    "workspace_tests_passed": 105,
+    "store_tests": 50,
+    "desktop_tests": 38,
+    "clippy_all_targets_warnings_denied": true
+  },
+  "linux": {
+    "core_store_daemon_tests_passed": 66,
+    "host_helper_tests_passed": 66,
+    "helper_skips": 0
+  },
+  "visual": {
+    "native_iced_screenshot_comparisons": 82,
+    "backend": "tiny-skia",
+    "directly_inspected": [
+      "workspace-edit-rename",
+      "workspace-edit-multi-gpu",
+      "workspace-edit-multi-gpu-small",
+      "workspace-edit-confirmation-small"
+    ],
+    "geometry_stable_across_rename_resize_validation_and_gpu_changes": true
+  },
+  "allocation_proofs": [
+    "independent connections cannot claim overlapping GPU sets",
+    "failed start rolls back every GPU and CPU/RAM claim",
+    "explicit CPU-only fallback retains the complete preference set",
+    "partial edit and database reopen retain old/new union until verified completion",
+    "permission revocation allows removal but blocks additions",
+    "legacy single-device APIs cannot truncate multi-GPU configurations",
+    "idempotency normalizes device order, duplicates and PCI case"
+  ],
+  "adapter_proofs": [
+    "all incoming cards preflighted against observed Incus devices before shutdown",
+    "retained GPUs keep their Incus device keys",
+    "failed preparation does not attach a partial target set",
+    "foreign, inherited, duplicate and unclaimed GPU devices require review",
+    "replay does not reboot an already-converged guest",
+    "every card cleanup completes before CPU release",
+    "observation checks every GPU device"
+  ],
+  "deployment": {
+    "controller_active": true,
+    "resource_claims_preserved": true,
+    "vm_and_application_ids_preserved": true,
+    "gpu_transition_schema_ready": true,
+    "guest_pids_and_states_preserved": true,
+    "t3_service_pid_preserved": true,
+    "endpoint_identity_preserved": true
+  },
+  "installed_sha256": {
+    "/usr/local/bin/homecloudd": "1764277d7a53555c44a2a007b46a65e34412fa27e141502c96f4eae2613eb21d",
+    "/usr/local/bin/homecloud": "2e10e269f210ae5bd568b5c87117ae121d8884bda4d64c086b8e34c7b47072f7",
+    "/usr/local/libexec/homecloud/host_runtime.py": "31097b56dd9c7c724d7cfd120ef33f0c6991494c15e63e616d7c0c9f6d8eabf9"
+  },
+  "live_reversible_edits": {
+    "running_vm_renamed_and_restored": true,
+    "stopped_vm_memory_edited_and_restored": true,
+    "stopped_vm_compute_claims_remained_zero": true,
+    "all_guest_states_and_pids_preserved": true,
+    "t3_service_pid_preserved": true,
+    "ssh_and_vm_identities_preserved": true,
+    "managed_application_ids_preserved": true,
+    "original_specifications_and_claims_restored": true,
+    "running_resource_edits_performed": false,
+    "gpu_changes_performed": false
+  },
+  "mac_app_rebuilt_and_reopened": true,
+  "physical_multi_gpu_passthrough_tested": false,
+  "pending": [
+    "Simultaneous physical passthrough with at least two independently assignable GPUs; lab has one GPU.",
+    "Running combined resize/GPU switch on disposable guest or agreed downtime.",
+    "Real force-stop/GPU-reset acceptance.",
+    "Attributable hotspot repeat."
+  ],
+  "telemetry": "Existing supported NVIDIA driver setup; multi-GPU guests require all selected cards responding. Per-device utilization unavailable until guest and host IDs can be mapped safely."
+}

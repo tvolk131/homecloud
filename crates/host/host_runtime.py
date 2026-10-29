@@ -14,6 +14,13 @@ import sys
 import time
 import uuid
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import managed_apps
+import managed_host
+import memory_capacity
+import resource_reserves
+import instance_runtime
+
 CONFIG = Path('/etc/homecloud/host.json')
 STATE = Path('/var/lib/homecloud/host')
 GIB = 1024**3
@@ -30,7 +37,7 @@ def api(method, path, data=None, missing=False):
     args = ['incus', 'query', '-X', method, path]
     if data is not None: args += ['-d', json.dumps(data)]
     if method != 'GET': args += ['--wait']
-    p = run(*args, check=not missing)
+    p = run(*args, check=not missing, timeout=8 if method == 'GET' else 90)
     if p.returncode:
         if missing and ('not found' in p.stderr.lower() or 'not found' in p.stdout.lower()): return None
         raise RuntimeError(p.stderr or p.stdout)
@@ -60,6 +67,9 @@ def load_config():
     assert re.fullmatch(r'[A-Za-z0-9_-]+', c['pool'])
     assert c['dataset_root'] == c['pool'] + '/homecloud'
     assert re.fullmatch(r'[a-f0-9]{64}', c['image'])
+    assert all(type(slot) is int and 1<=slot<=200 for slot in c.get('excluded_network_slots',[]))
+    if c.get('managed_host_image'):assert re.fullmatch(r'[a-f0-9]{64}',c['managed_host_image'])
+    assert c.get('cloud_init_transport','agent') in ('agent','disk'), 'Review the pinned image cloud-init transport'
     groups = c['cpu_groups']; house = c['housekeeping']
     assert groups and house and all(g for g in groups)
     cpus = house + [x for g in groups for x in g] + [x for v in c.get('legacy_vms', []) for x in v['cpu_ids']]
@@ -67,7 +77,8 @@ def load_config():
     for group in groups:
         siblings = Path(f'/sys/devices/system/cpu/cpu{group[0]}/topology/thread_siblings_list').read_text().strip()
         assert parse_cpus(siblings) == set(group), 'CPU allocation splits a physical core'
-    return c
+    c=memory_capacity.overlay(sys.modules[__name__],c)
+    return resource_reserves.effective(c, resource_reserves.read_record(sys.modules[__name__], c))
 
 
 def parse_cpus(value):
@@ -105,17 +116,27 @@ def owned(vm, missing=False):
 def state(vm): return api('GET', '/1.0/instances/' + vm_name(vm) + '/state')['status'].lower()
 
 
-def stop(vm):
-    if state(vm) == 'stopped': return
-    p = run('incus', 'stop', vm_name(vm), '--timeout', '30', check=False, timeout=60)
-    if p.returncode and state(vm) != 'stopped':
-        raise RuntimeError('conflict: guest did not stop gracefully; local operator review required')
+def stop(vm, force=False):
+    if state(vm) == 'stopped':
+        assert not instance_runtime.live_processes(sys.modules[__name__],vm),'conflict: QEMU is still alive despite a stopped Incus state; claims remain held'
+        instance_runtime.finished(sys.modules[__name__],vm)
+        return
+    args = ['--force'] if force else ['--timeout', '30']
+    try:
+        run('incus', 'stop', vm_name(vm), *args, check=False, timeout=60)
+    except subprocess.TimeoutExpired:
+        # A timed-out client is not proof that the hypervisor has stopped.
+        # Probe before deciding; force is never an automatic fallback.
+        pass
+    if state(vm) != 'stopped' or instance_runtime.live_processes(sys.modules[__name__],vm):
+        raise RuntimeError('conflict: force stop did not complete; resources remain held' if force else 'conflict: graceful shutdown did not complete; keep waiting or explicitly force stop')
+
+
+    instance_runtime.finished(sys.modules[__name__],vm)
 
 
 def start(vm):
-    if state(vm) == 'running': return
-    p = run('incus', 'start', vm_name(vm), check=False, timeout=120)
-    if p.returncode and state(vm) != 'running': raise RuntimeError(p.stderr)
+    return instance_runtime.start(sys.modules[__name__],vm)
 
 
 def exec_guest(vm, *args, check=True, timeout=15):
@@ -172,10 +193,13 @@ def cpu_layout(c):
         except OSError: pass
 
 
-def cpu_policy(c, vms):
+def cpu_policy(c, vms, activate=True):
     house = c['housekeeping']; entries = list(c.get('legacy_vms', []))
     for vm in vms:
         if vm['observed'] == 'deleted': continue
+        if not vm['cpu_ids']:
+            assert vm['desired'] in ('stopped','deleted') and vm['resources']['cpu_cores']==0, 'conflict: running VM has no CPU claim'
+            continue
         uid(vm['id']); uid(vm['owner'])
         assert vm['cpu_ids'] and all(x in [i for g in c['cpu_groups'] for i in g] for x in vm['cpu_ids'])
         assert all(not (set(g) & set(vm['cpu_ids'])) or set(g) <= set(vm['cpu_ids']) for g in c['cpu_groups']), 'conflict: split SMT core'
@@ -199,7 +223,7 @@ def cpu_policy(c, vms):
     changed |= text(Path('/etc/homecloud/cpu-policy.tsv'), ''.join(lines))
     if changed: run('systemctl','daemon-reload')
     for entry in entries:
-        run('systemctl','start',entry['unit'])
+        if activate: run('systemctl','start',entry['unit'])
         run('systemctl','set-property','--runtime',entry['unit'],'AllowedCPUs='+cpulist(house+entry['cpu_ids']))
     save(STATE/'cpu-vms.json',vms)
 
@@ -219,83 +243,186 @@ def cloud_init(key,t3_version=None):
     ssh='UsePAM yes\nPubkeyAuthentication yes\nPasswordAuthentication no\nKbdInteractiveAuthentication no\nPermitRootLogin no\nAuthorizedKeysFile .ssh/authorized_keys\nSubsystem sftp internal-sftp\nInclude /etc/ssh/sshd_config.d/*.conf\n'
     config={'users':[{'name':'dev','groups':['sudo'],'sudo':'ALL=(ALL) NOPASSWD:ALL','shell':'/bin/bash','lock_passwd':True,'ssh_authorized_keys':[key]}],
             'ssh_pwauth':False,'disable_root':True,'ssh_deletekeys':True,'package_update':True,
-            'packages':['openssh-server','curl','git','ca-certificates'],
-            'write_files':[{'path':'/etc/ssh/sshd_config','owner':'root:root','permissions':'0644','content':ssh}],
+            'packages':['openssh-server','curl','git','nano','ca-certificates'],
+            'write_files':[{'path':'/etc/ssh/sshd_config','owner':'root:root','permissions':'0644','content':ssh},
+                           {'path':'/etc/apt/apt.conf.d/80-homecloud-retries','owner':'root:root','permissions':'0644','content':'Acquire::Retries "3";\nAcquire::ForceIPv4 "true";\n'}],
             'runcmd':[['install','-d','-m','0755','/run/sshd'],['sshd','-t'],['systemctl','enable','--now','ssh'],['systemctl','restart','ssh'],['loginctl','enable-linger','dev']]}
     if t3_version:
         assert re.fullmatch(r'[0-9A-Za-z.+-]{1,80}',t3_version),'Invalid pinned T3 version'
-        script=Path(__file__).with_name('setup-t3.sh').read_text()
-        config['write_files'].append({'path':'/usr/local/share/homecloud/setup-t3.sh','owner':'root:root','permissions':'0644','content':script})
-        config['runcmd'].append(['runuser','-l','dev','-c','sh /usr/local/share/homecloud/setup-t3.sh '+t3_version])
+        # T3's prebuilt Linux runtime links libatomic; Ubuntu's minimal cloud
+        # image omits it. Install prerequisites before any user setup runs.
+        config['packages'].append('libatomic1')
     return '#cloud-config\n'+json.dumps(config)
+
+
+def seed_devices(config):
+    # images: */cloud uses agent templates and its own first-boot reboot. An
+    # additional NoCloud disk lets cloud-init race those templates and lose its
+    # network state. A reviewed disk-only image must explicitly opt in instead.
+    transport=config.get('cloud_init_transport','agent')
+    assert transport in ('agent','disk'),'Unknown cloud-init transport'
+    return {} if transport=='agent' else {'cloud-init':{'type':'disk','source':'cloud-init:config'}}
+
+
+def release_cpu_policy(c, vm, vms):
+    unit='homecloud-'+uuid.UUID(vm['id']).hex+'.service'
+    group=Path('/sys/fs/cgroup/homecloud.slice')/unit
+    if group.exists():
+        main=int(run('systemctl','show',unit,'--property=MainPID','--value').stdout.strip() or '0')
+        for procs in group.rglob('cgroup.procs'):
+            assert all(int(pid)==main for pid in procs.read_text().split()), 'conflict: VM host processes remain; CPU claim retained'
+    cpu_policy(c,[v for v in vms if v['id']!=vm['id']])
+    run('systemctl','stop',unit)
+
+
+def vm_gpus(vm, field='gpus'):
+    legacy={'gpus':'gpu','preferred_gpus':'preferred_gpu','pending_gpus':'pending_gpu'}[field]
+    values=vm[field] if field in vm else ([vm[legacy]] if vm.get(legacy) else [])
+    return sorted({address.lower() for address in values})
+
+
+def gpu_claims(vm):
+    return set(vm_gpus(vm)) | set(vm_gpus(vm,'pending_gpus'))
+
+
+def gpu_devices(instance):
+    result={name:dev for name,dev in instance['devices'].items() if dev.get('type')=='gpu'}
+    assert all(re.fullmatch(r'gpu[0-9]+',name) and dev.get('pci') and dev.get('gputype','physical')=='physical' for name,dev in result.items()), 'conflict: unrecognized GPU configuration'
+    return result
+
+
+def checked_gpu_devices(vm, instance):
+    result=gpu_devices(instance)
+    assert len({dev['pci'].lower() for dev in result.values()})==len(result), 'conflict: duplicate GPU assignment'
+    inherited={name:dev for name,dev in instance.get('expanded_devices',instance['devices']).items() if dev.get('type')=='gpu'}
+    assert inherited==result, 'conflict: inherited GPU configuration'
+    assert {dev['pci'].lower() for dev in result.values()} <= gpu_claims(vm), 'conflict: GPU assignment drift'
+    return result
+
+
+def target_gpus(vm, mutation):
+    if vm['desired']!='running':return []
+    if mutation['kind']=='gpu':return [mutation['pci'].lower()] if mutation['pci'] else []
+    if mutation['kind']=='start' and mutation['without_gpu']:return []
+    if mutation['kind']=='edit':
+        selection=mutation['changes']['gpu']
+        if selection['kind']=='set_many':return sorted(set(address.lower() for address in selection['pcis']))
+        if selection['kind']=='set':return [selection['pci'].lower()] if selection['pci'] else []
+    return vm_gpus(vm)
+
+
+def target_gpu(vm, mutation):
+    # Legacy helper for single-device callers; orchestration always uses the set.
+    targets=target_gpus(vm,mutation)
+    return targets[0] if targets else None
+
+
+def matching_gpu_devices(vm,instance):
+    try:devices=checked_gpu_devices(vm,instance)
+    except AssertionError:return False
+    return {dev['pci'].lower() for dev in devices.values()}==set(vm_gpus(vm))
 
 
 def apply(c, vm, vms, users, mutation):
     uid(vm['id']);uid(vm['owner']);spec=vm['spec']
     assert 1<=spec['memory_gib']<=1024 and 1<=spec['cores']<=256 and 10<=spec['disk_gib']<=65536
-    assert 1<=vm['network_slot']<=200
+    assert 1<=vm['network_slot']<=200 and vm['network_slot'] not in c.get('excluded_network_slots',[]),'conflict: VM bridge overlaps a reviewed uplink subnet'
+    assert mutation['kind']!='force_stop' or vm['desired']=='stopped', 'conflict: force stop requires stopped intent'
+    if mutation['kind']=='edit' and vm['desired']=='running':
+        assert mutation['restart_confirmed'], 'conflict: resource edit requires restart confirmation'
+        assert set(target_gpus(vm,mutation)) <= gpu_claims(vm), 'conflict: edit GPUs have not been claimed'
     active=[v for v in vms if v['observed']!='deleted']
-    assert sum(v['resources']['memory_bytes'] for v in active)<=c['capacity']['memory_bytes'], 'conflict: RAM budget exceeded'
     cpu_policy(c,active)
     d=owned(vm,missing=True)
     name=vm_name(vm);slot=vm['network_slot'];bridge=f'hcvm{slot}'
     if vm['desired']=='deleted':
-        old_gpu=d['devices'].get('gpu0',{}).get('pci') if d else None
         if d is not None:
+            checked_gpu_devices(vm,d)
             stop(vm);api('DELETE','/1.0/instances/'+name)
-        if old_gpu:restore_gpu(old_gpu)
+        managed_host.cleanup(sys.modules[__name__],vm)
+        for address in sorted(gpu_claims(vm)):restore_gpu(address)
         restore_released_gpus(c,vms,exclude=vm['id'])
         network=api('GET','/1.0/networks/'+bridge,missing=True)
         if network is not None:
             assert network['config'].get('user.homecloud.id')==vm['id'], 'conflict: foreign network'
             api('DELETE','/1.0/networks/'+bridge)
-        cpu_policy(c,[v for v in active if v['id']!=vm['id']])
-        unit='homecloud-'+uuid.UUID(vm['id']).hex+'.service'
-        run('systemctl','stop',unit,check=False)
-        return {'state':'deleted','ssh_host_key':None}
+        release_cpu_policy(c,vm,active)
+        instance_runtime.finished(sys.modules[__name__],vm)
+        return {'state':'deleted','ssh_host_key':None,'compute_released':True}
     backing(c,users)
+    if vm['desired']=='stopped':
+        assert d is not None, 'conflict: recorded VM is missing; inspect before releasing compute'
+        checked_gpu_devices(vm,d)
+        if mutation['kind']=='force_stop':stop(vm,force=True)
+        else:stop(vm)
+        data={'config':{**d['config'],'boot.autostart':'false'},'devices':{k:v for k,v in d['devices'].items() if k not in gpu_devices(d)},'profiles':[]}
+        if mutation['kind'] in ('resize','edit'):
+            data['config']['limits.memory']=f'{spec["memory_gib"]}GiB'
+            data['devices']['root']['size']=f'{spec["disk_gib"]}GiB'
+        api('PUT','/1.0/instances/'+name,data)
+        for address in sorted(gpu_claims(vm)):restore_gpu(address)
+        release_cpu_policy(c,vm,active)
+        return {'state':'stopped','ssh_host_key':vm['ssh_host_key'],'compute_released':True}
+    if c.get('minimum_reserves'):memory_capacity.running_guard(c,vms)
+    else:assert sum(v['resources']['memory_bytes'] for v in active)<=c['capacity']['memory_bytes'],'conflict: RAM budget exceeded'
+    assert vm['resources']['memory_bytes']>=spec['memory_gib']*GIB and vm['resources']['cpu_cores']>=spec['cores'], 'conflict: compute is not claimed'
     network=api('GET','/1.0/networks/'+bridge,missing=True)
     if network is None:
         api('POST','/1.0/networks',{'name':bridge,'type':'bridge','config':{'ipv4.address':f'10.78.{slot}.1/24','ipv4.nat':'true','ipv6.address':'none','dns.mode':'managed','user.homecloud.id':vm['id']}})
-    else: assert network['config'].get('user.homecloud.id')==vm['id'], 'conflict: foreign network'
+    else:assert network['config'].get('user.homecloud.id')==vm['id'], 'conflict: foreign network'
     wanted={'limits.memory':f'{spec["memory_gib"]}GiB','limits.cpu':cpulist(vm['cpu_ids'])}
     if d is None:
+        instance_runtime.checkpoint(sys.modules[__name__],vm,'creating')
         assert mutation['kind']=='create','conflict: recorded VM is missing from Incus; do not silently recreate its disk'
-        data={'name':name,'type':'virtual-machine','profiles':[],'source':{'type':'image','fingerprint':c['image']},
-              'config':{**wanted,'boot.autostart':'true' if vm['desired']=='running' else 'false','user.homecloud.id':vm['id'],'user.homecloud.owner':vm['owner'],'raw.apparmor':apparmor(vm),'raw.qemu':f'-name {name},debug-threads=on','cloud-init.user-data':cloud_init(spec['ssh_public_key'],c.get('t3_version'))},
-              'devices':{'root':{'type':'disk','path':'/','pool':storage_pool(vm['owner']),'size':f'{spec["disk_gib"]}GiB'},'cloud-init':{'type':'disk','source':'cloud-init:config'},'eth0':{'type':'nic','network':bridge,'ipv4.address':f'10.78.{slot}.10','security.mac_filtering':'true','security.ipv4_filtering':'true','security.ipv6_filtering':'true'}}}
-        api('POST','/1.0/instances',data)
-        d=owned(vm)
-    mismatched=any(d['config'].get(k)!=v for k,v in wanted.items()) or d['devices']['root'].get('size')!=f'{spec["disk_gib"]}GiB'
-    if mismatched:
-        assert mutation['kind']=='resize', 'conflict: instance resource drift; operator review required'
+        data={'name':name,'type':'virtual-machine','profiles':[],'source':{'type':'image','fingerprint':c['managed_host_image'] if managed_host.enabled(vm) else c['image']},
+              'config':{**wanted,'boot.autostart':'false','user.homecloud.id':vm['id'],'user.homecloud.owner':vm['owner'],'raw.apparmor':apparmor(vm),'raw.qemu':f'-name {name},debug-threads=on','cloud-init.user-data':cloud_init(spec['ssh_public_key'], '0.1.2' if 't3' in spec.get('applications', []) else None)},
+              'devices':{'root':{'type':'disk','path':'/','pool':storage_pool(vm['owner']),'size':f'{spec["disk_gib"]}GiB'},**seed_devices(c),**managed_host.device(sys.modules[__name__],c,vm,create=True),'eth0':{'type':'nic','network':bridge,'ipv4.address':f'10.78.{slot}.10','security.mac_filtering':'true','security.ipv4_filtering':'true','security.ipv6_filtering':'true'}}}
+        api('POST','/1.0/instances',data);d=owned(vm)
+    starting=mutation['kind']=='start' or (mutation['kind']=='state' and mutation['desired']=='running')
+    sizes_differ=d['config'].get('limits.memory')!=wanted['limits.memory'] or d['devices']['root'].get('size')!=f'{spec["disk_gib"]}GiB'
+    pins_differ=d['config'].get('limits.cpu')!=wanted['limits.cpu']
+    target=target_gpus(vm,mutation)
+    current={dev['pci'].lower() for dev in checked_gpu_devices(vm,d).values()}
+    assert set(target) <= gpu_claims(vm), 'conflict: GPUs have not been claimed'
+    gpu_preflight(c,vm,target,current)
+    if sizes_differ or pins_differ:
+        assert mutation['kind'] in ('resize','edit') or (starting and not sizes_differ and state(vm)=='stopped'), 'conflict: instance resource drift; operator review required'
         stop(vm)
         data={'config':{**d['config'],**wanted},'devices':d['devices'],'profiles':[]}
         data['devices']['root']['size']=f'{spec["disk_gib"]}GiB'
         api('PUT','/1.0/instances/'+name,data);d=owned(vm)
-    current_gpu=d['devices'].get('gpu0',{}).get('pci')
-    if current_gpu is None and vm['gpu'] is None:restore_released_gpus(c,vms)
-    if current_gpu!=vm['gpu']:
-        assert mutation['kind']=='gpu', 'conflict: GPU assignment drift'
-        gpu_change(c,vm,d)
-        d=owned(vm)
-    desired_boot='true' if vm['desired']=='running' else 'false'
-    if d['config'].get('boot.autostart')!=desired_boot:
-        api('PUT','/1.0/instances/'+name,{'config':{**d['config'],'boot.autostart':desired_boot},'devices':d['devices'],'profiles':[]})
-    if vm['desired']=='stopped':
-        stop(vm);return {'state':'stopped','ssh_host_key':vm['ssh_host_key']}
+    current={dev['pci'].lower() for dev in checked_gpu_devices(vm,d).values()}
+    if current!=set(target):
+        assert mutation['kind'] in ('gpu','edit') or (starting and state(vm)=='stopped'), 'conflict: GPU assignment drift'
+        gpu_changes(c,vm,d,target);d=owned(vm)
+    for address in sorted(gpu_claims(vm)-set(target)):restore_gpu(address)
+    if d['config'].get('boot.autostart')!='false':
+        api('PUT','/1.0/instances/'+name,{'config':{**d['config'],'boot.autostart':'false'},'devices':d['devices'],'profiles':[]})
     start(vm)
-    status=exec_guest(vm,'cloud-init','status','--format=json',check=False)
+    try:status=exec_guest(vm,'cloud-init','status','--format=json',check=False)
+    except subprocess.TimeoutExpired:
+        instance_runtime.checkpoint(sys.modules[__name__],vm,'guest_agent')
+        instance_runtime.wait(sys.modules[__name__],vm,'agent','waiting for the guest provisioning agent',300)
     try:provision=json.loads(status.stdout)
-    except ValueError:raise RuntimeError('pending: waiting for guest provisioning agent')
+    except ValueError:
+        instance_runtime.cid_consistent(sys.modules[__name__],vm)
+        instance_runtime.checkpoint(sys.modules[__name__],vm,'guest_agent')
+        instance_runtime.wait(sys.modules[__name__],vm,'agent','waiting for the guest provisioning agent',300)
+    if provision.get('status')!='done':instance_runtime.checkpoint(sys.modules[__name__],vm,'guest_setup')
     if provision.get('status') in ('error','degraded') or provision.get('errors'):
-        raise RuntimeError('conflict: cloud-init failed; inspect the guest provisioning log')
-    if provision.get('status')!='done':raise RuntimeError('pending: waiting for guest provisioning')
-    if vm['gpu']:ensure_gpu_driver(c,vm)
+        raise RuntimeError('conflict: guest setup failed; inspect /var/log/cloud-init-output.log. Fix networking/setup before retrying, or delete this incomplete VM')
+    if provision.get('status')!='done':instance_runtime.wait(sys.modules[__name__],vm,'provisioning','waiting for guest provisioning',600)
+    if target:instance_runtime.checkpoint(sys.modules[__name__],vm,'gpu_driver')
+    for address in target:ensure_gpu_driver(c,{**vm,'gpu':address,'gpus':[address]})
+    if len(target)>1:
+        probe=exec_guest(vm,'nvidia-smi','--query-gpu=uuid','--format=csv,noheader',check=False)
+        assert probe.returncode==0 and len(set(probe.stdout.strip().splitlines()))==len(target), 'conflict: not all selected GPUs are responding to the supported guest query'
+    instance_runtime.checkpoint(sys.modules[__name__],vm,'ssh_identity')
     p=exec_guest(vm,'cat','/etc/ssh/ssh_host_ed25519_key.pub',check=False)
     if p.returncode or not p.stdout.startswith('ssh-ed25519 '):raise RuntimeError('pending: waiting for guest SSH host key')
     host_key=p.stdout.strip()
     if vm['ssh_host_key'] and host_key!=vm['ssh_host_key']:raise RuntimeError('conflict: SSH host key changed; explicit operator review required')
+    instance_runtime.setup_finished(sys.modules[__name__],vm)
     return {'state':'running','ssh_host_key':host_key}
 
 
@@ -304,53 +431,81 @@ def pci(address):
     return Path('/sys/bus/pci/devices')/address
 
 
-def gpu_change(c,vm,d):
-    # Kept as a separate narrow operation; state is saved before host-driver
-    # handoff and reused on retries. No idle-based automatic reclamation.
-    stop(vm)
-    old=d['devices'].get('gpu0',{}).get('pci');new=vm['gpu']
-    if old:
-        data={'config':d['config'],'devices':{k:v for k,v in d['devices'].items() if k!='gpu0'},'profiles':[]}
-        api('PUT','/1.0/instances/'+vm_name(vm),data)
-        restore_gpu(old)
-    if new:
-        assert new in c.get('allowed_gpus',[]),'GPU is not offered by the operator'
+def gpu_preflight(c,vm,targets,present):
+    added=set(targets)-set(present)
+    for address in added:
+        assert address in c.get('allowed_gpus',[]),'GPU is not offered by the operator'
+        gpu_group(c,address)
+    if added:
         for other in api('GET','/1.0/instances?recursion=1'):
             if other['name']==vm_name(vm):continue
-            assert not any(dev.get('type')=='gpu' and dev.get('pci')==new for dev in other['expanded_devices'].values()),'conflict: GPU is attached outside this allocation'
-        device=pci(new);group=(device/'iommu_group').resolve(strict=True)
-        functions=[p for p in (group/'devices').iterdir() if p.name.startswith(new[:-1])]
-        peers=[p.name for p in (group/'devices').iterdir() if p.name not in [x.name for x in functions] and not (p/'class').read_text().strip().startswith('0x0604')]
-        assert not peers,'Unsafe IOMMU group contains another endpoint'
-        host_display=(device/'boot_vga').exists() and (device/'boot_vga').read_text().strip()=='1'
-        assert not host_display or c.get('allow_host_display_handoff',False),'Host display GPU requires an administrator-selected handoff policy'
-        saved=STATE/('gpu-'+new.replace(':','_')+'.json')
-        if not saved.exists():
-            record={'drivers':{p.name:(p/'driver').resolve().name if (p/'driver').exists() else None for p in functions},'vtconsoles':[p.name for p in Path('/sys/class/vtconsole').glob('vtcon*') if (p/'bind').read_text().strip()=='1'] if host_display else [],'getty':run('systemctl','is-active','getty@tty1.service',check=False).returncode==0 if host_display else False}
-            save(saved,record)
-        record=json.loads(saved.read_text())
-        if host_display:
-            clients=run('fuser','/dev/dri/card0','/dev/dri/renderD128',check=False)
+            assert not any(dev.get('type')=='gpu' and dev.get('pci','').lower() in added for dev in other['expanded_devices'].values()),'conflict: GPU is attached outside this allocation'
+
+
+def gpu_group(c,address):
+    device=pci(address);group=(device/'iommu_group').resolve(strict=True)
+    functions=[p for p in (group/'devices').iterdir() if p.name.startswith(address[:-1])]
+    peers=[p.name for p in (group/'devices').iterdir() if p.name not in [x.name for x in functions] and not (p/'class').read_text().strip().startswith('0x0604')]
+    assert not peers,'Unsafe IOMMU group contains another endpoint'
+    display=(device/'boot_vga').exists() and (device/'boot_vga').read_text().strip()=='1'
+    assert not display or c.get('allow_host_display_handoff',False),'Host display GPU requires an administrator-selected handoff policy'
+    if display:
+        drm=device/'drm'
+        nodes=[str(Path('/dev/dri')/p.name) for p in drm.iterdir() if re.fullmatch(r'(card|renderD)[0-9]+',p.name)] if drm.exists() else []
+        if nodes:
+            clients=run('fuser',*nodes,check=False)
             assert not clients.stdout.strip(),'Host GPU has userspace clients'
-            if record['getty']:run('systemctl','stop','getty@tty1.service')
-            for name in record['vtconsoles']:(Path('/sys/class/vtconsole')/name/'bind').write_text('0')
-        d=owned(vm);data={'config':d['config'],'devices':{**d['devices'],'gpu0':{'type':'gpu','gputype':'physical','pci':new}},'profiles':[]}
-        api('PUT','/1.0/instances/'+vm_name(vm),data)
+    return functions,display
+
+
+def prepare_gpu(c,address):
+    functions,display=gpu_group(c,address)
+    saved=STATE/('gpu-'+address.replace(':','_')+'.json')
+    if not saved.exists():
+        record={'drivers':{p.name:(p/'driver').resolve().name if (p/'driver').exists() else None for p in functions},'vtconsoles':[p.name for p in Path('/sys/class/vtconsole').glob('vtcon*') if (p/'bind').read_text().strip()=='1'] if display else [],'getty':run('systemctl','is-active','getty@tty1.service',check=False).returncode==0 if display else False}
+        save(saved,record)
+    record=json.loads(saved.read_text())
+    if display:
+        if record['getty']:run('systemctl','stop','getty@tty1.service')
+        for name in record['vtconsoles']:(Path('/sys/class/vtconsole')/name/'bind').write_text('0')
+
+
+def gpu_changes(c,vm,d,targets):
+    # Replays preserve existing device names/guest PCI placement for retained GPUs.
+    targets=set(targets)
+    devices=checked_gpu_devices(vm,d)
+    gpu_preflight(c,vm,targets,{dev['pci'].lower() for dev in devices.values()})
+    stop(vm)
+    removed={name:dev for name,dev in devices.items() if dev['pci'].lower() not in targets}
+    if removed:
+        api('PUT','/1.0/instances/'+vm_name(vm),{'config':d['config'],'devices':{k:v for k,v in d['devices'].items() if k not in removed},'profiles':[]})
+        for address in sorted({dev['pci'].lower() for dev in removed.values()}):restore_gpu(address)
+    d=owned(vm)
+    devices=checked_gpu_devices(vm,d)
+    present={dev['pci'].lower() for dev in devices.values()}
+    for address in sorted(targets-present):prepare_gpu(c,address)
+    additions=sorted(targets-present)
+    if additions:
+        updated=dict(d['devices'])
+        for address in additions:
+            name=next('gpu'+str(n) for n in range(256) if 'gpu'+str(n) not in updated)
+            updated[name]={'type':'gpu','gputype':'physical','pci':address}
+        api('PUT','/1.0/instances/'+vm_name(vm),{'config':d['config'],'devices':updated,'profiles':[]})
 
 
 def restore_released_gpus(c,vms,exclude=None):
-    assigned={v['gpu'] for v in vms if v['id']!=exclude and v['gpu'] and v['observed']!='deleted'}
+    assigned={pci for v in vms if v['id']!=exclude and v['observed']!='deleted' for pci in gpu_claims(v)}
     for address in c.get('allowed_gpus',[]):
         if address in assigned:continue
         # Also check foreign Incus instances before restoring a saved handoff.
-        attached=any(dev.get('type')=='gpu' and dev.get('pci')==address for v in api('GET','/1.0/instances?recursion=1') for dev in v['expanded_devices'].values())
+        attached=any(dev.get('type')=='gpu' and dev.get('pci','').lower()==address.lower() for v in api('GET','/1.0/instances?recursion=1') for dev in v['expanded_devices'].values())
         if not attached:restore_gpu(address)
 
 
 def ensure_gpu_driver(c,vm):
     probe=exec_guest(vm,'nvidia-smi','--query-gpu=name','--format=csv,noheader',check=False)
     if probe.returncode==0:return
-    package=c.get('gpu_driver_packages',{}).get(vm['gpu'])
+    package=c.get('gpu_driver_packages',{}).get(vm_gpus(vm)[0])
     assert package and re.fullmatch(r'nvidia-driver-[0-9]+',package),'conflict: guest GPU driver is unavailable; configure a supported image or driver package'
     unit='homecloud-gpu-driver.service'
     exists=exec_guest(vm,'systemctl','show',unit,'-p','LoadState','--value',check=False)
@@ -377,14 +532,18 @@ def ensure_gpu_driver(c,vm):
 def restore_gpu(address):
     saved=STATE/('gpu-'+address.replace(':','_')+'.json')
     if not saved.exists():return
+    assert not any(dev.get('type')=='gpu' and dev.get('pci','').lower()==address.lower() for v in api('GET','/1.0/instances?recursion=1') for dev in v['expanded_devices'].values()), 'conflict: GPU is still attached; claim retained'
     record=json.loads(saved.read_text())
     for bdf,original in record['drivers'].items():
         p=pci(bdf);current=(p/'driver').resolve().name if (p/'driver').exists() else None
         if current!=original:
             if current:(p/'driver/unbind').write_text(bdf)
             (p/'driver_override').write_text(original or '\n')
-            if original:run('modprobe',original)
-            Path('/sys/bus/pci/drivers_probe').write_text(bdf)
+            if original:
+                run('modprobe',original)
+                Path('/sys/bus/pci/drivers_probe').write_text(bdf)
+        actual=(p/'driver').resolve().name if (p/'driver').exists() else None
+        assert actual==original, 'conflict: GPU driver handoff incomplete; claim retained'
         (p/'driver_override').write_text('\n')
     for name in record['vtconsoles']:
         try:(Path('/sys/class/vtconsole')/name/'bind').write_text('1')
@@ -402,7 +561,10 @@ def inventory(c):
     ready=count>0
     board=Path('/sys/class/dmi/id/board_name').read_text().strip()
     iommu={'state':'ready' if ready else 'needs_firmware_configuration','evidence':[f'DMAR={dmar}; IVRS={ivrs}; IOMMU groups={count}',f'Motherboard: {board}'],'next_steps':[] if ready else ['Enable Intel VT-d or AMD IOMMU in firmware, then reboot and recheck.','If already enabled, inspect kernel IOMMU configuration. Missing groups alone do not prove unsupported hardware.']}
-    cards=[];instances=api('GET','/1.0/instances?recursion=1')
+    warnings=[];cards=[]
+    try:instances=api('GET','/1.0/instances?recursion=1')
+    except Exception as error:
+        instances=[];warnings.append('Incus inventory unavailable: '+str(error))
     for p in Path('/sys/bus/pci/devices').iterdir():
         if not (p/'class').read_text().strip().startswith(('0x0300','0x0302')):continue
         group=int((p/'iommu_group').resolve().name) if (p/'iommu_group').exists() else None
@@ -422,7 +584,9 @@ def inventory(c):
             try:assigned=uid(owner['config'].get('user.homecloud.id',''))
             except (ValueError,AttributeError):pass
             telemetry='Unavailable while the assigned VM is stopped or its guest driver is unavailable.'
-            if owner['status']=='Running':
+            if sum(dev.get('type')=='gpu' for dev in owner['expanded_devices'].values())>1:
+                telemetry='Per-device guest telemetry is unavailable for multi-GPU VMs.'
+            elif owner['status']=='Running':
                 try:
                     probe=run('incus','exec',owner['name'],'--','nvidia-smi','--query-gpu=utilization.gpu,memory.used,memory.total,temperature.gpu','--format=csv,noheader,nounits',check=False,timeout=4)
                     if probe.returncode==0:
@@ -430,13 +594,19 @@ def inventory(c):
                         if len(values)==4:telemetry=f'Guest GPU responding: {values[0].strip()}% utilization; {values[1].strip()}/{values[2].strip()} MiB VRAM; {values[3].strip()} C. Guest-reported, not an independent hardware health guarantee.'
                 except subprocess.TimeoutExpired:pass
         cards.append({'pci':p.name,'model':run('lspci','-s',p.name,check=False).stdout.strip(),'driver':(p/'driver').resolve().name if (p/'driver').exists() else None,'iommu_group':group,'host_display':display,'assigned_vm':assigned,'telemetry':telemetry,'readiness':{'state':state,'evidence':[f'IOMMU group {group}',f'Members: {", ".join(m.name for m in members)}',f'Host display: {display}'],'next_steps':[] if state in ('ready','assigned') else ['Review firmware, group membership, and operator assignment policy.']}})
-    available=zget(c['pool'],'available');warnings=[]
+    try:
+        available=zget(c['pool'],'available');pool_health=run('zpool','list','-H','-o','health',c['pool']).stdout.strip()
+    except Exception as error:
+        available=0;pool_health='unavailable';warnings.append('ZFS inventory unavailable: '+str(error))
     if available<c['minimum_pool_available_bytes']:warnings.append('Pool accounting headroom below operating floor; growth is blocked')
-    return {'hostname':os.uname().nodename,'cpu_model':next((l.split(':',1)[1].strip() for l in cpu.splitlines() if l.startswith('model name')),'unknown'),'physical_cores':len(groups),'memory_bytes':int(next(l.split()[1] for l in mem.splitlines() if l.startswith('MemTotal:')))*1024,'pool':c['pool'],'pool_available_bytes':available,'pool_health':run('zpool','list','-H','-o','health',c['pool']).stdout.strip(),'iommu':iommu,'gpus':cards,'warnings':warnings}
+    return {'hostname':os.uname().nodename,'cpu_model':next((l.split(':',1)[1].strip() for l in cpu.splitlines() if l.startswith('model name')),'unknown'),'physical_cores':len(groups),'memory_bytes':int(next(l.split()[1] for l in mem.splitlines() if l.startswith('MemTotal:')))*1024,'pool':c['pool'],'pool_available_bytes':available,'minimum_pool_available_bytes':c['minimum_pool_available_bytes'],'pool_health':pool_health,'iommu':iommu,'gpus':cards,'warnings':warnings}
 
 
 def observe(vms):
-    actual={v['name']:v for v in api('GET','/1.0/instances?recursion=1')};result=[]
+    try:actual={v['name']:v for v in api('GET','/1.0/instances?recursion=1')}
+    except Exception as error:
+        return [{'id':vm['id'],'state':'unavailable','error':'Incus observation unavailable; allocations remain held: '+str(error),'progress':None} for vm in vms if vm['observed']!='deleted']
+    result=[]
     for vm in vms:
         if vm['observed']=='deleted':continue
         record=actual.get(vm_name(vm));error=None;observed='missing'
@@ -444,12 +614,12 @@ def observe(vms):
             observed=record['status'].lower();conf=record['config'];devices=record['devices']
             if conf.get('user.homecloud.id')!=vm['id'] or conf.get('user.homecloud.owner')!=vm['owner']:
                 error='Ownership drift: operator review required'
-            elif conf.get('limits.cpu')!=cpulist(vm['cpu_ids']) or conf.get('limits.memory')!=f'{vm["spec"]["memory_gib"]}GiB' or devices.get('root',{}).get('size')!=f'{vm["spec"]["disk_gib"]}GiB' or devices.get('gpu0',{}).get('pci')!=vm['gpu']:
+            elif (not vm['cpu_ids'] and conf.get('boot.autostart')!='false') or (vm['cpu_ids'] and conf.get('limits.cpu')!=cpulist(vm['cpu_ids'])) or conf.get('limits.memory')!=f'{vm["spec"]["memory_gib"]}GiB' or devices.get('root',{}).get('size')!=f'{vm["spec"]["disk_gib"]}GiB' or not matching_gpu_devices(vm,record):
                 error='Configuration drift: operator review required'
             elif observed!=vm['desired']:
                 error='Lifecycle differs from requested state; inspect before restarting'
         else:error='Recorded VM is missing from Incus; resources remain held for inspection'
-        result.append({'id':vm['id'],'state':observed,'error':error})
+        result.append({'id':vm['id'],'state':observed,'error':error,'progress':instance_runtime.progress(sys.modules[__name__],vm)})
     return result
 
 
@@ -458,13 +628,18 @@ def main():
     c=load_config();STATE.mkdir(parents=True,exist_ok=True)
     if len(sys.argv)>1:
         assert sys.argv[1:] == ['cpu-layout']
-        cpu_layout(c)
-        cpu_policy(c,json.loads((STATE/'cpu-vms.json').read_text()) if (STATE/'cpu-vms.json').exists() else [])
-        return {'kind':'ok'}
+        with (STATE/'operations.lock').open('a') as lock:
+            fcntl.flock(lock,fcntl.LOCK_EX)
+            c=load_config()
+            resource_reserves.boot(sys.modules[__name__],c,json.loads((STATE/'cpu-vms.json').read_text()) if (STATE/'cpu-vms.json').exists() else [])
+            return {'kind':'ok'}
     raw=sys.stdin.read(1024*1024+1)
     assert len(raw)<=1024*1024,'Host request exceeds limit'
     request=json.loads(raw)
     kind=request['kind']
+    if kind=='diagnostics':return {'kind':'diagnostics','data':instance_runtime.diagnostics(sys.modules[__name__],request['vm'])}
+    if kind=='application':return {'kind':'application','data':managed_apps.application(sys.modules[__name__],request['vm'],request['application'],request['command'])}
+    if kind=='reserve_status':return {'kind':'reserve_policy','data':resource_reserves.report(c['_reserve_base'],c['_reserve_record'])}
     if kind=='inventory':return {'kind':'inventory','data':inventory(c)}
     if kind=='observe':return {'kind':'observations','data':observe(request['vms'])}
     if kind=='verify_ssh':
@@ -474,9 +649,19 @@ def main():
         network=api('GET','/1.0/networks/'+f'hcvm{slot}')
         assert network['config'].get('user.homecloud.id')==vm['id'],'conflict: network ownership changed'
         return {'kind':'ok'}
-    lock=(STATE/'operations.lock').open('a');fcntl.flock(lock,fcntl.LOCK_EX)
-    if kind=='backing':backing(c,request['users']);return {'kind':'ok'}
-    if kind=='apply':return {'kind':'applied','data':apply(c,request['vm'],request['vms'],request['users'],request['mutation'])}
+    with (STATE/'operations.lock').open('a') as lock:
+        fcntl.flock(lock,fcntl.LOCK_EX)
+        c=load_config()
+        if kind=='cancel_memory_capacity':return {'kind':'memory_capacity_cancelled','data':memory_capacity.cancel(sys.modules[__name__],c,request['operation'])}
+        if kind=='adopt_memory_capacity':return {'kind':'memory_capacity','data':memory_capacity.adopt(sys.modules[__name__],c,request['operation'])}
+        if kind=='discard_reserves':return {'kind':'discarded_reserves','data':resource_reserves.discard(sys.modules[__name__],c,request['operation'])}
+        if kind=='apply_reserves':return {'kind':'reserve_policy','data':resource_reserves.apply(sys.modules[__name__],c,request['operation'],request['vms'],request['users'])}
+        releasing=kind=='apply' and request['vm']['desired'] in ('stopped','deleted')
+        assert releasing or c['_reserve_record']['phase']=='applied','Host reserve update needs recovery before workload changes'
+        if kind=='backing':backing(c,request['users']);return {'kind':'ok'}
+        if kind=='apply':
+            instance_runtime.fence(sys.modules[__name__],request['vm'])
+            return {'kind':'applied','data':apply(c,request['vm'],request['vms'],request['users'],request['mutation'])}
     raise ValueError('Unknown host operation')
 
 

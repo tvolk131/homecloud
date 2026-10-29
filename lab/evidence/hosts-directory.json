@@ -1,0 +1,57 @@
+{
+  "date": "2026-10-28",
+  "scope": "Hosts directory/detail UI, flat allocations, read-only admin headroom",
+  "current_limits": [
+    "One authenticated host; fleet aggregation is deferred",
+    "Reserve editing remains local-host configuration; admin-only recovery workflow is a documented follow-up"
+  ],
+  "changes": [
+    "Host list separated from host details",
+    "One pinned row of peer tabs",
+    "CPU, memory and storage allocation values together per person",
+    "Per-person expandable VM rows and targeted Edit grant",
+    "Admin read-only outside-budget memory/cores and configured pool free-space floor",
+    "Missing policy shown as Not reported"
+  ],
+  "verification": {
+    "workspace_tests": 127,
+    "desktop_tests": 58,
+    "native_screenshot_comparisons": 101,
+    "linux_core_daemon_tests": 14,
+    "clippy": "workspace, all targets, warnings denied",
+    "visual_inspection": [
+      "Normal and small directory",
+      "Small allocations",
+      "Expanded per-person VM rows",
+      "Host headroom",
+      "Missing policy",
+      "Live Mac Hosts directory",
+      "Live Mac host Overview and configured 30 GiB pool floor"
+    ],
+    "mac_app": "Rebuilt and reopened on the live host Overview"
+  },
+  "deployment": {
+    "controller_active": true,
+    "host_policy_unchanged": true,
+    "resource_claims_preserved": true,
+    "vm_and_application_ids_preserved": true,
+    "gpu_transition_schema_ready": true,
+    "guest_pids_and_states_preserved": true,
+    "t3_service_pid_preserved": true,
+    "endpoint_identity_preserved": true,
+    "backup_directory": "/var/lib/homecloud/test-runs/hosts-ui/1793227514",
+    "sha256": {
+      "/usr/local/bin/homecloudd": "5fe7c9f95a4154e1b4caad492c46782eaf57aae4c646d9740a4efb45b0dad54e",
+      "/usr/local/bin/homecloud": "fe8fd3114afc61b6dea0be33487dc094061dadb03d92b6bfedac7d2ac2724095",
+      "/usr/local/libexec/homecloud/host_runtime.py": "6b3708824bf8b5cfd268163d44c9024b5d35e3e156f76797de529e4b5acd52eb"
+    }
+  },
+  "live_api": {
+    "snapshot_reports_configured_pool_floor": true,
+    "capacity_matches_unchanged_host_policy": true,
+    "managed_vms_have_no_errors": true,
+    "no_pending_vm_operations": true,
+    "read_only_check": true
+  },
+  "follow_up": "docs/mvp.md#admin-host-reserve-editing"
+}

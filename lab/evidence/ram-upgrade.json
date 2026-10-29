@@ -1,0 +1,78 @@
+{
+  "recorded_at_utc": "2026-10-29T16:32:15.870975+00:00",
+  "scope": "Firmware RAM inventory and post-upgrade host recovery; existing devbox only.",
+  "installed_dimms_gib": [
+    16,
+    8,
+    16,
+    8
+  ],
+  "installed_total_gib": 48,
+  "configured_memory_speed_mt_s": 2133,
+  "linux_usable_memory_bytes": 49374986240,
+  "crash_kernel_reservation_gib": 1,
+  "boot_blocker": {
+    "unit": "homecloud-host-layout.service",
+    "error": "ARC minimum exceeds the reviewed operating allowance",
+    "old_reviewed_minimum_limit_gib": 1,
+    "effective_arc_minimum_bytes": 1542968320,
+    "arc_maximum_gib": 2
+  },
+  "migration": {
+    "physical_usable_bytes": 49374986240,
+    "installed_dimm_gib": [
+      16,
+      8,
+      16,
+      8
+    ],
+    "old_guest_budget_gib": 11,
+    "new_guest_budget_gib": 41,
+    "minimum_system_gib": 4,
+    "operating_floor_gib": 2,
+    "arc_cap_gib": 2,
+    "arc_minimum_bytes": 1542968320,
+    "reviewed_arc_minimum_limit_gib": 2,
+    "grants_claims_instances_credentials_and_policy_preserved": true,
+    "backup": "/var/lib/homecloud/test-runs/ram-upgrade-20261029"
+  },
+  "recovery": {
+    "host_layout_active": true,
+    "incus_active": true,
+    "controller_active": true,
+    "failed_systemd_units": 0,
+    "devbox_running": true,
+    "guest_agent_responds": true,
+    "t3_user_service_active": true,
+    "t3_loopback_listener_port": 3773,
+    "source_or_binary_changes": false,
+    "zfs_parameter_or_boot_config_changes": false
+  },
+  "authenticated_snapshot": {
+    "host_usable_gib": 45.984039306640625,
+    "vm_memory_budget_gib": 41,
+    "user_grant_gib": 4,
+    "user_committed_gib": 4,
+    "pool_health": "ONLINE",
+    "vms": [
+      {
+        "name": "homecloud-devbox",
+        "desired": "running",
+        "observed": "running",
+        "error": null
+      },
+      {
+        "name": "t3-devbox",
+        "desired": "stopped",
+        "observed": "stopped",
+        "error": null
+      }
+    ],
+    "host_reserve_present": true,
+    "unfinished_operations": 0
+  },
+  "limits": [
+    "No full DIMM burn-in was run.",
+    "RAM envelope expansion is currently an explicit offline migration, not automatic hardware-capacity adoption."
+  ]
+}

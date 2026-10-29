@@ -14,5 +14,7 @@ uuid.workspace = true
 iced = { version = "=0.14.0", features = ["tokio"] }
 iced-m3 = "=0.1.0-beta.5"
 [dev-dependencies]
+tempfile.workspace = true
+homecloud-store.workspace = true
 iced_test = "=0.14.0"
 image = { version = "0.25", default-features = false, features = ["png"] }

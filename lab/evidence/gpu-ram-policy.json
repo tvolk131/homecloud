@@ -1,0 +1,56 @@
+{
+  "recorded_at": "2026-10-28T21:44:17.388095+00:00",
+  "policy": "GPU and CPU-only VMs share the normal 1 GiB RAM minimum; no GPU-specific RAM floor.",
+  "removed_checks": [
+    "legacy GPU attach",
+    "legacy resize with GPUs retained",
+    "start GPU claim",
+    "combined workspace edit",
+    "desktop editor GPU validation"
+  ],
+  "separate_recommendation": "T3/Claude devboxes retain the existing 4 GiB recommendation.",
+  "tests": {
+    "store": 51,
+    "desktop": 38,
+    "daemon_unit": 8,
+    "daemon_transport": 3,
+    "native_screenshot_comparisons": 84,
+    "linux_store_and_daemon": 62,
+    "clippy_all_targets_warnings_denied": true
+  },
+  "covered": [
+    "GPU attach at 1 GiB",
+    "legacy resize to 1 GiB with GPU retained",
+    "multi-GPU edit at 1 GiB",
+    "independent-connection competing multi-GPU starts at 1 GiB",
+    "zero-RAM edits/resizes rejected with claims intact",
+    "old backing held until verified downsize completion",
+    "small-window GPU edit below 4 GiB still requires restart consent"
+  ],
+  "visual": {
+    "directly_inspected": "workspace-edit-low-memory-small-tiny-skia.png",
+    "renderer": "native iced / tiny-skia"
+  },
+  "deployment": {
+    "controller_active": true,
+    "resource_claims_preserved": true,
+    "vm_and_application_ids_preserved": true,
+    "gpu_transition_schema_ready": true,
+    "guest_pids_and_states_preserved": true,
+    "t3_service_pid_preserved": true,
+    "endpoint_identity_preserved": true
+  },
+  "installed_sha256": {
+    "/usr/local/bin/homecloudd": "f6faf2069e661bfdd8eda202f0b9ad1fa7d445f64c246ae5c64e0bb41bb2ceaf",
+    "/usr/local/bin/homecloud": "2e10e269f210ae5bd568b5c87117ae121d8884bda4d64c086b8e34c7b47072f7"
+  },
+  "live_api_proof": {
+    "live_api_accepted_one_gib_gpu_preference": true,
+    "stopped_vm_compute_and_gpu_claims_remained_zero": true,
+    "original_settings_restored": true,
+    "guest_processes_and_t3_preserved": true,
+    "physical_low_memory_gpu_boot_tested": false
+  },
+  "physical_low_memory_gpu_boot_tested": false,
+  "mac_app_rebuilt_and_reopened": true
+}
