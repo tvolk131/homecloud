@@ -239,6 +239,18 @@ pub(super) fn lock() -> std::sync::MutexGuard<'static, ()> {
 }
 
 #[test]
+fn material_symbols_redistribution_notices_match_the_catalog() {
+    assert_eq!(
+        include_str!("../assets/material/LICENSE"),
+        iced_m3::material_symbols::LICENSE
+    );
+    assert_eq!(
+        include_str!("../assets/material/NOTICE"),
+        iced_m3::material_symbols::NOTICE
+    );
+}
+
+#[test]
 fn screenshot_regressions() {
     // Pin the pixel backend even for a plain `cargo test --workspace`. Setting
     // process-wide environment variables inside parallel tests would be unsafe.

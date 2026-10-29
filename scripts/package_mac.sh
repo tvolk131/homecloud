@@ -4,6 +4,9 @@ cd "$(dirname "$0")/.."
 cargo build --workspace
 bundle=target/Homecloud.app
 mkdir -p "$bundle/Contents/MacOS"
+notices="$bundle/Contents/Resources/licenses/material-symbols"
+mkdir -p "$notices"
+cp crates/desktop/assets/material/LICENSE crates/desktop/assets/material/NOTICE "$notices/"
 for binary in homecloud-desktop homecloud; do
   cp "target/debug/$binary" "$bundle/Contents/MacOS/$binary.new"
   mv -f "$bundle/Contents/MacOS/$binary.new" "$bundle/Contents/MacOS/$binary"

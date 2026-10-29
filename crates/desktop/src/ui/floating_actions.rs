@@ -6,7 +6,7 @@ const CONTENT_GAP: f32 = 16.0;
 pub(super) fn action<'a>(app: &App, s: &Snapshot) -> Option<Element<'a, Msg>> {
     let (symbol, label, message, disabled) = match app.page {
         Page::Workspaces => (
-            "add",
+            IconName::Add,
             "New VM",
             Msg::Open(Panel::Create),
             app.busy || app.snapshot_unavailable,
@@ -14,7 +14,7 @@ pub(super) fn action<'a>(app: &App, s: &Snapshot) -> Option<Element<'a, Msg>> {
         Page::Workspace(id) => {
             let vm = s.vms.iter().find(|v| v.id == id)?;
             (
-                "edit",
+                IconName::Edit,
                 "Edit VM",
                 Msg::Open(Panel::EditWorkspace(id)),
                 !workspace::can_edit(app, s, vm),
@@ -24,7 +24,7 @@ pub(super) fn action<'a>(app: &App, s: &Snapshot) -> Option<Element<'a, Msg>> {
     };
     Some(
         container(
-            iced_m3::extended_fab(lifecycle::symbol(symbol, 24.0), label)
+            iced_m3::extended_fab(icon(symbol), label)
                 .on_press(message)
                 .disabled(disabled),
         )

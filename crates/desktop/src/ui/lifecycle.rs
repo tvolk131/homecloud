@@ -135,21 +135,6 @@ pub(super) fn marker<'a>(state: State) -> Element<'a, Msg> {
         .into()
 }
 
-fn artwork(name: &str) -> &'static [u8] {
-    match name {
-        "add" => include_bytes!("../../assets/material/add.svg"),
-        "edit" => include_bytes!("../../assets/material/edit.svg"),
-        "play" => include_bytes!("../../assets/material/play_arrow.svg"),
-        "stop" => include_bytes!("../../assets/material/stop.svg"),
-        _ => include_bytes!("../../assets/material/terminal.svg"),
-    }
-}
-pub(super) fn symbol<'a>(name: &str, size: f32) -> Element<'a, Msg> {
-    icon(widget::svg::Handle::from_memory(artwork(name)))
-        .size(size)
-        .into()
-}
-
 pub(super) fn terminal(app: &App, vm: &Vm) -> Element<'static, Msg> {
     terminal_with_variant(app, vm, Variant::Filled)
 }
@@ -159,7 +144,10 @@ pub(super) fn terminal_outlined(app: &App, vm: &Vm) -> Element<'static, Msg> {
 fn terminal_with_variant(app: &App, vm: &Vm, variant: Variant) -> Element<'static, Msg> {
     iced_m3::Button::new(
         row![
-            symbol("terminal", 20.0),
+            Symbol::new(IconName::Terminal)
+                .optical_size(OpticalSize::Size20)
+                .icon()
+                .size(20),
             typography("Open terminal", Type::LabelLarge)
         ]
         .spacing(8)
@@ -207,7 +195,7 @@ pub(super) fn control<'a>(app: &App, s: &Snapshot, vm: &Vm) -> Element<'a, Msg> 
     } else {
         "Stop VM"
     };
-    let content = if status.busy() {
+    let content: Element<'_, Msg> = if status.busy() {
         // A stationary activity arc remains recognizable with motion disabled;
         // it is not an estimate of operation completion.
         iced_m3::circular_progress(0.72)
@@ -216,7 +204,12 @@ pub(super) fn control<'a>(app: &App, s: &Snapshot, vm: &Vm) -> Element<'a, Msg> 
             .colors([Color::from_rgb8(255, 207, 112)])
             .into()
     } else {
-        symbol(if start { "play" } else { "stop" }, 24.0)
+        icon(if start {
+            IconName::PlayArrow
+        } else {
+            IconName::Stop
+        })
+        .into()
     };
     let action = if start {
         Msg::Change(Mutation::Start {

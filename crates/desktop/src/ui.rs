@@ -19,6 +19,7 @@ use iced_m3::{
     ButtonVariant as Variant, Element, Theme, TypeScale as Type, button,
     dialog::{dialog, modal},
     icon,
+    material_symbols::{Fill, IconName, OpticalSize, Symbol},
     navigation::{NavigationItem, navigation_rail},
     typography,
 };
@@ -64,30 +65,6 @@ fn surface<'a>(
             },
             ..Default::default()
         })
-}
-fn glyph<'a>(name: &str) -> Element<'a, Msg> {
-    let path = match name {
-        "cloud" => {
-            "M7 18a5 5 0 0 1-1-9.9 6 6 0 0 1 11.5-1.2A5.5 5.5 0 0 1 18 18H7Zm3-8-3 3 3 3 1.4-1.4L9.8 13l1.6-1.6L10 10Zm4 6 3-3-3-3-1.4 1.4 1.6 1.6-1.6 1.6L14 16Z"
-        }
-        "vm" => {
-            "M4 3h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-7v2h4v2H7v-2h4v-2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Zm0 2v12h16V5H4Zm3 2 4 4-4 4-1.4-1.4L8.2 11 5.6 8.4 7 7Zm5 6h6v2h-6v-2Z"
-        }
-        "host" => {
-            "M7 2h10v3h3v2h3v2h-3v6h3v2h-3v2h-3v3H7v-3H4v-2H1v-2h3V9H1V7h3V5h3V2Zm-1 5v10h12V7H6Zm2 2h8v6H8V9Z"
-        }
-        "people" => {
-            "M9 3a4 4 0 1 1 0 8 4 4 0 0 1 0-8Zm0 2a2 2 0 1 0 0 4 2 2 0 0 0 0-4Zm8-1a3.5 3.5 0 0 1 0 7V9a1.5 1.5 0 0 0 0-3V4ZM1 20v-3c0-3 5-5 8-5s8 2 8 5v3H1Zm2-2h12v-1c0-1.4-3.6-3-6-3s-6 1.6-6 3v1Zm15-5c3 .5 5 2 5 4v3h-4v-2h2v-1c0-.9-1.3-1.7-3-2v-2Z"
-        }
-        "activity" => {
-            "M12 2a10 10 0 1 1-9.5 13h2.1A8 8 0 1 0 5.4 7.5L8 10H1V3l3 3A10 10 0 0 1 12 2Zm-1 4h2v6.4l4 2.4-1 1.7-5-3V6Z"
-        }
-        "settings" => {
-            "M10 2h4l.6 2.4 2 .9 2.2-.8 2 3.5-1.7 1.7.2 2.3 1.7 1.7-2 3.5-2.2-.8-2 .9L14 22h-4l-.6-2.4-2-.9-2.2.8-2-3.5 1.7-1.7-.2-2.3L3 10.3l2-3.5 2.2.8 2-.9L10 2Zm2 6a4 4 0 1 0 0 8 4 4 0 0 0 0-8Z"
-        }
-        _ => "M4 4h16v16H4V4Zm2 2v12h12V6H6Z",
-    };
-    icon(widget::svg::Handle::from_memory(format!("<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\"><path d=\"{path}\"/></svg>").into_bytes())).into()
 }
 fn badge<'a>(label: impl Into<String>, good: bool) -> Element<'a, Msg> {
     let label = label.into();
@@ -183,15 +160,18 @@ pub fn view(app: &App) -> Element<'_, Msg> {
     let background: Element<'_, Msg> = if let Some(snapshot) = &app.snapshot {
         responsive(move |size| {
             let items = [
-                (Page::Workspaces, "VMs", "vm"),
-                (Page::Hosts, "Hosts", "host"),
-                (Page::People, "People", "people"),
-                (Page::Activity, "Activity", "activity"),
-                (Page::Settings, "Settings", "settings"),
+                (Page::Workspaces, "VMs", IconName::DesktopWindows),
+                (Page::Hosts, "Hosts", IconName::Dns),
+                (Page::People, "People", IconName::Group),
+                (Page::Activity, "Activity", IconName::History),
+                (Page::Settings, "Settings", IconName::Settings),
             ]
             .into_iter()
             .filter(|(page, _, _)| *page != Page::People || snapshot.me.role == Role::Admin)
-            .map(|(page, label, icon)| NavigationItem::new(page, label, glyph(icon)));
+            .map(|(page, label, name)| {
+                let symbol = Symbol::new(name);
+                NavigationItem::new(page, label, symbol).selected_icon(symbol.fill(Fill::Filled))
+            });
             let rail = navigation_rail(
                 items,
                 Some(if matches!(app.page, Page::Workspace(_)) {
@@ -203,7 +183,7 @@ pub fn view(app: &App) -> Element<'_, Msg> {
                 }),
             )
             .on_select(Msg::Navigate)
-            .header(container(glyph("cloud")).center_x(48).center_y(48))
+            .header(container(icon(IconName::Cloud)).center_x(48).center_y(48))
             .footer(
                 column![
                     badge(
@@ -567,7 +547,7 @@ fn activity<'a>(app: &'a App, s: &'a Snapshot) -> Element<'a, Msg> {
 fn pairing(app: &App) -> Element<'_, Msg> {
     let connecting = app.client.is_some();
     let mut content = column![
-        container(glyph("cloud")).padding(12),
+        container(icon(IconName::Cloud)).padding(12),
         typography(
             if connecting {
                 "Connecting to your cloud"
