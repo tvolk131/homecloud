@@ -15,7 +15,8 @@ sh scripts/package_mac.sh
 open target/Homecloud.app
 ```
 
-The app uses `iced 0.14` and `iced-m3 0.1.0-beta.5`. Rust 1.99 is the currently
+The app uses `iced 0.14` and `iced-m3 0.1.0-beta.6` with its official offline
+Material Symbols catalog. Rust 1.99 is the currently
 tested toolchain. The package includes the `homecloud` OpenSSH transport helper.
 Debug symbols and incremental compilation are disabled to keep local builds small.
 

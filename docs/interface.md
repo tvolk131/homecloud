@@ -42,9 +42,12 @@ accepted operation followed by an older in-flight snapshot.
 Running cards keep a filled **Open terminal** button with an official leading
 Material terminal icon and its text label. Cards show configured resources,
 concise T3 readiness, and another owner's name when appropriate. GPU claims and
-remembered preferences remain distinct. The terminal/play/stop SVGs are unmodified
-Google Material Symbols, distributed with their license; sidebar icon integration
-remains separate.
+remembered preferences remain distinct. All icons, including the sidebar, cloud
+mark, terminal/play/stop controls and contextual FABs, come from iced-m3's official
+offline Material Symbols catalog. They use the Outlined family, with filled
+artwork for selected navigation destinations. Terminal buttons use 20px optical
+artwork at 20 logical pixels; other icons use 24px artwork and layout. Google's
+license and attribution notice are included in the Mac bundle.
 
 The VM page's pinned header shows name, lifecycle state, host and terminal/Start/Stop
 controls. Secondary **Overview** and **Settings** tabs organize content within
