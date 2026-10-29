@@ -12,29 +12,9 @@ use std::{
 };
 use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 
-#[derive(Clone, Serialize, Deserialize)]
-pub struct Profile {
-    pub server: EndpointAddr,
-    pub device_secret: String,
-}
-impl Profile {
-    pub fn load(path: &Path) -> Result<Self> {
-        #[cfg(unix)]
-        {
-            use std::os::unix::fs::PermissionsExt;
-            ensure!(
-                std::fs::metadata(path)?.permissions().mode() & 0o077 == 0,
-                "Client credential file must be readable only by its owner"
-            );
-        }
-        Ok(serde_json::from_slice(
-            &std::fs::read(path).context("No paired host; enroll this device first")?,
-        )?)
-    }
-    pub fn save(&self, path: &Path) -> Result<()> {
-        private_write(path, &serde_json::to_vec_pretty(self)?)
-    }
-}
+mod profile;
+pub use profile::*;
+
 pub fn default_profile() -> PathBuf {
     PathBuf::from(std::env::var_os("HOME").unwrap_or_else(|| ".".into()))
         .join(".config/homecloud/client.json")
@@ -51,7 +31,7 @@ pub fn private_write(path: &Path, bytes: &[u8]) -> Result<()> {
             std::fs::set_permissions(parent, std::fs::Permissions::from_mode(0o700))?;
         }
     }
-    let temporary = path.with_extension(format!("tmp-{}", std::process::id()));
+    let temporary = path.with_extension(format!("tmp-{}", uuid::Uuid::new_v4()));
     let mut options = std::fs::OpenOptions::new();
     options.write(true).create_new(true);
     #[cfg(unix)]
@@ -60,12 +40,20 @@ pub fn private_write(path: &Path, bytes: &[u8]) -> Result<()> {
         options.mode(0o600);
     }
     let mut file = options.open(&temporary)?;
-    file.write_all(bytes)?;
-    file.sync_all()?;
-    std::fs::rename(&temporary, path)?;
-    if let Some(parent) = path.parent() {
-        std::fs::File::open(parent)?.sync_all()?;
+    let result = (|| -> Result<()> {
+        file.write_all(bytes)?;
+        file.sync_all()?;
+        std::fs::rename(&temporary, path)?;
+        if let Some(parent) = path.parent() {
+            std::fs::File::open(parent)?.sync_all()?;
+        }
+        Ok(())
+    })();
+    if result.is_err() {
+        // Only remove the unique temporary created by this invocation.
+        let _ = std::fs::remove_file(&temporary);
     }
+    result?;
     Ok(())
 }
 pub fn load_secret(path: &Path) -> Result<SecretKey> {
@@ -298,8 +286,31 @@ impl Client {
         token: String,
         options: ConnectionOptions,
     ) -> Result<(Arc<Self>, User)> {
+        Self::enroll_inner(path, server, token, options, None).await
+    }
+    /// Inject storage for deterministic tests or another native platform store.
+    pub async fn enroll_with_store(
+        path: &Path,
+        server: EndpointAddr,
+        token: String,
+        options: ConnectionOptions,
+        store: &dyn CredentialStore,
+    ) -> Result<(Arc<Self>, User)> {
+        Self::enroll_inner(path, server, token, options, Some(store)).await
+    }
+    async fn enroll_inner(
+        path: &Path,
+        server: EndpointAddr,
+        token: String,
+        options: ConnectionOptions,
+        store: Option<&dyn CredentialStore>,
+    ) -> Result<(Arc<Self>, User)> {
         let profile = if path.exists() {
-            let old = Profile::load(path)?;
+            let old = if let Some(store) = store {
+                Profile::load_with_store(path, store)?
+            } else {
+                Profile::load(path)?
+            };
             ensure!(
                 old.server.id == server.id,
                 "Profile already pins another host; choose another profile path"
@@ -313,7 +324,11 @@ impl Client {
         };
         // Persist possession before redeeming a single-use token. Lost replies
         // can reconnect with the same device instead of stranding enrollment.
-        profile.save(path)?;
+        if let Some(store) = store {
+            profile.save_with_store(path, store)?;
+        } else {
+            profile.save(path)?;
+        }
         let client = Self::with_options(profile, options).await?;
         match client.rpc(Request::Enroll { token }).await? {
             Response::Enrolled(user) => Ok((client, user)),

@@ -5,6 +5,8 @@ from pathlib import Path
 import uuid
 
 DISK_GIB=32
+BOOTSTRAP='/usr/local/libexec/homecloud-workload/managed-host.py'
+BOOTSTRAP_SOURCE=Path(__file__).with_name('managed-host.py')
 BUNDLE=Path('/usr/local/libexec/homecloud/homecloud-host-bundle.tar.gz')
 
 
@@ -43,10 +45,12 @@ def application(runtime,vm,app,action):
     assert enabled(vm) and app['vm_id']==vm['id'] and app['kind']=='homecloud_host'
     assert app['desired_version']=='0.1.0' and app['start_on_boot'] is True
     runtime.owned(vm);assert runtime.state(vm)=='running','VM is not running'
-    name=runtime.vm_name(vm);script='/usr/local/libexec/homecloud/managed-host.py'
+    name=runtime.vm_name(vm);script=BOOTSTRAP
     def guest(*args,**kwargs):return runtime.run('incus','exec',name,'--',*args,timeout=kwargs.pop('timeout',15),**kwargs)
-    source=Path(__file__).with_name('managed-host.py').read_text()
-    writer="from pathlib import Path;import sys; p=Path('/usr/local/libexec/homecloud/managed-host.py');p.parent.mkdir(parents=True,exist_ok=True);p.write_text(sys.stdin.read());p.chmod(0o644)"
+    source=BOOTSTRAP_SOURCE.read_text()
+    # Keep the guest bootstrap outside the inner host's own installed software.
+    # Atomic replacement also avoids truncating a concurrently invoked monitor.
+    writer="from pathlib import Path;import sys,os,tempfile; p=Path("+repr(BOOTSTRAP)+");p.parent.mkdir(parents=True,exist_ok=True);fd,name=tempfile.mkstemp(dir=p.parent,prefix='.bootstrap-');f=os.fdopen(fd,'w');f.write(sys.stdin.read());f.flush();os.fsync(f.fileno());f.close();os.chmod(name,0o644);os.replace(name,p)"
     guest('python3','-c',writer,input=source)
     report=json.loads(guest('python3',script,'inspect').stdout)
     op=action.get('operation')

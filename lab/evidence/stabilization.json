@@ -1,0 +1,209 @@
+{
+  "date": "2026-10-29",
+  "github_checkpoint": "d65fdfbbc3cb2dfb45d81148606b668445f54cae",
+  "tests": {
+    "mac_rust_passed": 211,
+    "linux_rust_passed": 125,
+    "python_total": 136,
+    "python_mac_skips": 2,
+    "native_screenshot_comparisons": 133,
+    "native_keychain_smoke": "passed",
+    "clippy": "passed",
+    "native_gui_tests": 86
+  },
+  "keychain": {
+    "migration_identity_preserved": true,
+    "host_pin_preserved": true,
+    "plaintext_removed": true,
+    "native_roundtrip_and_delete": true,
+    "gui_reconnected": true,
+    "ssh_helper_authenticated": true
+  },
+  "deployment": {
+    "bundle_sha256": "5d862b7ffebbf55b23a946a8c4fa76c056e205fb2e817cb034cdd3aad22a58fd",
+    "physical": {
+      "status": "ready",
+      "id": "7caf2ac0-9487-4dd4-b020-f3c7a3f65490",
+      "daemon_sha256": "199cc3610add4f46bc96ac3af47a6920a3a8b712db258e253b4ba0a91731b85d",
+      "permanent_qemu_pid": 3361,
+      "t3_service": "active",
+      "incus_restarted": false,
+      "policy_rewritten": false,
+      "authenticated_status": true,
+      "ssh": true,
+      "incus_pid": 3197,
+      "incus_started_utc": "2026-10-29 16:28:46 UTC",
+      "hardware_and_controller_config_match_pre_adoption": true
+    },
+    "nested": {
+      "copied": {
+        "copied": true
+      },
+      "adopted": {
+        "status": "adopted",
+        "installation": "be06764a-b63c-4cbe-a3c1-4b5ebe0cc412",
+        "restarts": [
+          "homecloudd.service"
+        ]
+      },
+      "owner": "7e0e6549-b83f-4561-a0be-4984120bffd3",
+      "request_id": "3bcf5cce-0d25-4e62-8636-1ebebe7cbb81",
+      "inner": "7b0b9207-825f-4ebc-94e9-135b833fa50f",
+      "baseline": {
+        "pid": 18456,
+        "status": "Running",
+        "data": "deployment-survives",
+        "endpoint_sha256": "98ac9c804644071034da0cbfbe717ed874527fc4589b800492b02260f3865b01",
+        "incus_pid": "15026"
+      },
+      "check": {
+        "status": "checked",
+        "versions": {
+          "incus": "Client version: 6.0.5",
+          "zfs": "zfs-2.4.1-1ubuntu5.1",
+          "qemu": "QEMU emulator version 10.2.1 (Debian 1:10.2.1+ds-1ubuntu3.3)"
+        }
+      },
+      "compatibility_fixture": {
+        "reviewed_collision_recovered": true,
+        "compatibility_fixture_sha256": "201e31f90a04300d176e36600db860b6ba8e638940e9186a71543ce033b465ac"
+      },
+      "upgrade": {
+        "upgrade": true,
+        "rollback": true,
+        "acknowledged_grant_preserved": true,
+        "proof": {
+          "pid": 18456,
+          "status": "Running",
+          "data": "deployment-survives",
+          "endpoint_sha256": "98ac9c804644071034da0cbfbe717ed874527fc4589b800492b02260f3865b01",
+          "incus_pid": "15026"
+        }
+      },
+      "kill": {
+        "sigkill": true,
+        "guard_restored": true,
+        "proof": {
+          "pid": 18456,
+          "status": "Running",
+          "data": "deployment-survives",
+          "endpoint_sha256": "98ac9c804644071034da0cbfbe717ed874527fc4589b800492b02260f3865b01",
+          "incus_pid": "15026"
+        }
+      },
+      "bad-start": {
+        "bad_start_rejected": true,
+        "explicit_rollback": true,
+        "database_retained": true,
+        "proof": {
+          "pid": 18456,
+          "status": "Running",
+          "data": "deployment-survives",
+          "endpoint_sha256": "98ac9c804644071034da0cbfbe717ed874527fc4589b800492b02260f3865b01",
+          "incus_pid": "15026"
+        }
+      },
+      "install-check": {
+        "install_preflight": true,
+        "proof": {
+          "pid": 18456,
+          "status": "Running",
+          "data": "deployment-survives",
+          "endpoint_sha256": "98ac9c804644071034da0cbfbe717ed874527fc4589b800492b02260f3865b01",
+          "incus_pid": "15026"
+        }
+      },
+      "managed_upgrade": {
+        "managed_upgrade": true,
+        "job": "succeeded"
+      }
+    },
+    "test_worker_cleaned": true,
+    "fresh_install": {
+      "passed": true,
+      "proof": {
+        "bundle_sha256": "5d862b7ffebbf55b23a946a8c4fa76c056e205fb2e817cb034cdd3aad22a58fd",
+        "receipt_verified": true,
+        "bootstrap_separated": true,
+        "controller": "active",
+        "pool": "ONLINE"
+      },
+      "independent_enrollment": true,
+      "applications": {
+        "stage": "ready",
+        "service": "running"
+      },
+      "empty_independent_controller": true
+    }
+  },
+  "anomalies": [
+    {
+      "issue": "outer managed-host bootstrap shared inner installed helper path",
+      "result": "receipt verification blocked rollback on drift; paths separated and regression test added; exact final bundle upgrade and rollback passed across monitor refreshes"
+    },
+    {
+      "issue": "older local macOS Python lacks tar extraction filter API",
+      "result": "known-file test fixture handles the local test runtime; production Linux keeps data filter"
+    },
+    {
+      "issue": "example tracing dev dependency was briefly omitted during cleanup",
+      "result": "restored; final Rust and clippy checks pass"
+    }
+  ],
+  "limits": [
+    "installer hardware-policy changes remain explicit maintenance, not transactional policy migration",
+    "state-format revision is an explicit developer compatibility contract",
+    "stable Mac signing/notarization and permanent operator privilege cleanup remain release work",
+    "final-hardware density, real multiple GPUs and deferred monitored-hotspot repeat remain separate acceptance work",
+    "off-host backups remain deliberately deferred",
+    "original isolated Incus SIGKILL and deleted-instance QEMU orphan causes remain unproven"
+  ],
+  "final_state": {
+    "permanent_qemu_pid": 3361,
+    "t3_service": "active",
+    "incus_pid": 3197,
+    "temporary_leases": {
+      "cpu_leases": 0,
+      "gpu_leases": 0,
+      "network_leases": 0
+    },
+    "temporary_instances_removed": true,
+    "temporary_volumes_removed": true,
+    "receipt_verified": true,
+    "policy_unchanged": true,
+    "daemon_sha256": "859a6f87e1842cf7d75c5c69ed57321b41b34645590806696355d8d739dc300b",
+    "bundle_sha256": "4c0c78e64e01a255782a752fd1a9989fdf64ac188669a59caf028cb1c0fbad5c",
+    "grant_restored": {
+      "memory_bytes": 4294967296,
+      "cpu_cores": 2,
+      "disk_bytes": 137438953472
+    },
+    "committed": {
+      "memory_bytes": 4294967296,
+      "cpu_cores": 1,
+      "disk_bytes": 51539607552
+    },
+    "vm_count": 2,
+    "fresh_worker_cleaned": true
+  },
+  "integration": {
+    "upstream_material_symbols": "7a26e41",
+    "merged_without_overwriting": true,
+    "mac_rust": 211,
+    "native_gui": 86,
+    "clippy": "passed",
+    "serde_json": "1.0.145",
+    "live_fault_and_fresh_install_bundle": "5d862b7ffebbf55b23a946a8c4fa76c056e205fb2e817cb034cdd3aad22a58fd",
+    "linux_rust": 125,
+    "approved_host_refresh": {
+      "deployment": "a9186a51-dcfa-4a4e-84ce-426c24aa0996",
+      "status": "ready",
+      "restarts": [
+        "homecloudd.service"
+      ]
+    },
+    "bundle_sha256": "4c0c78e64e01a255782a752fd1a9989fdf64ac188669a59caf028cb1c0fbad5c",
+    "authenticated_status": true,
+    "ssh": true
+  }
+}

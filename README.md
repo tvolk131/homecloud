@@ -6,7 +6,7 @@ dedicated cores, GPU passthrough, and OpenSSH over Iroh.
 
 **Early implementation, under active lab validation.** See [MVP decisions](docs/mvp.md),
 [operations](docs/operations.md), and [validation](docs/validation.md) before adding coworkers.
-Backups are deliberately deferred; this host is disposable.
+Backups are deliberately deferred; this host is disposable. See the [current roadmap](docs/roadmap.md) for stabilization and acceptance work.
 
 ## Run the Mac app
 
@@ -21,11 +21,11 @@ tested toolchain. The package includes the `homecloud` OpenSSH transport helper.
 Debug symbols and incremental compilation are disabled to keep local builds small.
 
 The current development Mac is already paired with the lab host. The default
-private credential is `~/.config/homecloud/client.json`. `HOMECLOUD_PROFILE` selects
+paired-host metadata is `~/.config/homecloud/client.json`; Mac device keys live in Keychain. `HOMECLOUD_PROFILE` selects
 another profile; `HOMECLOUD_CLI` overrides the SSH helper path.
 
 Use **Open Terminal** for ordinary SSH over Iroh. In **New VM**, select
-**Install T3 Code**, or open **Details → Overview** on an existing VM. Homecloud installs
+**T3 Code**, or open an existing VM’s details. Homecloud installs
 T3's boot service and native Codex/Claude provider CLIs, then guides browser account
 authorization. Sign
 into the same T3 Connect account on your Mac to select the backend; guest IPs and
@@ -76,3 +76,6 @@ does not run guests or provide SSH.
 Never commit `.local/`, endpoint secrets, profiles, invitation codes, private SSH
 keys, raw guest logs, or machine-specific known-host credentials. The checked-in
 `lab/` files document the earlier proofs; they are not a general-purpose installer.
+
+Client device keys use the native macOS Keychain; see [credential storage](docs/credentials.md).
+Use the separate [host software deployment procedure](docs/deployment.md) for upgrades.

@@ -1386,3 +1386,77 @@ VMs remain. The devbox QEMU PID stayed 3361 and T3 remained active; final host
 memory health is Healthy and the pool is ONLINE. Full evidence and resolved test
 findings are in `lab/evidence/memory-recovery.json`. This does not establish full
 physical-host density or resolve the earlier independent Incus/QEMU incidents.
+
+
+## October 29 stabilization: credentials and software deployment
+
+Mac device keys now use the native Keychain. Seven deterministic migration tests
+cover identity/pin preservation, denied and failed store operations, readback,
+missing/corrupt keys, tampered references, concurrent migration, permissions and
+unknown schema versions. A separate native disposable-item round trip passed.
+The actual Mac profile migrated without re-pairing, its plaintext key was removed,
+and the CLI, bundled GUI and SSH helper authenticated successfully afterward.
+
+Software updates now have a dedicated local-root command, allowlisted manifest,
+content/version/state-format checks, matched-file receipts, a durable journal,
+root systemd pre-start recovery guards and explicit software-only rollback.
+Twelve filesystem/SQLite/kernel-lock fault tests exercise the update boundary.
+A managed-host regression covers separate bootstrap/runtime paths, and two more
+tests prevent existing-host updates from reinstalling packages or storage policy.
+
+Real nested tests exercised install preflight, legacy adoption, normal updates,
+rollback retaining a grant acknowledged after its snapshot, SIGKILL after the
+first payload replacement, and a daemon that passed help but failed service
+startup. Incus and the inner VM retained their PIDs and a durable proof file;
+the endpoint key remained unchanged. The updater failure did not restore an old
+database. A direct managed-host software upgrade also completed successfully.
+
+The first test exposed a genuine bootstrap/runtime filename collision: the outer
+monitor refreshed `managed-host.py` inside the inner host's installed software
+directory. Receipt verification blocked rollback on that drift. The outer
+bootstrap now lives under `homecloud-workload`, and atomic refresh plus a
+regression test protect the inner installation. A temporary compatibility
+fixture allowed engine fault testing before the physical-host fix was approved;
+the exact final bundle subsequently passed normal update and rollback across
+multiple monitor refreshes after the fix was deployed. A new disposable worker
+then installed the exact final bundle from scratch, passed receipt verification,
+reported its pool ONLINE and controller active, and enrolled an independent
+administrator without reusing any permanent identity or database.
+
+With explicit operator approval, the physical host adopted receipts/guards and
+installed bundle `5d862b7ffebbf55b23a946a8c4fa76c056e205fb2e817cb034cdd3aad22a58fd`.
+Only Homecloud restarted. The permanent devbox retained QEMU PID 3361, its T3
+service stayed active, and authenticated status plus SSH worked afterward.
+A local pre-adoption recovery copy remains under
+`/var/lib/homecloud/install-backups/stabilization-1793309938644877439`.
+This is not an off-host backup.
+
+Local verification passed 210 Rust tests on Mac (including 85 native GUI tests
+and 133 screenshot comparisons), 125 relevant Rust tests on Linux, and 136 Python
+tests (two Linux-only skips on Mac). The ignored native Keychain smoke was also
+run explicitly. The existing `block` dependency still emits a future-Rust
+compatibility advisory; current clippy checks pass. The build/test iteration also
+caught a missing example-only tracing dependency and a Python 3.9 fixture
+compatibility issue; both were corrected before the final checks.
+
+The installer is still an explicit maintenance operation, not a transactional
+hardware-policy migration. The version baseline is intentionally narrow, stable
+Mac signing/notarization and permanent operator sudo cleanup remain release work,
+and final-hardware density, multi-card hardware and the deferred hotspot repeat
+are not proven by these deployment tests. See [roadmap](roadmap.md).
+
+Both disposable hosts and their custom disks were removed through the normal
+API. Temporary CPU/GPU/network leases are zero, the original 4 GiB / 2-core /
+128 GiB grant is restored, and the two permanent VMs remain. Incus PID 3197
+and permanent QEMU PID 3361 are unchanged. Structured evidence is in
+[`lab/evidence/stabilization.json`](../lab/evidence/stabilization.json).
+
+The concurrently merged Material Symbols update (`7a26e41`) was preserved.
+Combined verification passed 211 Mac Rust tests, including 86 GUI tests and the
+updated icon screenshot baselines. Its shared serde_json 1.0.145 pin was rebuilt and passed all 125 Linux Rust
+tests. The separately approved host refresh deployed bundle
+`4c0c78e64e01a255782a752fd1a9989fdf64ac188669a59caf028cb1c0fbad5c`,
+then passed authenticated status and SSH with Incus/QEMU PIDs unchanged.
+The earlier fault and clean-install evidence above
+identifies the exact pre-integration bundle tested rather than claiming those
+fault campaigns were rerun for the dependency-only rebuild.

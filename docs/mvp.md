@@ -39,7 +39,8 @@ This trusts the physical host and Incus; it is not protection against a compromi
 
 All admission, CPU/network/GPU leases and idempotency records commit in one SQLite
 `BEGIN IMMEDIATE` transaction before an external effect. The first host uses a
-fixed, reviewed resource budget; changing its total capacity needs an explicit migration.
+reviewed resource budget. RAM changes use explicit capacity adoption; CPU topology
+and storage-envelope changes still require an operator-reviewed migration.
 
 The durable `Vm.resources` record is the RAM/disk commitment, not measured usage.
 CPU rows uniquely claim every SMT sibling; GPU rows uniquely claim a PCI address
@@ -164,28 +165,11 @@ Clients cannot supply arbitrary host commands, paths, image URLs or network dest
 This adapter is Python for the first implementation; domain policy, identity,
 persistence, transport, clients and reconciliation are Rust. The CPU launcher is C.
 
-## Next work before coworker release
+## Current roadmap
 
-The full-stop/reacquire, competing GPU start/attach, cleanup-failure retention,
-controller crash replay, real disk-quota backing, isolation, forced relay and
-unattended host reboot proofs passed on the lab. See [validation](validation.md)
-and its recorded evidence. Real provider-workflow acceptance is also complete:
-both existing Claude/Codex threads resumed after VM reboot without reauthorization,
-and the owner confirmed disconnect/reconnect plus actual Mac sleep/wake task
-continuity. Remaining work:
-- Resolve slow/intermittent automatic-mode mobile connections. Relay-only hotspot
-  control/SSH/SFTP concurrency passed; baseline sleep/network-change recovery passed.
-  Provider continuity is verified separately; automatic-mode hotspot behavior
-  remains unresolved. The October 28 full runs have uncertain network attribution
-  after the phone died; repeat with the network guard when mobile testing resumes.
-- Add operation cancellation/recovery UX, better forms/navigation, activity history,
-  persistent alerts, SMART/disk inventory, and idle-GPU advisories.
-- Harden the host installer with package/version checks, migration/rollback paths,
-  broader hardware discovery and explicit upgrade behavior. The sample policy is lab-specific.
-- Store Mac device secrets in Keychain. Current private files use mode 0600.
-- Broaden crash/fault injection, hostile guest/network cases, and device reset/reboot tests.
-- Design off-host backup/restore, schema migration and image-update policy before
-  treating the system as durable storage for important work.
+The live backlog is maintained in [roadmap.md](roadmap.md). The dated
+[validation record](validation.md) distinguishes completed proofs, resolved findings
+and deliberately deferred acceptance work. Older lab evidence is historical.
 
 
 T3 is the first [managed guest application](managed-apps.md), selected per VM.

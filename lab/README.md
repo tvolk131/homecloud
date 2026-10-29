@@ -116,3 +116,27 @@ has no swap. A final cache reduction checks actual reclamation. Record the neste
 distro's Incus/QEMU/ZFS versions: these may differ from the physical lab host.
 This validates a fully disposable worker component, not full resident saturation
 or abrupt physical power loss on the permanent bare-metal server.
+
+
+## Software deployment proofs
+
+`deployment_runner.py` uses a manifest-owned managed host and independently
+bootstraps an inner client. Supply the reviewed Linux bundle path on the physical
+build host and its SHA-256 to `copy`, then run `adopt` only for a pre-receipt worker,
+`inner`, `install-check`, `check`, `upgrade`, `kill`, and `bad-start` in sequence.
+All commands take the same `--state`, pinned `--ssh-config` and Mac `--cli` as the
+managed-host runner; artifact commands also require `--bundle-sha256`.
+
+`upgrade` changes an acknowledged grant after its snapshot, then proves software
+rollback retains it. `kill` sends SIGKILL to a disposable updater after its first
+payload replacement and starts the real guarded service. `bad-start` builds a
+fixture daemon that passes `--help` but exits during service startup, then uses
+explicit software rollback. They check the same running inner QEMU PID, Incus
+PID, endpoint identity and durable proof file throughout. A failure keeps the
+worker and manifest for inspection. Cleanup uses the managed-host runner's normal
+API deletion; it restores the original outer user grant and removes the owned
+custom test volume only after the worker is fully gone.
+
+Never run the guest fault fixture directly on the permanent host. Native Keychain
+smoke tests are explicitly ignored in CI and create/delete only a disposable item.
+See [deployment](../docs/deployment.md) and [credentials](../docs/credentials.md).

@@ -32,4 +32,4 @@ jobs:
         run: |
           cargo clippy --locked --workspace --exclude homecloud-desktop --all-targets -- -D warnings
           cc -Wall -Wextra -Werror -fsyntax-only crates/host/native/qemu_cpu_launcher.c
-      - run: python3 -m py_compile crates/host/host_runtime.py scripts/install_host.py lab/prove_access.py
+      - run: python3 -m py_compile crates/host/host_runtime.py scripts/install_host.py scripts/host_deploy.py scripts/bundle_host.py lab/prove_access.py

@@ -11,6 +11,10 @@ may change; pin the machine identity rather than trusting a newly discovered IP.
 The host currently runs kernel `7.0.0-38-generic`; the Ubuntu 24.04 guests run 6.8.
 The controller starts at boot without a console login.
 
+Normal software upgrades use the separate [deployment procedure](deployment.md).
+The installer below is an explicit maintenance operation.
+Mac device profiles migrate to [Keychain storage](credentials.md).
+
 ## Installation boundary
 
 The host must already have a healthy ZFS pool, working Incus/QEMU, nftables,

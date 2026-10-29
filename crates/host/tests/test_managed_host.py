@@ -33,3 +33,28 @@ class HostDiskTests(unittest.TestCase):
         self.volume={'config':{'user.homecloud.id':self.vm['id'],'user.homecloud.owner':self.vm['owner']},'used_by':['a VM']}
         with self.assertRaisesRegex(AssertionError,'still attached'):m.cleanup(self.host,self.vm)
         self.assertEqual(self.deletes,0)
+
+
+class BootstrapIsolationTests(unittest.TestCase):
+    def test_inspection_never_overwrites_the_inner_host_software(self):
+        import io,json,tempfile
+        from unittest.mock import patch
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp);protected=root/'usr/local/libexec/homecloud/managed-host.py';protected.parent.mkdir(parents=True);protected.write_text('inner software')
+            source=Path(__file__).resolve().parents[3]/'guest/managed-host.py'
+            calls=[]
+            def run(*args,**kwargs):
+                command=args[4:];calls.append(command)
+                if command[:2]==('python3','-c'):
+                    real_path=type(root)
+                    def mapped(value):return real_path(temp)/str(value).lstrip('/')
+                    with patch('pathlib.Path',side_effect=mapped),patch('sys.stdin',io.StringIO(kwargs['input'])):exec(command[2],{})
+                    return SimpleNamespace(stdout='')
+                self.assertEqual(command,('python3',m.BOOTSTRAP,'inspect'));return SimpleNamespace(stdout=json.dumps({'observation':{'service':'running'},'job':None}))
+            runtime=SimpleNamespace(owned=lambda vm:None,state=lambda vm:'running',vm_name=lambda vm:'fixture',run=run)
+            vm={'id':'00000000-0000-4000-8000-000000000001','spec':{'applications':['homecloud_host']}}
+            app={'vm_id':vm['id'],'kind':'homecloud_host','desired_version':'0.1.0','start_on_boot':True}
+            with patch.object(m,'BOOTSTRAP_SOURCE',source):report=m.application(runtime,vm,app,{'kind':'inspect'})
+            self.assertEqual(report['observation']['service'],'running');self.assertEqual(protected.read_text(),'inner software')
+            self.assertEqual((root/m.BOOTSTRAP.lstrip('/')).read_text(),source.read_text())
+            self.assertEqual(len(calls),2)

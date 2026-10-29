@@ -8,6 +8,7 @@ use std::sync::Arc;
 
 #[tokio::test]
 async fn real_quic_requires_enrollment_and_rechecks_device_revocation() {
+    let credentials = TestCredentials::default();
     let temp = tempfile::tempdir().unwrap();
     let store = Store::open(temp.path().join("state.db"), Config::default().limits).unwrap();
     let (_, token) = store.bootstrap("Administrator").unwrap();
@@ -63,11 +64,19 @@ async fn real_quic_requires_enrollment_and_rechecks_device_revocation() {
     .await
     .unwrap();
     assert!(outsider.snapshot().await.is_err());
-    let (client, user) = Client::enroll(&path, address.clone(), token.clone())
+    let (client, user) = Client::enroll_with_store(
+        &path,
+        address.clone(),
+        token.clone(),
+        Default::default(),
+        &credentials,
+    )
+    .await
+    .unwrap();
+    assert_eq!(client.snapshot().await.unwrap().me.id, user.id);
+    let sibling = Client::from_profile(Profile::load_with_store(&path, &credentials).unwrap())
         .await
         .unwrap();
-    assert_eq!(client.snapshot().await.unwrap().me.id, user.id);
-    let sibling = Client::load(&path).await.unwrap();
     assert_eq!(client.device_id(), sibling.device_id());
     assert_ne!(client.transport_id(), sibling.transport_id());
     let (first, second) = tokio::join!(client.snapshot(), sibling.snapshot());
@@ -245,6 +254,7 @@ async fn slow_control_reader_receives_the_complete_response_before_connection_re
 #[tokio::test]
 async fn recoverable_create_survives_an_unread_quic_response_and_fences_rejection() {
     use std::time::{Duration, Instant};
+    let credentials = TestCredentials::default();
     let temp = tempfile::tempdir().unwrap();
     let limits = Config::default().limits;
     let store = Store::open(temp.path().join("state.db"), limits.clone()).unwrap();
@@ -275,7 +285,15 @@ async fn recoverable_create_survives_an_unread_quic_response_and_fences_rejectio
     let address = iroh::EndpointAddr::new(host.id()).with_ip_addr(socket);
     let worker = tokio::spawn(serve(service.clone(), host.clone()));
     let path = temp.path().join("client.json");
-    let (client, _) = Client::enroll(&path, address.clone(), token).await.unwrap();
+    let (client, _) = Client::enroll_with_store(
+        &path,
+        address.clone(),
+        token,
+        Default::default(),
+        &credentials,
+    )
+    .await
+    .unwrap();
     service
         .store
         .grant(&client.device_id(), user.id, grant, false)
@@ -295,7 +313,7 @@ async fn recoverable_create_survives_an_unread_quic_response_and_fences_rejectio
         idempotency_key: key,
         spec: spec.clone(),
     };
-    let profile = Profile::load(&path).unwrap();
+    let profile = Profile::load_with_store(&path, &credentials).unwrap();
     let bytes: [u8; 32] = hex_decode(&profile.device_secret);
     let device = SecretKey::from_bytes(&bytes);
     let endpoint = iroh::Endpoint::builder(iroh::endpoint::presets::Minimal)
@@ -317,7 +335,9 @@ async fn recoverable_create_survives_an_unread_quic_response_and_fences_rejectio
     conn.close(0u32.into(), b"simulate lost reply without reading it");
     endpoint.close().await;
     client.close().await;
-    let client = Client::load(&path).await.unwrap();
+    let client = Client::from_profile(Profile::load_with_store(&path, &credentials).unwrap())
+        .await
+        .unwrap();
     let Response::Operation(first) = client.rpc_response(request.clone()).await.unwrap() else {
         panic!("Missing original operation")
     };
@@ -363,4 +383,16 @@ fn hex_decode(value: &str) -> [u8; 32] {
         *b = u8::from_str_radix(&value[2 * i..2 * i + 2], 16).unwrap();
     }
     bytes
+}
+
+#[derive(Default)]
+struct TestCredentials(std::sync::Mutex<std::collections::HashMap<String, Vec<u8>>>);
+impl homecloud_client::CredentialStore for TestCredentials {
+    fn get(&self, account: &str) -> anyhow::Result<Option<Vec<u8>>> {
+        Ok(self.0.lock().unwrap().get(account).cloned())
+    }
+    fn put(&self, account: &str, secret: &[u8]) -> anyhow::Result<()> {
+        self.0.lock().unwrap().insert(account.into(), secret.into());
+        Ok(())
+    }
 }
