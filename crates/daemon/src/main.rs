@@ -22,6 +22,8 @@ struct Args {
 #[derive(Subcommand)]
 enum Command {
     Serve,
+    #[command(hide = true)]
+    CollectStorage,
     BootstrapAdmin {
         #[arg(long, default_value = "Administrator")]
         name: String,
@@ -38,6 +40,13 @@ async fn main() -> Result<()> {
         .with_writer(std::io::stderr)
         .init();
     let args = Args::parse();
+    if matches!(args.command, Command::CollectStorage) {
+        println!(
+            "{}",
+            serde_json::to_string(&homecloud_host::storage::collect().await?)?
+        );
+        return Ok(());
+    }
     let config = if let Some(path) = args.config {
         serde_json::from_slice::<Config>(&std::fs::read(path)?)?
     } else {
@@ -65,6 +74,7 @@ async fn main() -> Result<()> {
     }
     let store = Store::open(args.state_dir.join("state.db"), config.limits)?;
     match args.command {
+        Command::CollectStorage => unreachable!(),
         Command::BootstrapAdmin { name } => {
             let (user, token) = store.bootstrap(&name)?;
             println!(
@@ -89,6 +99,15 @@ async fn main() -> Result<()> {
                 })
             };
             let service = Service::new(store, backend)?;
+            let storage_worker = service.clone();
+            let storage = tokio::spawn(async move {
+                loop {
+                    if let Err(error) = storage_worker.collect_storage_once().await {
+                        tracing::warn!(%error, "Storage observation unavailable");
+                    }
+                    tokio::time::sleep(Duration::from_secs(60)).await;
+                }
+            });
             let secret = load_secret(&args.state_dir.join("endpoint.secret"))?;
             let endpoint = homecloud_daemon::endpoint(secret).await?;
             let _ = tokio::time::timeout(Duration::from_secs(15), endpoint.online()).await;
@@ -118,6 +137,7 @@ async fn main() -> Result<()> {
             tokio::select! {result=homecloud_daemon::serve(service,endpoint.clone())=>result?,_=tokio::signal::ctrl_c()=>{},}
             reconcile.abort();
             applications.abort();
+            storage.abort();
             endpoint.close().await;
         }
     }

@@ -4,7 +4,9 @@ mod apps;
 mod edit;
 mod memory_health;
 mod reserves;
+mod storage;
 pub use memory_health::*;
+pub use storage::*;
 mod vm;
 pub use apps::*;
 pub use edit::*;
@@ -276,6 +278,8 @@ pub struct Gpu {
 }
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct HostInventory {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub storage: Option<StorageInventory>,
     pub hostname: String,
     pub cpu_model: String,
     pub physical_cores: usize,
@@ -453,6 +457,14 @@ mod tests {
         inventory["minimum_pool_available_bytes"] = serde_json::json!(30 * GIB);
         let updated: HostInventory = serde_json::from_value(inventory).unwrap();
         assert_eq!(updated.minimum_pool_available_bytes, Some(30 * GIB));
+    }
+
+    #[test]
+    fn older_inventory_omits_storage_instead_of_inventing_an_empty_success() {
+        let mut inventory = serde_json::to_value(HostInventory::default()).unwrap();
+        inventory.as_object_mut().unwrap().remove("storage");
+        let old: HostInventory = serde_json::from_value(inventory).unwrap();
+        assert!(old.storage.is_none());
     }
 
     #[test]

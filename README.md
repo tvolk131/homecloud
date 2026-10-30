@@ -79,3 +79,9 @@ keys, raw guest logs, or machine-specific known-host credentials. The checked-in
 
 Client device keys use the native macOS Keychain; see [credential storage](docs/credentials.md).
 Use the separate [host software deployment procedure](docs/deployment.md) for upgrades.
+
+Administrators can inspect physical disks, imported ZFS topology and cached SMART
+observations in **Hosts → Disks & ZFS**. See [storage observability](docs/storage-observability.md)
+for freshness, prerequisites and the read-only/physical-validation boundaries.
+The collector is Rust code shipped in the existing host daemon; the privileged
+Python adapter only dispatches its fixed local command.

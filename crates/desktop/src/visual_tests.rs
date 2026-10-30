@@ -84,6 +84,7 @@ pub(super) fn fixture() -> App {
         },
     ];
     let inventory = HostInventory {
+        storage: None,
         hostname: "homecloud-01".into(),
         cpu_model: "Intel Core i7-8700K".into(),
         physical_cores: 6,
@@ -211,6 +212,44 @@ pub(super) fn host_fixture() -> App {
     s.inventory.pool_available_bytes = 6144 * GIB;
     app
 }
+pub(super) fn storage_fixture() -> App {
+    let mut app = host_fixture();
+    app.host_tab = HostTab::Storage;
+    let mut inventory: StorageInventory = serde_json::from_value(serde_json::json!({
+        "disks": [
+            {"id": "wwn:fixture-hdd", "path": "/dev/sda", "model": "Fixture storage HDD",
+             "serial": "SYNTHETIC-STORAGE", "wwn": "fixture-hdd", "transport": "sata",
+             "size_bytes": 1000000000000u64, "rotational": true,
+             "devices": [{"path": "/dev/sda1", "filesystem": "zfs_member"}],
+             "smart": {"state": "current", "passed": true, "temperature_celsius": 32,
+                "power_on_hours": 1200,
+                "metrics": [{"name": "Current_Pending_Sector (raw)", "value": "0"}],
+                "self_tests": ["Short offline: Completed without error"]}},
+            {"id": "serial:fixture-boot", "path": "/dev/nvme0n1", "model": "Fixture OS NVMe",
+             "serial": "SYNTHETIC-BOOT", "transport": "nvme", "size_bytes": 500000000000u64,
+             "rotational": false,
+             "devices": [{"path": "/dev/nvme0n1p1", "filesystem": "ext4", "mountpoints": ["/"]}],
+             "smart": {"state": "current", "passed": false, "temperature_celsius": 45,
+                "metrics": [{"name": "Critical warning flags", "value": "4"},
+                            {"name": "Percentage used", "value": "104"},
+                            {"name": "Media / data integrity errors", "value": "2"}]}}
+        ],
+        "pools": [{"name": "tank", "guid": "100", "state": "ONLINE", "managed": true,
+            "scan": "scrub · finished", "warnings": ["No redundancy in data vdev /dev/sda1"],
+            "vdevs": [{"name": "/dev/sda1", "guid": "101", "kind": "disk", "role": "data",
+                "path": "/dev/sda1", "state": "ONLINE", "disk_id": "wwn:fixture-hdd",
+                "read_errors": 0, "write_errors": 0, "checksum_errors": 2}]}]
+    }))
+    .unwrap();
+    let now = unix_now();
+    inventory.disk_collection.observed_at = Some(now);
+    inventory.pool_collection.observed_at = Some(now);
+    for disk in &mut inventory.disks {
+        disk.smart.collection.observed_at = Some(now);
+    }
+    app.snapshot.as_mut().unwrap().inventory.storage = Some(inventory);
+    app
+}
 pub(super) fn simulator(app: &App, size: (f32, f32)) -> Simulator<'_, Msg, Theme> {
     Simulator::with_size(
         Settings {
@@ -278,6 +317,11 @@ fn screenshot_regressions() {
     let artifacts = root.join("../../target/ui-screenshots");
     let update = std::env::var("UPDATE_SCREENSHOTS").as_deref() == Ok("1");
     let names = [
+        "host-storage-topology",
+        "host-storage-smart",
+        "host-storage-disks-small",
+        "host-storage-stale",
+        "host-storage-unavailable-small",
         "memory-vms-blocked-small",
         "memory-vm-blocked",
         "memory-host-recovery",
@@ -418,6 +462,40 @@ fn screenshot_regressions() {
         };
         let mut size = (1180.0, 820.0);
         match name {
+            "host-storage-topology"
+            | "host-storage-smart"
+            | "host-storage-disks-small"
+            | "host-storage-stale"
+            | "host-storage-unavailable-small" => {
+                app = storage_fixture();
+                size = (1180.0, 1040.0);
+                if name == "host-storage-smart" {
+                    app.storage_disk = Some("wwn:fixture-hdd".into());
+                }
+                if name == "host-storage-disks-small" {
+                    size = (800.0, 600.0);
+                    app.storage_disk = Some("serial:fixture-boot".into());
+                }
+                if name == "host-storage-stale" {
+                    let inventory = app
+                        .snapshot
+                        .as_mut()
+                        .unwrap()
+                        .inventory
+                        .storage
+                        .as_mut()
+                        .unwrap();
+                    inventory.disk_collection.error =
+                        Some("Disk discovery timed out; previous readings retained.".into());
+                    inventory.pool_collection.error =
+                        Some("ZFS observation failed; previous topology retained.".into());
+                }
+                if name == "host-storage-unavailable-small" {
+                    size = (800.0, 600.0);
+                    app.snapshot.as_mut().unwrap().inventory.storage =
+                        Some(StorageInventory::default());
+                }
+            }
             "memory-vms-blocked-small"
             | "memory-vm-blocked"
             | "memory-host-recovery"
@@ -1236,6 +1314,9 @@ Setup did not complete.
             _ => {}
         }
         let mut rendered = simulator(&app, size);
+        if name == "host-storage-disks-small" {
+            scroll_bottom(&mut rendered, size);
+        }
         if matches!(
             name,
             "host-reserves-pending" | "host-reserves-review" | "host-reserves-unapplied"

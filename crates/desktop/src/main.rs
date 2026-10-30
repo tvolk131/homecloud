@@ -18,6 +18,8 @@ mod memory_ui_tests;
 mod reserve_ui_tests;
 mod reserves;
 mod resources;
+#[cfg(test)]
+mod storage_ui_tests;
 mod ui;
 #[cfg(test)]
 mod visual_tests;
@@ -40,6 +42,7 @@ enum HostTab {
     Overview,
     Allocations,
     Hardware,
+    Storage,
 }
 #[derive(Clone)]
 enum Panel {
@@ -101,6 +104,7 @@ enum Msg {
     DismissNotice,
     ToggleHardware,
     HostTab(HostTab),
+    StorageDisk(String),
     HighlightOwner(Option<Uuid>),
     ToggleIdentity,
     ToggleMotion,
@@ -188,6 +192,7 @@ struct App {
     last_panel_error: Option<String>,
     hardware_details: bool,
     host_tab: HostTab,
+    storage_disk: Option<String>,
     advanced: bool,
     host_owner: Option<Uuid>,
     identity_details: bool,
@@ -251,6 +256,7 @@ impl App {
             last_panel_error: None,
             hardware_details: false,
             host_tab: HostTab::Overview,
+            storage_disk: None,
             advanced: false,
             host_owner: None,
             identity_details: false,
@@ -718,6 +724,13 @@ impl App {
             Msg::ToggleIdentity => self.identity_details = !self.identity_details,
             Msg::ToggleHardware => self.hardware_details = !self.hardware_details,
             Msg::HostTab(tab) => self.host_tab = tab,
+            Msg::StorageDisk(id) => {
+                self.storage_disk = if self.storage_disk.as_ref() == Some(&id) {
+                    None
+                } else {
+                    Some(id)
+                };
+            }
             Msg::HighlightOwner(owner) => self.host_owner = owner,
             Msg::ToggleMotion => self.reduced_motion = !self.reduced_motion,
             Msg::LoadSetupDiagnostics(id) => {
