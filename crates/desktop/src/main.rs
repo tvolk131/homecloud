@@ -14,11 +14,16 @@ mod fab_tests;
 mod host_ui_tests;
 #[cfg(test)]
 mod memory_ui_tests;
+mod preferences;
+#[cfg(test)]
+mod preferences_tests;
 #[cfg(test)]
 mod reserve_ui_tests;
 mod reserves;
 mod resources;
 mod ui;
+#[cfg(test)]
+mod ui_status_tests;
 #[cfg(test)]
 mod visual_tests;
 use std::{path::PathBuf, sync::Arc, time::Duration};
@@ -155,6 +160,7 @@ struct ApplicationRequest {
 }
 struct App {
     profile: PathBuf,
+    preferences_path: Option<PathBuf>,
     client: Option<Arc<Client>>,
     snapshot: Option<Snapshot>,
     fields: [String; FIELD_COUNT],
@@ -218,6 +224,8 @@ impl App {
         }
         Self {
             profile,
+            // Fixtures never resolve or access the real user's preferences.
+            preferences_path: None,
             client: None,
             snapshot: None,
             fields,
@@ -274,12 +282,39 @@ impl App {
             Task::none()
         };
         let mut app = Self::blank(profile);
+        match preferences::default_path() {
+            Ok(path) => {
+                app.preferences_path = Some(path);
+                app.load_preferences();
+            }
+            Err(error) => app.error = Some(format!("Could not load preferences: {error}")),
+        }
         let home = PathBuf::from(std::env::var_os("HOME").unwrap_or_default());
         app.fields[Field::Key as usize] = std::fs::read_to_string(home.join(".ssh/id_ed25519.pub"))
             .unwrap_or_default()
             .trim()
             .into();
         (app, task)
+    }
+    fn load_preferences(&mut self) {
+        let Some(path) = self.preferences_path.as_deref() else {
+            self.error =
+                Some("Could not load preferences: Configuration directory unavailable".into());
+            return;
+        };
+        match preferences::Preferences::load(path, &self.profile) {
+            Ok(loaded) => {
+                // Honor the imported setting even if persistence fails, and
+                // retain its source file so a later launch can retry the import.
+                self.reduced_motion = loaded.preferences.reduced_motion;
+                if loaded.needs_save
+                    && let Err(error) = loaded.preferences.save(path)
+                {
+                    self.error = Some(format!("Could not save preferences: {error}"));
+                }
+            }
+            Err(error) => self.error = Some(format!("Could not load preferences: {error}")),
+        }
     }
     fn theme(&self) -> Theme {
         Theme::from_accent(iced::Color::from_rgb8(101, 151, 235), true)
@@ -719,7 +754,31 @@ impl App {
             Msg::ToggleHardware => self.hardware_details = !self.hardware_details,
             Msg::HostTab(tab) => self.host_tab = tab,
             Msg::HighlightOwner(owner) => self.host_owner = owner,
-            Msg::ToggleMotion => self.reduced_motion = !self.reduced_motion,
+            Msg::ToggleMotion => {
+                let Some(path) = self.preferences_path.as_deref() else {
+                    self.error = Some(
+                        "Could not save preferences: Configuration directory unavailable".into(),
+                    );
+                    return Task::none();
+                };
+                let preferences = preferences::Preferences {
+                    reduced_motion: !self.reduced_motion,
+                };
+                match preferences.save(path) {
+                    Ok(()) => {
+                        self.reduced_motion = preferences.reduced_motion;
+                        if self.error.as_deref().is_some_and(|error| {
+                            error.starts_with("Could not save preferences:")
+                                || error.starts_with("Could not load preferences:")
+                        }) {
+                            self.error = None;
+                        }
+                    }
+                    Err(error) => {
+                        self.error = Some(format!("Could not save preferences: {error}"));
+                    }
+                }
+            }
             Msg::LoadSetupDiagnostics(id) => {
                 if self.setup_diagnostics_loading {
                     return Task::none();

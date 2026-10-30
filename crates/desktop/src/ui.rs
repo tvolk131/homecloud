@@ -8,6 +8,7 @@ mod memory_health;
 mod reserves;
 mod resource_controls;
 mod setup;
+mod status_colors;
 mod workspace;
 mod workspaces;
 use homecloud_core::*;
@@ -70,7 +71,7 @@ fn badge<'a>(label: impl Into<String>, good: bool) -> Element<'a, Msg> {
     let label = label.into();
     let attention = matches!(
         label.as_str(),
-        "Needs review" | "Needs attention" | "Setup needed" | "Check host"
+        "Needs review" | "Needs attention" | "Setup needed" | "Check host" | "Failed"
     );
     container(typography(label, Type::LabelMedium))
         .padding([5, 10])
@@ -79,7 +80,7 @@ fn badge<'a>(label: impl Into<String>, good: bool) -> Element<'a, Msg> {
                 if attention {
                     theme.colors.error_container
                 } else if good {
-                    Color::from_rgb8(24, 58, 46)
+                    status_colors::SUCCESS_CONTAINER
                 } else {
                     theme.colors.surface_container_highest
                 }
@@ -88,7 +89,7 @@ fn badge<'a>(label: impl Into<String>, good: bool) -> Element<'a, Msg> {
             text_color: Some(if attention {
                 theme.colors.on_error_container
             } else if good {
-                Color::from_rgb8(154, 224, 183)
+                status_colors::ON_SUCCESS_CONTAINER
             } else {
                 theme.colors.on_surface_variant
             }),
@@ -130,27 +131,6 @@ fn gpu_name(value: &str) -> String {
         .map(|(v, _)| v.to_owned())
         .unwrap_or_else(|| value.to_owned())
 }
-fn state_label(vm: &Vm) -> &str {
-    if vm
-        .error
-        .as_ref()
-        .is_some_and(|e| !e.starts_with("pending:"))
-    {
-        "Needs attention"
-    } else if vm.error.is_some() {
-        "Updating"
-    } else {
-        match vm.observed.as_str() {
-            "running" if vm.desired == Lifecycle::Stopped => "Stopping",
-            "stopped" if vm.desired == Lifecycle::Running => "Starting",
-            "running" => "Running",
-            "stopped" => "Stopped",
-            "pending" => "Creating",
-            _ => "Check status",
-        }
-    }
-}
-
 // Content and floating actions share a 24px right edge. The scrollbar occupies
 // the outer 16px gutter, rather than pushing the whole page farther inward.
 const PAGE_EDGE_INSET: f32 = 24.0;
@@ -228,7 +208,7 @@ pub fn view(app: &App) -> Element<'_, Msg> {
             let primary: Element<'_, Msg> = match app.page {
                 Page::Workspace(_) => quiet("Back to VMs", Msg::Navigate(Page::Workspaces)).into(),
                 Page::Host => quiet("Back to hosts", Msg::Navigate(Page::Hosts)).into(),
-                Page::Workspaces => widget::space().into(),
+                Page::Workspaces | Page::Settings => widget::space().into(),
                 Page::People if snapshot.me.role == Role::Admin => button("+  Invite coworker")
                     .on_press(Msg::Open(Panel::Invite))
                     .disabled(app.busy)
@@ -523,7 +503,9 @@ fn activity<'a>(app: &'a App, s: &'a Snapshot) -> Element<'a, Msg> {
             "succeeded" => "Completed",
             "needs_review" => "Needs review",
             "pending" => "Queued",
-            _ => "In progress",
+            "applying" | "retrying" => "In progress",
+            "failed" => "Failed",
+            _ => "Status unknown",
         };
         let mut details = column![
             typography(operation_name(op), Type::TitleMedium),
