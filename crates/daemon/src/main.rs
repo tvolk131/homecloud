@@ -2,7 +2,7 @@ use anyhow::Result;
 use clap::{Parser, Subcommand};
 use homecloud_client::{load_secret, private_write};
 use homecloud_daemon::{Config, Service};
-use homecloud_host::{Backend, ProcessBackend, Simulator};
+use homecloud_host::{Backend, Simulator};
 use homecloud_store::Store;
 use std::{path::PathBuf, sync::Arc, time::Duration};
 
@@ -72,7 +72,7 @@ async fn main() -> Result<()> {
             "State directory must be accessible only by its owner"
         );
     }
-    let store = Store::open(args.state_dir.join("state.db"), config.limits)?;
+    let store = Store::open(args.state_dir.join("state.db"), config.limits.clone())?;
     match args.command {
         Command::CollectStorage => unreachable!(),
         Command::BootstrapAdmin { name } => {
@@ -93,10 +93,7 @@ async fn main() -> Result<()> {
             let backend: Arc<dyn Backend> = if args.simulate {
                 Arc::new(Simulator::new(args.state_dir.join("observed.json")))
             } else {
-                Arc::new(ProcessBackend {
-                    script: config.host_script,
-                    sudo: config.sudo,
-                })
+                config.host_backend()
             };
             let service = Service::new(store, backend)?;
             let storage_worker = service.clone();

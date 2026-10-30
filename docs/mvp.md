@@ -164,6 +164,9 @@ A root-owned fixed-command adapter is invoked by a narrowly matching sudo rule.
 Clients cannot supply arbitrary host commands, paths, image URLs or network destinations.
 This adapter is Python for the first implementation; domain policy, identity,
 persistence, transport, clients and reconciliation are Rust. The CPU launcher is C.
+An opt-in [Rust host observer](host-adapter.md) implements inventory and VM
+observation as the first adapter migration slice; installed hosts keep their
+existing Python backend unless explicitly configured otherwise.
 
 ## Current roadmap
 

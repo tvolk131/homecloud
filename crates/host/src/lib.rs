@@ -1,9 +1,13 @@
-use anyhow::{Context, Result, ensure};
+use anyhow::Result;
 use async_trait::async_trait;
 use homecloud_core::*;
 use serde::{Deserialize, Serialize};
 use std::{collections::BTreeMap, path::PathBuf, sync::Arc};
-use tokio::{io::AsyncWriteExt, process::Command, sync::Mutex};
+use tokio::sync::Mutex;
+
+pub mod observer;
+mod process;
+pub use process::{HostCommand, ObservingBackend, ProcessBackend};
 
 pub mod storage;
 
@@ -127,59 +131,6 @@ pub enum HostResponse {
 #[async_trait]
 pub trait Backend: Send + Sync {
     async fn request(&self, request: HostRequest) -> Result<HostResponse>;
-}
-
-pub struct ProcessBackend {
-    pub script: PathBuf,
-    pub sudo: bool,
-}
-#[async_trait]
-impl Backend for ProcessBackend {
-    async fn request(&self, request: HostRequest) -> Result<HostResponse> {
-        let mut command = if self.sudo {
-            let mut c = Command::new("sudo");
-            c.args(["-n", "--", "/usr/bin/python3"]);
-            c
-        } else {
-            Command::new("/usr/bin/python3")
-        };
-        command
-            .arg(&self.script)
-            .stdin(std::process::Stdio::piped())
-            .stdout(std::process::Stdio::piped())
-            .stderr(std::process::Stdio::piped())
-            .kill_on_drop(true);
-        let mut child = command
-            .spawn()
-            .context("Starting privileged host adapter")?;
-        child
-            .stdin
-            .take()
-            .context("Host adapter stdin")?
-            .write_all(&serde_json::to_vec(&request)?)
-            .await?;
-        let output = tokio::time::timeout(
-            std::time::Duration::from_secs(240),
-            child.wait_with_output(),
-        )
-        .await
-        .context("Host adapter timed out; allocation remains held")??;
-        ensure!(
-            output.stdout.len() <= 4 * MAX_FRAME,
-            "Host response too large"
-        );
-        ensure!(
-            output.status.success(),
-            "Host adapter: {}",
-            String::from_utf8_lossy(&output.stderr)
-        );
-        let response: HostResponse =
-            serde_json::from_slice(&output.stdout).context("Invalid host adapter response")?;
-        if let HostResponse::Error(message) = response {
-            anyhow::bail!("{message}");
-        }
-        Ok(response)
-    }
 }
 
 /// Persistent observed state for local development and crash-boundary tests.
