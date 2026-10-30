@@ -8,7 +8,21 @@ uses color, size, shape and containment to guide attention and group related
 content, while warning against replacing familiar interactions or removing labels.
 Here that means tonal surfaces, rounded cards, clear primary actions and labeled
 navigation. Expressive springs and shape feedback come from iced-m3's theme;
-Settings exposes a reduced-motion option.
+Settings exposes an app-wide reduced-motion option. UI preferences use
+`directories::ProjectDirs::config_dir()` with the `dev.homecloud` namespace:
+`~/Library/Application Support/dev.homecloud/preferences.json` on macOS, and
+`$XDG_CONFIG_HOME/homecloud/preferences.json` on Linux (defaulting to
+`~/.config/homecloud/preferences.json`). `HOMECLOUD_PROFILE` still selects only
+the paired-host metadata and its associated operation journals.
+
+On first launch without an app-wide preferences file, Homecloud imports the
+selected profile's `<profile>.preferences.json`, if present, or persists defaults.
+An existing app-wide file always takes precedence across profiles. The legacy
+source is retained, and invalid files are reported rather than silently replaced.
+An imported motion setting takes effect even if saving the new file fails, with
+an error and a retry on the next launch. Preference writes are atomic; a failed
+toggle save keeps the previous setting and shows an error. Pairing metadata,
+Keychain references and pending creation journals are not migrated.
 
 Related primary guidance:
 
@@ -130,7 +144,11 @@ evidence, and host-display warnings sit behind a diagnostics disclosure.
 People contains user grants,
 invitations and device revocation; ordinary users do not get this destination.
 Activity presents requests by action and machine name with visible progress and
-an explicit administrator retry for operations requiring review.
+an explicit administrator retry for operations requiring review. Failed requests,
+including superseded shutdown attempts, remain labeled Failed with their original
+error. Only applying/retrying phases appear In progress; unrecognized phases show
+Status unknown. Allocation rows use the same lifecycle state as the VM page,
+including unavailable observations, retained cleanup claims and blocked starts.
 
 The narrow layout condenses resource summaries and uses one VM column. Wider
 windows use two columns. Content reserves a scrollbar gutter; forms keep their

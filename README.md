@@ -24,6 +24,13 @@ The current development Mac is already paired with the lab host. The default
 paired-host metadata is `~/.config/homecloud/client.json`; Mac device keys live in Keychain. `HOMECLOUD_PROFILE` selects
 another profile; `HOMECLOUD_CLI` overrides the SSH helper path.
 
+App-wide UI preferences are saved separately in
+`~/Library/Application Support/dev.homecloud/preferences.json` on macOS. Linux
+uses `$XDG_CONFIG_HOME/homecloud/preferences.json`, falling back to
+`~/.config/homecloud/preferences.json`. The app imports an older
+`<profile>.preferences.json` once when the new file is absent. Changing profiles
+does not change UI preferences. See [interface design](docs/interface.md).
+
 Use **Open Terminal** for ordinary SSH over Iroh. In **New VM**, select
 **T3 Code**, or open an existing VM’s details. Homecloud installs
 T3's boot service and native Codex/Claude provider CLIs, then guides browser account
