@@ -22,7 +22,7 @@ The host must already have a healthy ZFS pool, working Incus/QEMU, nftables,
 cloud image cached in Incus. Review the hardware policy locally before installing:
 
 ```sh
-cargo build -p homecloud-daemon -p homecloud-cli
+cargo build -p homecloud-daemon -p homecloud-cli -p homecloud-host
 sudo python3 scripts/install_host.py \
   --policy examples/lab-host.json --daemon target/debug/homecloudd
 ```

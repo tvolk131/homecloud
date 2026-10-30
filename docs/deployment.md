@@ -17,19 +17,20 @@ hardware detector or a general installation profile. Required tools include
 Incus/QEMU, ZFS, nftables, a working static C toolchain, PCI tools, sudo and
 `br_netfilter`; disk cloud-init transport also needs `mkisofs`.
 
-Build the daemon and CLI on the target Linux environment. From a reviewed source
+Build the daemon, CLI and Rust observer on the target Linux environment. From a reviewed source
 checkout, run the read-only policy/prerequisite check first:
 
 ```sh
-cargo build --locked -p homecloud-daemon -p homecloud-cli
+cargo build --locked -p homecloud-daemon -p homecloud-cli -p homecloud-host
 sudo python3 scripts/install_host.py --check \
   --policy /root/reviewed-host.json --daemon target/debug/homecloudd
 sudo python3 scripts/install_host.py \
   --policy /root/reviewed-host.json --daemon target/debug/homecloudd
 ```
 
-The matching CLI defaults to `homecloud` beside the daemon; `--cli PATH` can select
-it explicitly. Check mode validates binaries, versions, CPU siblings, RAM bounds,
+The matching CLI and observer default to `homecloud` and
+`homecloud-host-observer` beside the daemon; `--cli PATH` and `--observer PATH`
+can select them explicitly. Check mode validates binaries, versions, CPU siblings, RAM bounds,
 pool health, the cached image, nft syntax and static launcher compilation before
 changing host policy or services. Installation writes a software receipt and
 root pre-start guards for the controller and host-layout service.
@@ -40,6 +41,12 @@ path, and an interrupted policy installation needs local operator inspection.
 Configuration copies under `install-backups` are not a transactional hardware
 policy rollback or a backup of VM data. Fresh installation on the intended final
 physical hardware remains a separate acceptance task.
+
+The [native observation cutover](host-adapter.md) requires a reviewed maintenance
+installation for older Python-only hosts. It adds the exact observer sudo rule
+and expands the guarded deployment file set. Finish recovery of any interrupted
+old deployment first. An older updater refuses this changed bundle/engine;
+replacing just the daemon leaves the required observer unavailable.
 
 ## Build and verify an update
 
@@ -53,7 +60,7 @@ sha256sum /tmp/homecloud-host.tar.gz
 
 Obtain the bundle and its expected digest through a trusted source. A hash checks
 content integrity; it does not authenticate an arbitrary publisher. The bundle
-contains only an explicit software allowlist plus its format, architecture,
+contains the daemon, CLI and observer plus an explicit helper allowlist, format, architecture,
 persisted-state compatibility revision and per-file hashes. No profiles,
 credentials, database or VM data are included.
 
@@ -111,6 +118,11 @@ acceptance checks. Local deployment copies do not protect against total host or
 disk loss; off-host backups are deliberately deferred.
 
 ## Adopting a pre-receipt lab installation
+
+This route requires the complete current payload, including the native observer
+and its reviewed sudo rule. It cannot convert a Python-only host by adding the
+deployment engine alone; use the maintenance cutover described above for that
+host. Keep older adoption proofs with their matching release.
 
 This is a one-time explicit local-root step. Retain the exact reviewed source
 matching the installed helpers and a separately verified installed daemon hash.

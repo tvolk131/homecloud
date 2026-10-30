@@ -18,7 +18,8 @@ use anyhow::{Result, ensure};
 use homecloud_client::{DeviceProof, read_frame, write_frame};
 use homecloud_core::*;
 use homecloud_host::{
-    Backend, HostCommand, HostRequest, HostResponse, ObservingBackend, ProcessBackend,
+    Backend, HOST_OBSERVER_PATH, HostCommand, HostRequest, HostResponse, ObservingBackend,
+    ProcessBackend,
 };
 use homecloud_store::{Limits, Store};
 use iroh::{
@@ -45,9 +46,6 @@ pub struct Config {
     /// Replaces the legacy Python command when explicitly configured locally.
     #[serde(default)]
     pub host_command: Option<HostCommand>,
-    /// Optional native command for Inventory/Observe only.
-    #[serde(default)]
-    pub host_observer: Option<HostCommand>,
     #[serde(default = "default_true")]
     pub sudo: bool,
 }
@@ -58,24 +56,27 @@ fn default_host_script() -> PathBuf {
     "/usr/local/libexec/homecloud/host_runtime.py".into()
 }
 impl Config {
+    fn primary_command(&self) -> HostCommand {
+        self.host_command.clone().unwrap_or_else(|| HostCommand {
+            program: "/usr/bin/python3".into(),
+            args: vec![self.host_script.to_string_lossy().into_owned()],
+        })
+    }
+
     pub fn host_backend(&self) -> Arc<dyn Backend> {
-        let primary = Arc::new(ProcessBackend {
-            command: self.host_command.clone().unwrap_or_else(|| HostCommand {
-                program: "/usr/bin/python3".into(),
-                args: vec![self.host_script.to_string_lossy().into_owned()],
+        Arc::new(ObservingBackend {
+            primary: Arc::new(ProcessBackend {
+                command: self.primary_command(),
+                sudo: self.sudo,
             }),
-            sudo: self.sudo,
-        });
-        match &self.host_observer {
-            Some(command) => Arc::new(ObservingBackend {
-                primary,
-                observer: Arc::new(ProcessBackend {
-                    command: command.clone(),
-                    sudo: self.sudo,
-                }),
+            observer: Arc::new(ProcessBackend {
+                command: HostCommand {
+                    program: HOST_OBSERVER_PATH.into(),
+                    args: vec![],
+                },
+                sudo: self.sudo,
             }),
-            None => primary,
-        }
+        })
     }
 }
 impl Default for Config {
@@ -92,7 +93,6 @@ impl Default for Config {
             },
             host_script: default_host_script(),
             host_command: None,
-            host_observer: None,
             sudo: true,
         }
     }

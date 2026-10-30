@@ -1,7 +1,7 @@
 use super::*;
 use homecloud_core::GIB;
 use serde_json::{Value, json};
-use std::{io::Write, os::unix::fs::symlink, process::Command, sync::Mutex};
+use std::{os::unix::fs::symlink, sync::Mutex};
 
 #[derive(Default)]
 struct FakeCommands {
@@ -69,6 +69,10 @@ fn fixture() -> tempfile::TempDir {
         ("proc/cpuinfo", "model name\t: Fixture CPU\n"),
         ("proc/meminfo", "MemTotal: 8388608 kB\n"),
         ("proc/sys/kernel/hostname", "fixture-host\n"),
+        (
+            "proc/sys/kernel/random/boot_id",
+            "00000000-0000-4000-8000-000000000003\n",
+        ),
         ("sys/class/dmi/id/board_name", "Fixture Board\n"),
         ("sys/firmware/acpi/tables/DMAR", "fixture"),
         (
@@ -129,65 +133,16 @@ fn policy() -> Value {
         "allowed_gpus":["0000:01:00.0"]})
 }
 
-/// Use the existing Python implementation as a temporary compatibility oracle.
-/// Both implementations see the same private files and fake command responses.
-fn python_reference(observer: &Observer<FakeCommands>, kind: &str, data: Value) -> Value {
-    let source = Path::new(env!("CARGO_MANIFEST_DIR")).join("host_runtime.py");
-    let responses: Vec<_> = observer
-        .commands
-        .responses
-        .iter()
-        .map(|(argv, result)| json!({"argv":argv,"result":result}))
-        .collect();
-    let script = r#"
-import importlib.util,json,sys
-from pathlib import Path
-from types import SimpleNamespace
-source,root,kind=sys.argv[1:]
-spec=importlib.util.spec_from_file_location('reference_host',source)
-host=importlib.util.module_from_spec(spec);sys.modules[spec.name]=host;spec.loader.exec_module(host)
-payload=json.load(sys.stdin)
-host.Path=lambda p: Path(root)/str(p).lstrip('/')
-host.STATE=Path(root)/'var/lib/homecloud/host'
-host.os.uname=lambda: SimpleNamespace(nodename=(Path(root)/'proc/sys/kernel/hostname').read_text().strip())
-def run(*argv,check=True,**kwargs):
- result=next(r['result'] for r in payload['responses'] if r['argv']==list(argv))
- if check and not result['success']: raise RuntimeError('fixture unavailable')
- return SimpleNamespace(stdout=result['stdout'],stderr=result['stderr'],returncode=0 if result['success'] else 1)
-host.run=run
-print(json.dumps(host.inventory(payload['data']) if kind=='inventory' else host.observe(payload['data'])))
-"#;
-    let mut child = Command::new("python3")
-        .args(["-c", script])
-        .arg(source)
-        .arg(&observer.root)
-        .arg(kind)
-        .stdin(Stdio::piped())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .spawn()
-        .unwrap();
-    child
-        .stdin
-        .take()
-        .unwrap()
-        .write_all(
-            json!({"responses":responses,"data":data})
-                .to_string()
-                .as_bytes(),
-        )
-        .unwrap();
-    let output = child.wait_with_output().unwrap();
-    assert!(
-        output.status.success(),
-        "{}",
-        String::from_utf8_lossy(&output.stderr)
-    );
-    serde_json::from_slice(&output.stdout).unwrap()
+// Recorded before deleting the Python implementation. These fixtures preserve
+// its wire behavior without retaining a second runnable observer.
+fn recorded(kind: &str) -> Vec<Value> {
+    let fixtures: Value =
+        serde_json::from_str(include_str!("fixtures/python-observation-v1.json")).unwrap();
+    fixtures[kind].as_array().unwrap().clone()
 }
 
 #[tokio::test]
-async fn observation_matches_python_for_ownership_drift_missing_and_gpu_states() {
+async fn observation_preserves_recorded_ownership_drift_missing_and_gpu_states() {
     let root = fixture();
     let base = vm();
     let mut scenarios = vec![(base.clone(), vec![instance(&base)])];
@@ -241,12 +196,13 @@ async fn observation_matches_python_for_ownership_drift_missing_and_gpu_states()
     ));
     std::fs::create_dir_all(progress.parent().unwrap()).unwrap();
     std::fs::write(progress, r#"{"stage":"guest_agent","since":123}"#).unwrap();
-    for (vm, records) in scenarios {
+    let expected = recorded("observe");
+    assert_eq!(scenarios.len(), expected.len());
+    for ((vm, records), expected) in scenarios.into_iter().zip(expected) {
         let observer = Observer {
             root: root.path().into(),
             commands: inventory_commands(json!(records)),
         };
-        let expected = python_reference(&observer, "observe", json!([vm.clone()]));
         let observed = observer.observe(vec![vm]).await.unwrap();
         assert_eq!(serde_json::to_value(observed).unwrap(), expected);
     }
@@ -276,8 +232,64 @@ async fn unavailable_incus_does_not_report_missing_or_release_claims() {
     assert!(observed[0].progress.is_none());
 }
 
+#[test]
+fn observation_checks_every_gpu_in_a_multi_gpu_vm() {
+    let mut vm = vm();
+    vm.gpus.push("0000:02:00.0".into());
+    let mut record: Instance = serde_json::from_value(instance(&vm)).unwrap();
+    record.devices.insert(
+        "gpu7".into(),
+        BTreeMap::from([
+            ("type".into(), "gpu".into()),
+            ("pci".into(), "0000:02:00.0".into()),
+        ]),
+    );
+    assert!(observe_instance(&vm, &record).1.is_none());
+    record
+        .devices
+        .get_mut("gpu7")
+        .unwrap()
+        .insert("pci".into(), "0000:09:00.0".into());
+    assert_eq!(
+        observe_instance(&vm, &record).1.as_deref(),
+        Some("Configuration drift: operator review required")
+    );
+}
+
 #[tokio::test]
-async fn inventory_matches_python_for_available_assigned_and_reserved_gpus() {
+async fn operator_reservations_and_unsafe_iommu_members_are_visible() {
+    let root = fixture();
+    let observer = Observer {
+        root: root.path().into(),
+        commands: inventory_commands(json!([])),
+    };
+    let mut reserved = policy();
+    reserved["allowed_gpus"] = json!([]);
+    let inventory = observer
+        .inventory_with_policy(serde_json::from_value(reserved).unwrap())
+        .await
+        .unwrap();
+    assert_eq!(inventory.gpus[0].readiness.state, "reserved_by_operator");
+
+    let alien = root.path().join("sys/bus/pci/devices/0000:02:00.0");
+    std::fs::create_dir_all(&alien).unwrap();
+    std::fs::write(alien.join("class"), "0x020000\n").unwrap();
+    symlink(
+        &alien,
+        root.path()
+            .join("sys/kernel/iommu_groups/12/devices/0000:02:00.0"),
+    )
+    .unwrap();
+    let inventory = observer
+        .inventory_with_policy(serde_json::from_value(policy()).unwrap())
+        .await
+        .unwrap();
+    assert_eq!(inventory.gpus[0].readiness.state, "unsafe_iommu_group");
+}
+
+#[tokio::test]
+async fn inventory_preserves_recorded_gpu_readiness_and_telemetry() {
+    let expected = recorded("inventory");
     for assigned in [false, true] {
         for display in [false, true] {
             let root = fixture();
@@ -308,7 +320,9 @@ async fn inventory_matches_python_for_available_assigned_and_reserved_gpus() {
                 root: root.path().into(),
                 commands,
             };
-            let expected = python_reference(&observer, "inventory", policy());
+            let mut expected = expected[usize::from(assigned) * 2 + usize::from(display)].clone();
+            // The captured Python fixture predates master's host shutdown support.
+            expected["shutdown_boot_id"] = json!("00000000-0000-4000-8000-000000000003");
             let observed = observer
                 .inventory_with_policy(serde_json::from_value(policy()).unwrap())
                 .await
@@ -391,5 +405,39 @@ async fn guest_command_output_is_bounded_while_reading() {
             .unwrap_err()
             .to_string()
             .contains("too large")
+    );
+}
+
+#[tokio::test]
+async fn inventory_reports_current_boot_and_rejects_invalid_shutdown_identity() {
+    let root = fixture();
+    let observer = Observer {
+        root: root.path().into(),
+        commands: inventory_commands(json!([])),
+    };
+    let path = root.path().join("proc/sys/kernel/random/boot_id");
+    for boot in [
+        "00000000-0000-4000-8000-000000000003",
+        "00000000-0000-4000-8000-000000000004",
+    ] {
+        std::fs::write(&path, format!("{boot}\n")).unwrap();
+        let inventory = observer
+            .inventory_with_policy(serde_json::from_value(policy()).unwrap())
+            .await
+            .unwrap();
+        assert_eq!(inventory.shutdown_boot_id.as_deref(), Some(boot));
+    }
+    std::fs::write(&path, "invalid boot ID").unwrap();
+    let error = observer
+        .inventory_with_policy(serde_json::from_value(policy()).unwrap())
+        .await
+        .unwrap_err();
+    assert!(error.to_string().contains("Invalid host boot ID"));
+    std::fs::remove_file(&path).unwrap();
+    assert!(
+        observer
+            .inventory_with_policy(serde_json::from_value(policy()).unwrap())
+            .await
+            .is_err()
     );
 }

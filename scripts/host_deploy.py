@@ -33,6 +33,7 @@ HOST_FILES = ('host_runtime.py','managed_apps.py','managed_host.py','memory_capa
 GUEST_FILES = ('setup-t3.sh','managed-app.py','setup-providers.py','codex_auth.py',
                'claude_auth.py','account_metadata.py','managed-host.py')
 PAYLOAD = {'bin/homecloudd':'/usr/local/bin/homecloudd','bin/homecloud':'/usr/local/bin/homecloud',
+           'bin/homecloud-host-observer':HELPER+'homecloud-host-observer',
            **{'crates/host/'+n:HELPER+n for n in HOST_FILES},
            **{'guest/'+n:HELPER+n for n in GUEST_FILES}}
 BOUNDARY = ('crates/host/native/qemu_cpu_launcher.c','crates/host/firewall.nft','scripts/host_deploy.py')
@@ -118,6 +119,8 @@ class Services:
         require(platform.system()=='Linux' and platform.machine()=='x86_64','Requires Linux x86-64')
         for command in ('systemctl','incus','zfs','zpool','nft','gcc','visudo'):
             require(shutil.which(command),'Missing prerequisite: '+command)
+        for command in ('/usr/bin/incus','/usr/bin/lspci','/usr/sbin/zfs','/usr/sbin/zpool'):
+            require(Path(command).is_file() and os.access(command,os.X_OK),'Missing observer prerequisite: '+command)
         os_release=Path('/etc/os-release').read_text()
         require('ID=ubuntu\n' in os_release and 'VERSION_ID="26.04"' in os_release,
                 'This deployment path is validated on Ubuntu 26.04; review and test other platforms explicitly')
@@ -129,7 +132,7 @@ class Services:
                 'Untested Incus/ZFS/QEMU versions; validate a maintenance migration first')
         self.run('systemctl','is-active','incus.service')
         with tempfile.TemporaryDirectory(prefix='homecloud-preflight-') as temporary:
-            for name in ('homecloudd','homecloud'):
+            for name in ('homecloudd','homecloud','homecloud-host-observer'):
                 candidate=Path(temporary)/name;candidate.write_bytes(files['bin/'+name]);candidate.chmod(0o700)
                 self.run(str(candidate),'--help',timeout=15)
         return {k:v.splitlines()[0] for k,v in versions.items()}
@@ -204,7 +207,8 @@ class Deployment:
         require(r['format']==FORMAT and r['state_format']==STATE_FORMAT,'Installed state format is incompatible')
         return r
     def verify(self,receipt):
-        require(set(receipt['files'])==set(PAYLOAD.values())|{GUARD},'Invalid installed file set')
+        require(set(receipt['files'])==set(PAYLOAD.values())|{GUARD},
+                'Installed file set differs; run a reviewed maintenance installation')
         for name,sha in receipt['files'].items():
             p=self.path(name);require(p.is_file() and not p.is_symlink() and digest(p.read_bytes())==sha,
                                      'Installed software drift: '+name)

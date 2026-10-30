@@ -7,7 +7,7 @@ use tokio::sync::Mutex;
 
 pub mod observer;
 mod process;
-pub use process::{HostCommand, ObservingBackend, ProcessBackend};
+pub use process::{HOST_OBSERVER_PATH, HostCommand, ObservingBackend, ProcessBackend};
 
 pub mod storage;
 

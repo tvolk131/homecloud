@@ -1,74 +1,75 @@
 # Rust host adapter migration
 
-The daemon can execute an operator-configured host command using the existing
-`HostRequest`/`HostResponse` JSON protocol. Existing `control.json` files keep
-using `/usr/bin/python3` with their `host_script` path and retain the existing
-sudo behavior. Commands and arguments come from local daemon configuration;
-network requests cannot choose them. No shell is used to construct the command.
+Inventory and VM observation always run through the Rust
+`homecloud-host-observer` executable. Their Python implementations have been
+removed. There is no opt-in setting or Python fallback for these requests.
+A failed native observation remains visible while resource claims stay held.
 
-`homecloud-host-observer` is the first native migration slice. It implements
-`inventory` and `observe`, including IOMMU/GPU readiness, pool health, VM ownership
-and configuration drift, and setup progress. It rejects all other request kinds.
-Its paths and external commands are fixed, it requires root on Linux, and it
-accepts one bounded JSON request on stdin with no command-line arguments.
-It expects `/usr/bin/incus`, `/usr/bin/lspci`, `/usr/sbin/zfs` and
-`/usr/sbin/zpool` on the validated Ubuntu host.
+The daemon invokes the root-owned observer at
+`/usr/local/libexec/homecloud/homecloud-host-observer` through an exact sudo rule
+with no arguments. The observer requires Linux and root, reads one bounded JSON
+request from stdin, and accepts only `inventory` and `observe`. Host paths and
+external commands are fixed. Command output is bounded while reading, including
+optional GPU telemetry from a guest. It expects `/usr/bin/incus`, `/usr/bin/lspci`,
+`/usr/sbin/zfs` and `/usr/sbin/zpool` on the validated Ubuntu host.
 
 The observer reads the root-owned pool policy and private reserve journal to
-include additional disk reserves in the reported operating floor. Observation
-does not replay or enforce policy. Full configuration validation, locks, journal
-recovery and every mutation remain in the primary Python adapter. This allows
-read-only inspection without moving enforcement into a second implementation.
+include additional disk reserves in the reported operating floor. It observes
+IOMMU/GPU readiness, pool health, VM ownership/configuration drift and setup
+progress. It does not replay or enforce policy. Full configuration validation,
+locks, journal recovery, diagnostics, applications and every mutation still run
+through the remaining Python adapter.
 
-## Disposable-host opt-in
+Existing `host_script` configuration continues to select that remaining adapter.
+An explicit `host_command` object can select another primary executable and
+literal arguments. Neither setting changes the mandatory native observation
+route. These commands come from local daemon configuration, never network
+requests. The daemon constructs no shell command.
 
-This first slice is for explicit lab validation. The standard installer, update
-bundle and deployment receipt do not install or manage the observer yet. Build
-and install the matching binary separately on the disposable Linux host:
+## Installation and the cutover boundary
+
+Build all three binaries on the target Linux environment:
 
 ```sh
-cargo build --locked -p homecloud-host --bin homecloud-host-observer
-sudo install -o root -g root -m 0755 target/debug/homecloud-host-observer \
-  /usr/local/libexec/homecloud-host-observer
+cargo build --locked -p homecloud-daemon -p homecloud-cli -p homecloud-host
+sudo python3 scripts/install_host.py --check \
+  --policy /root/reviewed-host.json --daemon target/debug/homecloudd
 ```
 
-Keep the existing Python sudo rule. Use `visudo` to add a separate
-`/etc/sudoers.d/homecloud-observer` rule allowing the observer with no arguments:
+The installer requires the matching observer beside the daemon, or supplied with
+`--observer PATH`. Its preflight checks the executable before persistent changes.
+Installation places the observer in the fixed libexec path and installs its
+no-arguments sudo rule alongside the remaining Python rule. No extra controller
+configuration enables the observer.
 
-```sudoers
-homecloud ALL=(root) NOPASSWD: /usr/local/libexec/homecloud-host-observer ""
-```
+An existing Python-only installation needs a reviewed `--maintenance`
+installation from this release's source tree after finishing any interrupted
+software deployment. This adds the new privilege rule, deployment engine and
+three-binary receipt. Maintenance can restart Incus; validate on a disposable
+host first and use the documented maintenance procedure for working hosts.
+The older updater deliberately refuses the changed bundle/engine boundary.
+Deploying just the new daemon is insufficient.
 
-Add this field alongside the existing fields in `/etc/homecloud/control.json`:
-
-```json
-"host_observer": {
-  "program": "/usr/local/libexec/homecloud-host-observer"
-}
-```
-
-Restart only `homecloudd`. Inventory and VM observation now use Rust; all other
-operations go directly to the existing primary adapter. Native errors remain
-visible rather than falling back to Python. Remove `host_observer` and restart
-the daemon to return all requests to the primary adapter. Keep the separately
-installed observer matched to the daemon during this experiment.
-
-For a later complete adapter replacement, `host_command` selects its executable
-and optional literal arguments. It overrides the legacy Python command; it does
-not change the read-only routing of `host_observer`. Do not point `host_command`
-at this observer: it cannot execute mutations.
+Subsequent ordinary bundles include the observer's content hash and executable.
+Preflight requires it, checks its architecture and runs its `--help`. The daemon
+and observer are checkpointed, replaced, verified and restored as one file set.
+Missing or modified observer bytes block the startup guard. Software rollback
+retains acknowledged database work. Moving back across the original Python-only
+installation boundary is also a maintenance transition, rather than an ordinary
+three-binary software rollback. See [deployment](deployment.md).
 
 ## Validation and subsequent slices
 
-Run `cargo test --locked -p homecloud-host -p homecloud-daemon`. Compatibility
-tests give Rust and Python identical private host files and fake Incus/system
-responses. They cover inventory and observation, ownership/configuration drift,
-GPU claims, missing VMs, unavailable services, and routing failures. These tests
-do not execute real Incus/ZFS operations or establish hardware behavior.
+Run `cargo test --locked -p homecloud-host -p homecloud-daemon`. Rust regressions
+use recorded outputs captured from the previous Python adapter with identical
+private host files and fake command responses. The fixtures preserve its wire
+behavior without retaining another runnable observer. Tests cover drift, GPU
+claims, missing VMs, unavailable services, setup progress, command limits and
+routing failures. Deployment fault tests include observer interruption recovery,
+rollback, missing binaries and pre-cutover receipts.
 
-Before default activation, compare both observers on a disposable managed host
-and repeat the relevant lifecycle and resource-policy proofs. Then integrate
-the native executable into the matched deployment/rollback file set and retire
-the duplicate Python observation functions. Port lifecycle and resource mutations
-with their failure tests in subsequent slices, followed by guest jobs and
-installation/deployment tooling. Audit historical lab scripts separately.
+These checks do not establish real Incus/ZFS or hardware behavior. Repeat the
+relevant disposable-host lifecycle and resource-policy proofs before deployment.
+Port lifecycle and resource mutations with their failure tests in subsequent
+cutovers, followed by guest jobs and installation/deployment tooling. Retire
+each corresponding Python implementation as its subsystem moves to Rust.

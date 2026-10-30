@@ -6,6 +6,8 @@ use serde::{Deserialize, Serialize};
 use std::{path::PathBuf, process::Stdio, sync::Arc};
 use tokio::{io::AsyncWriteExt, process::Command};
 
+pub const HOST_OBSERVER_PATH: &str = "/usr/local/libexec/homecloud/homecloud-host-observer";
+
 /// An operator-configured command, never supplied by a network request.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct HostCommand {
@@ -68,7 +70,7 @@ impl Backend for ProcessBackend {
     }
 }
 
-/// Migrate read-only calls without wrapping or changing the mutation process.
+/// Native observation and the remaining Python operations have separate commands.
 pub struct ObservingBackend {
     pub primary: Arc<dyn Backend>,
     pub observer: Arc<dyn Backend>,

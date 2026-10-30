@@ -369,13 +369,6 @@ class MultiGpuTests(unittest.TestCase):
         current=self.instance();current['devices']['gpu7']['pci']='0000:09:00.0'
         with self.assertRaisesRegex(AssertionError,'assignment drift'):host.checked_gpu_devices(vm,current)
 
-    def test_observation_compares_all_gpus_instead_of_only_gpu0(self):
-        vm=self.vm();vm['pending_gpus']=[]
-        current=self.instance();current.update(name=host.vm_name(vm),status='Running');current['config'].update({'user.homecloud.id':vm['id'],'user.homecloud.owner':vm['owner']})
-        with patch.object(host,'api',return_value=[current]):
-            self.assertIsNone(host.observe([vm])[0]['error'])
-            current['devices']['gpu7']['pci']=self.C
-            self.assertIn('Configuration drift',host.observe([vm])[0]['error'])
 
     def test_all_gpu_cleanup_finishes_before_cpu_release_and_failure_keeps_claims(self):
         vm=self.vm();vm['desired']='stopped';events=[]
@@ -416,11 +409,3 @@ class MultiGpuTests(unittest.TestCase):
             self.assertEqual(run.call_args.kwargs['timeout'],8)
             host.api('POST','/1.0/instances',{'name':'owned'})
             self.assertEqual(run.call_args.kwargs['timeout'],90)
-
-    def test_unavailable_incus_does_not_represent_cached_running_state_as_fresh(self):
-        vm={'id':VM_ID,'observed':'running','resources':{'memory_bytes':6*host.GIB}};before=copy.deepcopy(vm)
-        with patch.object(host,'api',side_effect=subprocess.TimeoutExpired('incus',8)):
-            result=host.observe([vm])
-        self.assertEqual(result[0]['state'],'unavailable')
-        self.assertIn('allocations remain held',result[0]['error'])
-        self.assertEqual(vm,before)

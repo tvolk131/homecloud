@@ -296,6 +296,11 @@ impl<C: Commands> Observer<C> {
             .context("Missing MemTotal")?
             .parse()?;
         Ok(HostInventory {
+            shutdown_boot_id: Some(
+                uuid::Uuid::parse_str(self.read("proc/sys/kernel/random/boot_id")?.trim())
+                    .context("Invalid host boot ID")?
+                    .to_string(),
+            ),
             // Storage is collected separately and attached by the daemon.
             storage: None,
             hostname: self.read("proc/sys/kernel/hostname")?.trim().into(),
