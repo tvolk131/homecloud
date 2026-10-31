@@ -507,3 +507,69 @@ fail-closed. Restore the host-layout policy before Incus/controller, then verify
 inventory, the VM budget, guest agent and managed application listener. This
 upgrade's local backup is under
 `/var/lib/homecloud/test-runs/ram-upgrade-20261029`.
+
+## Physical host shutdown from the GUI
+
+The desktop host detail page offers an administrator-only **Shut down host…**
+confirmation on shutdown-capable Linux adapters. This requires updating both the
+controller/host adapter and the desktop app. The simulator never executes power
+operations. This feature has local protocol/fault/UI coverage; a real power-off
+and subsequent power-on remain an explicit hardware acceptance check.
+
+The controller records an audited, durable shutdown request before doing work.
+An admission gate waits at most two seconds for in-flight controller/application
+work, then reports a busy host for an explicit retry. Pending operations are
+rejected before queuing for this gate, with a transactional recheck after
+admission. Read-only status/diagnostics, device revocation, account activation
+and device enrollment remain available even while a shutdown writer is queued.
+The accepted shutdown blocks new workload mutations (including changes to
+resource grants/promises) and both ordinary reconciliation lanes. Outstanding VM,
+reserve or memory-capacity operations must be completed or recovered first.
+Snapshots and guest diagnostics remain available. Recorded missing instances
+reject admission with an explicit recovery/deletion instruction. A guest that
+disappears after admission still blocks power-off; cancellation does not
+automatically recreate a missing or unverified VM. Its claims remain held.
+
+Each managed guest is stopped gracefully and verified separately, without
+changing its desired lifecycle, removing devices, or releasing CPU/RAM/GPU/disk
+claims. A failed drain waits for admin review and never escalates to force.
+The drain error offers retry/cancellation, rather than the ordinary VM force-stop
+action that is paused during host shutdown. Read-only guest observations continue
+during review without changing intent or releasing claims.
+Before requesting normal `systemctl poweroff`, the root adapter verifies that
+all Incus instances across all projects (including unmanaged guests) are stopped
+and that recorded VMs have no remaining QEMU processes. It repeats these checks
+at the power-off boundary. Unmanaged active guests must be stopped separately, or shutdown can
+be cancelled before the power-off attempt.
+
+A shutdown recovery cancellation first writes and fsyncs a root-side cancellation
+fence under the host operation lock. Delayed drain/power-off requests for that
+operation are rejected, even after a controller/helper restart. Only the confirmed
+fence permits SQLite to queue resumption of retained Running intent. A lost
+cancellation reply keeps workload admission closed; finish cancellation before
+retrying shutdown. A retry drains/checks the same recorded guests again. Replaying
+an accepted retry returns its current receipt without resetting drain progress.
+A recorded power-off attempt is never automatically repeated, including after a lost reply.
+After an ambiguous power-off result, cancellation is unavailable because the OS
+may already have queued shutdown. If the host remains reachable, an administrator
+can review and explicitly retry. An acknowledged refusal before the OS command
+restores cancellation only if there was no earlier uncertain attempt. A queued
+power-off that leaves the same boot reachable for one minute after its queue
+acknowledgement moves to Needs review without automatically retrying. The app cannot independently confirm
+that the physical machine powered off.
+
+A controller restart changes unfinished shutdowns to Needs review and audits
+that transition once. A different
+kernel boot finishes the old shutdown record and releases the admission fence;
+normal boot recovery then reasserts already-held Running intent under the
+existing memory/ARC/CPU safety policies. A delayed request from the previous
+kernel boot cannot power off the new boot. Shutdown request keys retain their
+original receipts. Software downgrade to a controller without this lifecycle
+must only be considered after shutdown is cancelled or its kernel boot has ended.
+
+Confirming host shutdown commits to the drain sequence. Cancellation/resumption
+is offered when shutdown is waiting for review; aborting an active drain between
+guests is a separate UX follow-up. The two-second admission bound is a busy
+response, not a guarantee that every live workload mix can drain admission that
+quickly. Measure both reconciliation lanes on the installed host during hardware
+acceptance before changing that policy.

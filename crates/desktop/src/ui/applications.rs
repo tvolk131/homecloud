@@ -94,7 +94,7 @@ fn flow<'a>(
                 "Continue in browser"
             })
             .on_press(Msg::OpenAuthorization(application.id))
-            .disabled(app.busy),
+            .disabled(app.busy || app.shutdown_blocks_work()),
         );
         if action.input_required {
             content = content
@@ -205,7 +205,9 @@ pub(super) fn view<'a>(app: &'a App, snapshot: &'a Snapshot, vm_id: Uuid) -> Ele
                 && snapshot.me.role == Role::Admin
             {
                 body = body.push(
-                    button("Retry host installation").on_press(Msg::InstallManagedHost(vm.id)),
+                    button("Retry host installation")
+                        .on_press(Msg::InstallManagedHost(vm.id))
+                        .disabled(app.shutdown_blocks_work()),
                 );
             }
         } else {
@@ -250,7 +252,7 @@ pub(super) fn view<'a>(app: &'a App, snapshot: &'a Snapshot, vm_id: Uuid) -> Ele
             card.push(
                 button("Install T3 Code")
                     .on_press(Msg::InstallApplication(vm_id))
-                    .disabled(!running || app.busy),
+                    .disabled(!running || app.busy || app.shutdown_blocks_work()),
             )
         };
         if !running {
@@ -294,7 +296,7 @@ pub(super) fn view<'a>(app: &'a App, snapshot: &'a Snapshot, vm_id: Uuid) -> Ele
                         "Install T3 Code"
                     })
                     .on_press(Msg::InstallApplication(vm_id))
-                    .disabled(!running || active || app.busy),
+                    .disabled(!running || active || app.busy || app.shutdown_blocks_work()),
                 );
         }
         content = content.push(tools);
@@ -329,7 +331,9 @@ pub(super) fn view<'a>(app: &'a App, snapshot: &'a Snapshot, vm_id: Uuid) -> Ele
                 },
             )
             .on_press(Msg::SetupApplication(application.id, target))
-            .disabled(active || app.busy || app.app_request.is_some()),
+            .disabled(
+                active || app.busy || app.shutdown_blocks_work() || app.app_request.is_some(),
+            ),
         );
     }
     let mut connection = column![header].spacing(8);
@@ -426,7 +430,9 @@ pub(super) fn view<'a>(app: &'a App, snapshot: &'a Snapshot, vm_id: Uuid) -> Ele
                     _ => "Retry Claude sign-in",
                 })
                 .on_press(Msg::SetupApplication(application.id, target))
-                .disabled(active || app.busy || app.app_request.is_some()),
+                .disabled(
+                    active || app.busy || app.shutdown_blocks_work() || app.app_request.is_some(),
+                ),
             );
         }
         let mut provider = column![header.wrap()].spacing(8);

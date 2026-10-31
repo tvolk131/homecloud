@@ -1,4 +1,6 @@
 CREATE TABLE IF NOT EXISTS meta(key TEXT PRIMARY KEY, value TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS host_shutdown_operations(id TEXT PRIMARY KEY, actor TEXT NOT NULL REFERENCES users(id), request_key TEXT NOT NULL, active INTEGER NOT NULL, record TEXT NOT NULL, UNIQUE(actor,request_key));
+CREATE UNIQUE INDEX IF NOT EXISTS one_active_host_shutdown ON host_shutdown_operations((1)) WHERE active=1;
 CREATE TABLE IF NOT EXISTS users(id TEXT PRIMARY KEY, name TEXT NOT NULL, role TEXT NOT NULL CHECK(role IN ('admin','user')), active INTEGER NOT NULL, grant_json TEXT NOT NULL, gpu_allowed INTEGER NOT NULL);
 CREATE TABLE IF NOT EXISTS devices(peer TEXT PRIMARY KEY, user_id TEXT NOT NULL REFERENCES users(id), active INTEGER NOT NULL);
 CREATE TABLE IF NOT EXISTS invitations(verifier TEXT PRIMARY KEY, user_id TEXT NOT NULL REFERENCES users(id), expires_at INTEGER NOT NULL, consumed_at INTEGER);

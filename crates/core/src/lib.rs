@@ -1,5 +1,7 @@
 mod setup;
+mod shutdown;
 pub use setup::*;
+pub use shutdown::*;
 mod apps;
 mod edit;
 mod memory_health;
@@ -280,6 +282,9 @@ pub struct Gpu {
 pub struct HostInventory {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub storage: Option<StorageInventory>,
+    /// Present only on adapters that support safe host shutdown.
+    #[serde(default)]
+    pub shutdown_boot_id: Option<String>,
     pub hostname: String,
     pub cpu_model: String,
     pub physical_cores: usize,
@@ -298,6 +303,8 @@ pub struct HostInventory {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Snapshot {
+    #[serde(default)]
+    pub host_shutdown: Option<HostShutdownOperation>,
     /// Scoped condition for every user; aggregate details are admin-only.
     #[serde(default)]
     pub memory_health: Option<HostMemoryHealth>,
@@ -326,6 +333,16 @@ fn legacy_disk_overhead_gib() -> u64 {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "snake_case")]
 pub enum Request {
+    ShutdownHost {
+        idempotency_key: Uuid,
+        expected_boot_id: String,
+    },
+    RetryHostShutdown {
+        operation_id: Uuid,
+    },
+    CancelHostShutdown {
+        operation_id: Uuid,
+    },
     Enroll {
         token: String,
     },
@@ -409,9 +426,41 @@ pub enum Request {
         vm_id: Uuid,
     },
 }
+impl Request {
+    /// Resource promises and guest/host effects pause together during shutdown.
+    /// Read-only and account/device security actions remain available.
+    pub fn changes_host_workload(&self) -> bool {
+        match self {
+            Self::CancelMemoryCapacity { .. }
+            | Self::AdoptMemoryCapacity { .. }
+            | Self::SetHostReserves { .. }
+            | Self::RetryHostReserves { .. }
+            | Self::DiscardHostReserves { .. }
+            | Self::EnsureApplication { .. }
+            | Self::StartApplicationSetup { .. }
+            | Self::SubmitApplicationCode { .. }
+            | Self::Invite { .. }
+            | Self::Grant { .. }
+            | Self::CreateVm { .. }
+            | Self::Mutate { .. }
+            | Self::RetryOperation { .. } => true,
+            Self::ShutdownHost { .. }
+            | Self::RetryHostShutdown { .. }
+            | Self::CancelHostShutdown { .. }
+            | Self::Enroll { .. }
+            | Self::Snapshot
+            | Self::InviteDevice { .. }
+            | Self::RevokeDevice { .. }
+            | Self::SetAccountActive { .. }
+            | Self::VmDiagnostics { .. }
+            | Self::Ssh { .. } => false,
+        }
+    }
+}
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "kind", content = "data", rename_all = "snake_case")]
 pub enum Response {
+    HostShutdownOperation(HostShutdownOperation),
     VmDiagnostics(VmDiagnostics),
     Enrolled(User),
     HostReserveOperation(HostReserveOperation),

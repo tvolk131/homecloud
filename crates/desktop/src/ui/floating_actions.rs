@@ -9,7 +9,7 @@ pub(super) fn action<'a>(app: &App, s: &Snapshot) -> Option<Element<'a, Msg>> {
             IconName::Add,
             "New VM",
             Msg::Open(Panel::Create),
-            app.busy || app.snapshot_unavailable,
+            app.busy || app.snapshot_unavailable || app.shutdown_blocks_work(),
         ),
         Page::Workspace(id) => {
             let vm = s.vms.iter().find(|v| v.id == id)?;

@@ -8,6 +8,7 @@ mod memory_health;
 mod reserves;
 mod resource_controls;
 mod setup;
+mod shutdown;
 mod status_colors;
 mod workspace;
 mod workspaces;
@@ -283,6 +284,9 @@ pub fn view(app: &App) -> Element<'_, Msg> {
                     right: SCROLLBAR_GUTTER,
                     ..Default::default()
                 }));
+            }
+            if let Some(status) = shutdown::banner(app, snapshot) {
+                main = main.push(status);
             }
             main = main.push(
                 scrollable(
@@ -588,6 +592,45 @@ fn panel_view<'a>(app: &'a App, panel: &'a Panel) -> iced_m3::Dialog<'a, Msg> {
     let mut content = column![].spacing(20);
     let mut actions = row![quiet("Cancel", Msg::Close).disabled(app.busy)].spacing(8);
     match panel {
+        Panel::ShutdownHost {
+            boot_id, hostname, ..
+        } => {
+            let count = app
+                .snapshot
+                .as_ref()
+                .map(|s| {
+                    s.vms
+                        .iter()
+                        .filter(|v| v.observed == "running" || v.desired == Lifecycle::Running)
+                        .count()
+                })
+                .unwrap_or(0);
+            content=content.push(heading(format!("Shut down “{hostname}”?")))
+                .push(copy(format!("{count} running VM{} will shut down. Everyone’s running tasks will be interrupted, and terminal and T3 connections will disconnect.",if count==1 {""} else {"s"})))
+                .push(copy("VMs currently set to run will start again when the host is powered back on. Their disks and allocations are kept."))
+                .push(copy("You’ll need physical access or separately configured remote power management to turn this host back on."));
+            let changed = app
+                .snapshot
+                .as_ref()
+                .is_none_or(|s| s.inventory.shutdown_boot_id.as_ref() != Some(boot_id));
+            if changed {
+                content = content.push(message(
+                    "Host restarted. Close this dialog and review its current status.",
+                    true,
+                ));
+            }
+            actions = actions.push(
+                danger(
+                    if app.busy {
+                        "Requesting shutdown…"
+                    } else {
+                        "Shut down host"
+                    },
+                    Msg::ShutdownHost,
+                )
+                .disabled(!app.can_shutdown_host() || changed),
+            );
+        }
         Panel::SetupDiagnostics(id) => {
             return dialog(setup::details(app, *id))
                 .actions(

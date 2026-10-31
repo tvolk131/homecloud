@@ -180,6 +180,24 @@ pub(super) fn navigation(app: &App) -> Element<'static, Msg> {
 
 pub(super) fn view<'a>(app: &'a App, s: &'a Snapshot, width: f32) -> Element<'a, Msg> {
     let mut body = column![].spacing(20);
+    if s.me.role == Role::Admin
+        && let Some(boot_id) = &s.inventory.shutdown_boot_id
+    {
+        body = body.push(
+            container(
+                quiet(
+                    "Shut down host…",
+                    Msg::Open(Panel::ShutdownHost {
+                        boot_id: boot_id.clone(),
+                        request_key: Uuid::new_v4(),
+                        hostname: hostname(s).into(),
+                    }),
+                )
+                .disabled(!app.can_shutdown_host()),
+            )
+            .align_right(Length::Fill),
+        );
+    }
     for warning in &s.inventory.warnings {
         body = body.push(message(warning, true));
     }

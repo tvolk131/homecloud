@@ -44,6 +44,10 @@ into the same T3 Connect account on your Mac to select the backend; guest IPs an
 SSH environment setup are unnecessary for that path. See
 [managed applications](docs/managed-apps.md) for setup, recovery, and CLI commands.
 
+Administrators can use **Hosts → select host → Shut down host…** to gracefully
+drain VMs and power off a capable physical host. The confirmation explains
+interruptions and power-on requirements; failed shutdowns have explicit recovery.
+
 ## CLI
 
 ```sh

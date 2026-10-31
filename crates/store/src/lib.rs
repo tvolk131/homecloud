@@ -1,5 +1,6 @@
 mod apps;
 mod create;
+mod shutdown;
 pub use create::CreateOutcome;
 mod edit;
 mod memory;
