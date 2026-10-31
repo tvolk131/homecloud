@@ -12,14 +12,15 @@ never holds the VM's resource-operation lane. Concurrent installation/setup
 requests for the same actor and action reuse the existing operation. Different
 actions cannot share an idempotency key or overlap within one application.
 Installation and T3 connection permit owners/administrators; personal provider
-sign-in and its browser challenge are restricted to the VM owner.
+and GitHub sign-in/removal and their browser challenges are restricted to the VM owner.
 
 The adapter has three hooks:
 
 - `ensure_installed`: bring a pinned installation and its boot service into place.
 - `inspect`: return service/setup observations and any active guest-job result.
-- `start_setup(action)`: request a compiled-in named action, currently `connect_t3`
-  or `sign_in_codex` / `sign_in_claude`. These are fixed adapters, never caller-supplied commands.
+- `start_setup(action)`: request a compiled-in named action, currently `connect_t3`,
+  `sign_in_codex` / `sign_in_claude`, or `sign_in_github` / `sign_out_github`.
+  These are fixed adapters, never caller-supplied commands.
 
 The controller runs an independent application worker. Short fixed Incus commands
 launch/query a transient systemd service inside the guest. Installation and
@@ -28,11 +29,14 @@ There is no network listener or permanently running Homecloud guest daemon.
 
 The guest job runs as `dev`; the installed runner is root-owned. It uses T3's own
 installer, background service, and T3 Connect CLI. The bundle also installs native
-Codex CLI 0.165.0 and Claude Code 2.1.308, within T3's bundled compatibility ranges.
-The Codex release archive is installed with its code-mode host and ripgrep sidecars;
-Claude uses its vendor's native installer layout. Both initial downloads are
-SHA-256 verified before execution/extraction. Existing compatible provider versions
-are retained. Node/npm are not required by these native distributions.
+Codex CLI 0.165.0 and Claude Code 2.1.308, within T3's bundled compatibility ranges,
+plus GitHub CLI 2.103.3. The Codex release archive is installed with its code-mode
+host and ripgrep sidecars; Claude uses its vendor's native installer layout; gh's
+release tarball is unpacked into a versioned directory. All initial downloads are
+SHA-256 verified before execution/extraction. Existing compatible versions
+are retained: a system gh at 2.40 or newer (for example Ubuntu 24.04's package)
+is used as-is, while an older one is shadowed by the pinned copy in `~/.local/bin`.
+Node/npm are not required by these native distributions.
 Optional runtime dependencies are installed before T3 starts. T3's persistent user service is enabled at boot
 with lingering, whether or not account connection has finished. VM stop/delete
 remains available and interrupts guest jobs through normal shutdown.
@@ -69,8 +73,10 @@ already established T3 Connect identity.
 After linking, restart T3 once to activate its connection. This can interrupt any
 existing T3 work, so initial setup is intended for a fresh backend. T3 then owns
 its persistent service and managed tunnel; the Homecloud GUI is not its transport.
-An explicit installation repair activates provider PATH changes by restarting an
-already-running T3 service once. Fresh installation starts it once. Codex sign-in
+An explicit installation repair restarts an already-running T3 service only when
+its process environment lacks `~/.local/bin` on PATH, or when T3 itself was
+installed by that run. Adding a new tool (such as gh) to an existing VM therefore
+does not interrupt T3 sessions. Fresh installation starts it once. Codex sign-in
 is available in Homecloud using the guest CLI’s structured app-server device-code
 flow. Claude sign-in uses its guest CLI’s browser flow, with a private return-code field in Homecloud.
 Homecloud reports provider binary versions separately from account pairing and
@@ -90,6 +96,9 @@ window leaves the guest job running. After approval, sign into the same T3 Conne
 account in the Mac T3 client and select the environment. Choose **Sign into Codex** in Homecloud, then **Continue in browser**,
 and approve with your ChatGPT account. Refresh provider checks in the remote T3
 environment afterward. For Claude, choose **Sign into Claude**, open the page, then return its authorization code to Homecloud and choose **Complete Claude sign-in**. Never send this code in chat.
+For Git and gh inside the VM, choose **Sign into GitHub**, open GitHub's device
+page, sign in with the intended account and enter the displayed code. **Remove access…**
+signs the VM out after a confirmation.
 
 CLI equivalents:
 
@@ -99,6 +108,8 @@ homecloud app-install VM_UUID
 homecloud app-setup APPLICATION_UUID
 homecloud app-setup APPLICATION_UUID --codex
 homecloud app-setup APPLICATION_UUID --claude
+homecloud app-setup APPLICATION_UUID --github
+homecloud app-setup APPLICATION_UUID --github-sign-out
 homecloud status
 ```
 
@@ -193,6 +204,52 @@ CLI prompt parsing remains tied to the validated Claude version. Browser approva
 and a real Claude provider task require owner-assisted acceptance after deployment.
 
 
+## GitHub CLI access
+
+GitHub sign-in is optional, owner-only and separate from the AI providers: it
+never satisfies "Sign into at least one provider". The row's caption shows
+`@login · Git and gh in this VM` when signed in.
+
+gh 2.103.3 was validated without a terminal: `gh auth login --web` prints the
+one-time code and `https://github.com/login/device` and waits, without prompting.
+With a terminal it stops at interactive questions, so the adapter uses plain pipes.
+Only complete output lines are parsed; only that exact device URL with a
+`XXXX-XXXX` code becomes a challenge, and anything else fails explicitly.
+Raw gh output is bounded and never forwarded.
+
+The job runs, in order:
+
+1. Refuse to replace an existing account; unknown state blocks login.
+2. `gh auth setup-git --hostname github.com --force`, before any token exists, so a
+   Git configuration failure leaves nothing behind. It writes gh's credential
+   helper for github.com only.
+3. `gh auth login --hostname github.com --web --git-protocol https --skip-ssh-key
+   --insecure-storage` with default scopes (no `workflow`) and non-expiring
+   tokens (`--expiring` would want Git 2.46; the guest has 2.43).
+4. Confirm the saved login, then best-effort Git author setup: when `user.name`
+   or `user.email` is unset, fill it from `gh api user` using GitHub's
+   `ID+login@users.noreply.github.com` address. Values the owner set are never
+   overwritten; values Homecloud wrote (recorded in
+   `~/.local/state/homecloud/github-identity.json`) follow a later account.
+
+gh stores its token in `~/.config/gh/hosts.yml` (mode 0600; the guest has no
+keyring daemon). Homecloud never reads it. Token environment variables
+(`GH_TOKEN`, `GITHUB_TOKEN`, Enterprise variants and `GH_HOST`) are removed from
+the adapter's environment so they cannot hide or replace the stored sign-in.
+Git and gh inside the VM, including T3 tasks, get the account's full repository
+access, which the expanded flow states before the owner approves.
+
+`sign_out_github` runs `gh auth logout --user` for each saved github.com account.
+It does not revoke the token on GitHub; the confirmation dialog points to GitHub
+Settings → Applications → GitHub CLI, noting that revoking there also signs out
+other devices using the same OAuth app. Deleting the VM likewise leaves the token
+valid until revoked. Interrupted sign-in or removal recovers only when the
+observed account matches that action's own outcome.
+
+References: [gh auth login](https://cli.github.com/manual/gh_auth_login),
+[gh auth setup-git](https://cli.github.com/manual/gh_auth_setup-git).
+
+
 ## Provider-connected services are a separate account scope
 
 A Codex session can expose an OpenAI-connected GitHub plugin even when the guest
@@ -210,19 +267,19 @@ ChatGPT Settings > Plugins > GitHub, select the intended external account, and
 verify the plugin identity again. A workspace-managed connection may require its
 administrator. Changing the connection can affect other sessions that use it.
 
-Future developer-access onboarding should distinguish provider-connected GitHub
-access from guest-local Git/`gh` credentials and Git commit author settings. Fresh
-VMs should remain free of operator GitHub credentials. An optional owner-driven
-GitHub CLI sign-in would establish guest Git/CLI access; it must not be presented
-as replacing or controlling the provider's separate GitHub plugin connection.
+Homecloud's optional owner-driven GitHub CLI sign-in (below) establishes
+guest-local Git/`gh` access and, when unset, Git commit author settings. Fresh VMs
+remain free of operator GitHub credentials. The interface never presents it as
+replacing or controlling the provider's separate GitHub plugin connection; the
+expanded sign-in flow says so explicitly.
 
 Reference: https://help.openai.com/en/articles/20001494-connecting-and-managing-app-accounts-in-chatgpt
 
 
 ## Apps & accounts interface
 
-The workspace card is titled Apps & accounts, with rows for T3 Code, Codex and
-Claude. It currently presents the T3 managed application and its provider-tool
+The workspace card is titled Apps & accounts, with rows for T3 Code, Codex,
+Claude and, when the runner reports the GitHub CLI component, GitHub. It currently presents the T3 managed application and its provider-tool
 components; these rows are not independent managed-application records. The
 shared heading leaves room for other managed tools while setup behavior remains
 specific to each adapter. VM power and resources stay in their own controls.
@@ -230,13 +287,15 @@ specific to each adapter. VM power and resources stay in their own controls.
 ## Read-only account identity
 
 `ApplicationObservation.accounts` carries optional, generic account display data:
-component name, email, account ID, plan, authentication kind and observation time.
+component name, email, username, account ID, plan, authentication kind and observation time.
 Provider components retain their existing installation/authentication status. No
 credential or raw provider reply belongs in this model. The daemon clears account
 metadata from snapshots for everyone except the VM owner, including other admins.
 
 The guest adapter queries Codex app-server `account/read` with refreshToken false
-and Claude `auth status` JSON. Only allowlisted, bounded display strings escape
+and Claude `auth status` JSON. GitHub reads only gh's saved active login locally
+(`gh config get --host github.com user`), never a token and never the network,
+so the regular inspection loop spends no GitHub API rate limit. Only allowlisted, bounded display strings escape
 normalization. Account status caches for 10 seconds. Fresh guest observations
 contain no provider usage data, and no adapter requests Codex rate limits.
 Historical usage fields in stored observations are ignored during deserialization;

@@ -914,6 +914,19 @@ fn panel_view<'a>(app: &'a App, panel: &'a Panel) -> iced_m3::Dialog<'a, Msg> {
                     .disabled(app.busy || app.snapshot_unavailable),
             );
         }
+        Panel::RemoveGitHub(id) => {
+            content = content
+                .push(heading("Remove GitHub access from this VM?"))
+                .push(copy("Git and gh in this VM, including tasks running in T3, will no longer be able to use your GitHub account. Repositories and commits in the VM are kept."))
+                .push(copy("This doesn’t revoke the token on GitHub. To revoke it, open GitHub Settings → Applications → GitHub CLI. Doing that also signs out gh on your other devices."));
+            actions = actions.push(
+                danger(
+                    "Remove access",
+                    Msg::SetupApplication(*id, ApplicationSetupAction::SignOutGitHub),
+                )
+                .disabled(app.busy || app.snapshot_unavailable || app.app_request.is_some()),
+            );
+        }
         Panel::Revoke(peer) => {
             content=content.push(heading("Revoke this device?")).push(copy(short(peer))).push(copy("Its active SSH tunnels will close, and it will no longer be able to connect. Enrolling it again requires a fresh device key."));
             actions =

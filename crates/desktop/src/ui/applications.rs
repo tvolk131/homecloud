@@ -11,11 +11,14 @@ fn loading<'a>(label: impl Into<Cow<'a, str>>) -> Element<'a, Msg> {
         .into()
 }
 
+const GITHUB: &str = "GitHub CLI";
+
 fn title(target: ApplicationSetupAction) -> &'static str {
     match target {
         ApplicationSetupAction::ConnectT3 => "T3",
         ApplicationSetupAction::SignInCodex => "Codex",
         ApplicationSetupAction::SignInClaude => "Claude",
+        ApplicationSetupAction::SignInGitHub | ApplicationSetupAction::SignOutGitHub => "GitHub",
     }
 }
 
@@ -44,6 +47,11 @@ fn flow<'a>(
 ) -> Option<Element<'a, Msg>> {
     let observation = &application.observation;
     let requesting = request_for(app.app_request.as_ref(), application.id, target);
+    // Removal is a short guest job with no browser step.
+    if target == ApplicationSetupAction::SignOutGitHub {
+        return (requesting || active_for(operation, target).is_some())
+            .then(|| loading("Removing GitHub access…"));
+    }
     if requesting {
         let label = if app.app_request.as_ref().is_some_and(|r| r.submitting_code) {
             "Sending authorization code…".to_owned()
@@ -75,8 +83,12 @@ fn flow<'a>(
                 ApplicationSetupAction::ConnectT3 => "Open T3’s page and confirm that its code matches the one below.",
                 ApplicationSetupAction::SignInCodex => "Open OpenAI’s page, sign into ChatGPT, then enter this code.",
                 ApplicationSetupAction::SignInClaude => "Open Claude’s page and sign in. Then paste the authorization code it gives you below.",
+                ApplicationSetupAction::SignInGitHub | ApplicationSetupAction::SignOutGitHub => "Open GitHub’s device page, sign in, then enter this code.",
             }),
         ].spacing(12);
+        if target == ApplicationSetupAction::SignInGitHub {
+            content = content.push(copy("Git and gh in this VM, including tasks running in T3, get full access to your repositories. This doesn’t change the GitHub connection used by Codex’s plugin."));
+        }
         if !action.code.is_empty() {
             content = content.push(
                 row![
@@ -124,6 +136,13 @@ fn status_dot<'a>(label: &'static str, good: bool, waiting: bool) -> Element<'a,
         lifecycle::State::Stopped
     };
     iced_m3::tooltip(lifecycle::marker(state), label).into()
+}
+
+fn github_caption(account: Option<&ApplicationAccount>) -> String {
+    match account.and_then(|a| a.username.as_deref()) {
+        Some(login) => format!("@{login} · Git and gh in this VM"),
+        None => "Signed in · Git and gh in this VM".into(),
+    }
 }
 
 fn account_caption(account: Option<&ApplicationAccount>, fallback: &str) -> String {
@@ -352,10 +371,11 @@ pub(super) fn view<'a>(app: &'a App, snapshot: &'a Snapshot, vm_id: Uuid) -> Ele
     }
     content = content.push(connection);
     let mut providers = column![].spacing(16);
+    // GitHub is guest Git/gh access, not one of T3's AI providers.
     if !observation
         .components
         .iter()
-        .any(|c| c.account == "signed_in")
+        .any(|c| c.name != GITHUB && c.account == "signed_in")
     {
         providers = providers.push(copy(
             "Sign into at least one provider. Credentials stay inside this VM.",
@@ -368,15 +388,30 @@ pub(super) fn view<'a>(app: &'a App, snapshot: &'a Snapshot, vm_id: Uuid) -> Ele
             "Claude Code",
             ApplicationSetupAction::SignInClaude,
         ),
+        ("GitHub", GITHUB, ApplicationSetupAction::SignInGitHub),
     ] {
         let component = observation.components.iter().find(|c| c.name == name);
+        let github = target == ApplicationSetupAction::SignInGitHub;
+        // Older guest runners do not report the optional GitHub CLI at all.
+        if github && component.is_none() {
+            continue;
+        }
+        let targets: &[ApplicationSetupAction] = if github {
+            &[target, ApplicationSetupAction::SignOutGitHub]
+        } else {
+            &[target]
+        };
         let signed_in = component.is_some_and(|c| c.account == "signed_in");
         let progress = running
-            .then(|| flow(app, application, target, operation))
+            .then(|| {
+                targets
+                    .iter()
+                    .find_map(|t| flow(app, application, *t, operation))
+            })
             .flatten();
-        let failed = operation.is_some_and(|op| {
+        let failed = operation.filter(|op| {
             op.kind == ApplicationOperationKind::Setup
-                && op.setup_action == target
+                && targets.contains(&op.setup_action)
                 && matches!(
                     op.phase,
                     ApplicationPhase::Failed | ApplicationPhase::Interrupted
@@ -385,7 +420,11 @@ pub(super) fn view<'a>(app: &'a App, snapshot: &'a Snapshot, vm_id: Uuid) -> Ele
         let status = if !running {
             unavailable
         } else if progress.is_some() {
-            "Signing in"
+            if github && signed_in {
+                "Removing access"
+            } else {
+                "Signing in"
+            }
         } else if signed_in {
             "Signed in"
         } else if !component.is_some_and(|c| c.ready) {
@@ -401,7 +440,7 @@ pub(super) fn view<'a>(app: &'a App, snapshot: &'a Snapshot, vm_id: Uuid) -> Ele
         let identity = row![
             status_dot(
                 status,
-                running && signed_in,
+                running && signed_in && progress.is_none(),
                 progress.is_some() || status == "Checking account"
             ),
             typography(label, Type::TitleMedium)
@@ -410,40 +449,61 @@ pub(super) fn view<'a>(app: &'a App, snapshot: &'a Snapshot, vm_id: Uuid) -> Ele
         .align_y(Alignment::Center);
         let mut header = row![identity].spacing(12).align_y(Alignment::Center);
         if signed_in && owner {
-            header = header.push(copy(account_caption(
-                account,
-                "Signed in · account email unavailable",
-            )));
-        } else {
+            header = header.push(copy(if github {
+                github_caption(account)
+            } else {
+                account_caption(account, "Signed in · account email unavailable")
+            }));
+        }
+        if !(signed_in && owner) {
             header = header.push(horizontal_space());
         }
-        if owner
-            && running
-            && component.is_some_and(|c| c.ready && c.account == "signed_out")
-            && progress.is_none()
-        {
+        let controls_available = owner && running && progress.is_none();
+        let blocked = active || app.busy || app.shutdown_blocks_work() || app.app_request.is_some();
+        if controls_available && component.is_some_and(|c| c.ready && c.account == "signed_out") {
+            let retry = failed.is_some_and(|op| op.setup_action == target);
             header = header.push(
-                button(match (target, failed) {
+                button(match (target, retry) {
                     (ApplicationSetupAction::SignInCodex, false) => "Sign into Codex",
                     (ApplicationSetupAction::SignInCodex, true) => "Retry Codex sign-in",
                     (ApplicationSetupAction::SignInClaude, false) => "Sign into Claude",
-                    _ => "Retry Claude sign-in",
+                    (ApplicationSetupAction::SignInClaude, true) => "Retry Claude sign-in",
+                    (_, false) => "Sign into GitHub",
+                    (_, true) => "Retry GitHub sign-in",
                 })
                 .on_press(Msg::SetupApplication(application.id, target))
-                .disabled(
-                    active || app.busy || app.shutdown_blocks_work() || app.app_request.is_some(),
-                ),
+                .disabled(blocked),
+            );
+        } else if github && controls_available && signed_in {
+            header = header.push(
+                quiet(
+                    "Remove access…",
+                    Msg::Open(Panel::RemoveGitHub(application.id)),
+                )
+                .disabled(blocked),
             );
         }
         let mut provider = column![header.wrap()].spacing(8);
         if signed_in && !owner {
-            provider = provider.push(copy("The VM owner manages this provider account."));
+            provider = provider.push(copy(if github {
+                "The VM owner manages this GitHub account."
+            } else {
+                "The VM owner manages this provider account."
+            }));
         } else if !signed_in && progress.is_none() {
-            provider = provider.push(copy(status));
+            provider = provider.push(copy(if github && status == "Not signed in" && owner {
+                "Not signed in. Sign in so Git and gh in this VM can use your GitHub account."
+            } else {
+                status
+            }));
         }
         if let Some(progress) = progress {
             provider = provider.push(progress);
-        } else if failed && !signed_in && observation.operation_id == operation.map(|op| op.id) {
+        } else if let Some(op) = failed
+            // Only while the failure is still current: a later success supersedes it.
+            && op.setup_action.expected_account() != component.map(|c| c.account.as_str())
+            && observation.operation_id == Some(op.id)
+        {
             provider = provider.push(copy(&observation.operation_message));
         }
         providers = providers.push(provider);

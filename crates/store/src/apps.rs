@@ -168,7 +168,7 @@ impl Store {
             if let Some(provider) = setup_action.provider_name() {
                 ensure!(
                     me.id == vm.owner,
-                    "Only the VM owner can sign into a provider account"
+                    "Only the VM owner can manage this account"
                 );
                 ensure!(
                     app.observation
@@ -292,15 +292,13 @@ impl Store {
                     let recovered_success = op.phase == ApplicationPhase::Interrupted
                         && op.kind == ApplicationOperationKind::Setup
                         && job.phase == ApplicationPhase::Succeeded
-                        && match op.setup_action {
-                            ApplicationSetupAction::ConnectT3 => app.observation.setup == "ready",
-                            ApplicationSetupAction::SignInCodex
-                            | ApplicationSetupAction::SignInClaude => {
-                                app.observation.components.iter().any(|c| {
-                                    Some(c.name.as_str()) == op.setup_action.provider_name()
-                                        && c.account == "signed_in"
-                                })
-                            }
+                        && match op.setup_action.provider_name() {
+                            None => app.observation.setup == "ready",
+                            Some(provider) => app.observation.components.iter().any(|c| {
+                                c.name == provider
+                                    && Some(c.account.as_str())
+                                        == op.setup_action.expected_account()
+                            }),
                         }
                         && {
                             let vm = get_vm(tx, app.vm_id)?;

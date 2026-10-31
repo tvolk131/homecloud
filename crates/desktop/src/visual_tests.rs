@@ -458,6 +458,12 @@ fn screenshot_regressions() {
         "t3-claude-waiting-small",
         "t3-claude-verifying",
         "t3-details",
+        "t3-github-signed-out",
+        "t3-github-waiting",
+        "t3-github-waiting-small",
+        "t3-github-signed-in",
+        "t3-github-remove-confirmation",
+        "t3-github-removing",
         "t3-waiting-small",
         "delete",
         "pairing",
@@ -1074,16 +1080,7 @@ Setup did not complete.
                 }
             }
             "workspace-ready" | "workspace-ready-small" | "workspace-long-name" => {
-                app = codex_fixture("signed_in");
-                app.snapshot.as_mut().unwrap().applications[0]
-                    .observation
-                    .components
-                    .push(ApplicationComponent {
-                        name: "Claude Code".into(),
-                        version: Some("2.1.308".into()),
-                        ready: true,
-                        account: "signed_in".into(),
-                    });
+                app = github_fixture("signed_in");
                 if name.ends_with("small") || name == "workspace-long-name" {
                     size = (800.0, 600.0);
                 }
@@ -1259,6 +1256,51 @@ Setup did not complete.
                         "Codex sign-in was interrupted. Request a new sign-in link.".into();
                 }
             }
+            "t3-github-signed-out"
+            | "t3-github-waiting"
+            | "t3-github-waiting-small"
+            | "t3-github-signed-in"
+            | "t3-github-remove-confirmation"
+            | "t3-github-removing" => {
+                let signed_in = matches!(
+                    name,
+                    "t3-github-signed-in" | "t3-github-remove-confirmation" | "t3-github-removing"
+                );
+                app = github_fixture(if signed_in { "signed_in" } else { "signed_out" });
+                size = if name.ends_with("small") {
+                    (800.0, 600.0)
+                } else {
+                    (1180.0, 1040.0)
+                };
+                if name.starts_with("t3-github-waiting") {
+                    let s = app.snapshot.as_mut().unwrap();
+                    s.application_operations.push(setup_operation(
+                        ApplicationSetupAction::SignInGitHub,
+                        ApplicationPhase::WaitingForUser,
+                    ));
+                    let observation = &mut s.applications[0].observation;
+                    observation.operation_id = Some(id(201));
+                    observation.operation_stage = "awaiting_approval".into();
+                    observation.action = Some(BrowserAction {
+                        url: "https://github.com/login/device".into(),
+                        code: "AB12-CD34".into(),
+                        expires_at: u64::MAX,
+                        setup_action: ApplicationSetupAction::SignInGitHub,
+                        input_required: false,
+                    });
+                } else if name == "t3-github-remove-confirmation" {
+                    app.panel = Some(Panel::RemoveGitHub(id(200)));
+                } else if name == "t3-github-removing" {
+                    app.snapshot
+                        .as_mut()
+                        .unwrap()
+                        .application_operations
+                        .push(setup_operation(
+                            ApplicationSetupAction::SignOutGitHub,
+                            ApplicationPhase::Running,
+                        ));
+                }
+            }
             "t3-providers-missing" | "t3-providers-installed" => {
                 app.page = Page::Workspace(id(10));
                 let installed = name.ends_with("installed");
@@ -1292,6 +1334,17 @@ Setup did not complete.
                                 ApplicationComponent {
                                     name: "Claude Code".into(),
                                     version: installed.then(|| "2.1.308".into()),
+                                    ready: installed,
+                                    account: if installed {
+                                        "signed_out"
+                                    } else {
+                                        "unavailable"
+                                    }
+                                    .into(),
+                                },
+                                ApplicationComponent {
+                                    name: "GitHub CLI".into(),
+                                    version: installed.then(|| "2.103.3".into()),
                                     ready: installed,
                                     account: if installed {
                                         "signed_out"
@@ -1914,6 +1967,95 @@ fn codex_signin_targets_a_named_owner_action_and_does_not_offer_account_replacem
     app.snapshot.as_mut().unwrap().me.id = id(2);
     let mut ui = simulator(&app, (1180.0, 820.0));
     assert!(ui.find("Sign into Codex").is_err());
+}
+
+/// Codex and Claude signed in, plus the optional GitHub CLI in the given state.
+fn github_fixture(account: &str) -> App {
+    let mut app = codex_fixture("signed_in");
+    let observation = &mut app.snapshot.as_mut().unwrap().applications[0].observation;
+    observation.components.extend([
+        ApplicationComponent {
+            name: "Claude Code".into(),
+            version: Some("2.1.308".into()),
+            ready: true,
+            account: "signed_in".into(),
+        },
+        ApplicationComponent {
+            name: "GitHub CLI".into(),
+            version: Some("2.103.3".into()),
+            ready: true,
+            account: account.into(),
+        },
+    ]);
+    if account == "signed_in" {
+        observation.accounts.push(ApplicationAccount {
+            name: "GitHub CLI".into(),
+            username: Some("octo-fixture".into()),
+            ..Default::default()
+        });
+    }
+    app
+}
+
+#[test]
+fn github_access_is_optional_owner_driven_and_removal_needs_confirmation() {
+    let _guard = lock();
+    let size = (1180.0, 1040.0);
+    // An older guest runner reports no GitHub CLI: no row, and nothing to start.
+    let app = codex_fixture("signed_in");
+    let mut ui = simulator(&app, size);
+    assert!(ui.find("GitHub").is_err());
+    drop(ui);
+    let app = github_fixture("signed_out");
+    let mut ui = simulator(&app, size);
+    ui.click("Sign into GitHub").unwrap();
+    assert!(
+        matches!(ui.into_messages().collect::<Vec<_>>().as_slice(), [Msg::SetupApplication(a, ApplicationSetupAction::SignInGitHub)] if *a == id(200))
+    );
+    let mut app = github_fixture("signed_out");
+    app.snapshot.as_mut().unwrap().me.id = id(2);
+    let mut ui = simulator(&app, size);
+    assert!(ui.find("Sign into GitHub").is_err());
+    drop(ui);
+    let mut app = github_fixture("signed_in");
+    let mut ui = simulator(&app, size);
+    assert!(ui.find("Sign into GitHub").is_err());
+    assert!(ui.find("@octo-fixture · Git and gh in this VM").is_ok());
+    ui.click("Remove access…").unwrap();
+    let msg = ui.into_messages().next().unwrap();
+    assert!(matches!(msg, Msg::Open(Panel::RemoveGitHub(a)) if a == id(200)));
+    let _ = app.update(msg);
+    let mut ui = simulator(&app, size);
+    ui.click("Cancel").unwrap();
+    let _ = app.update(ui.into_messages().next().unwrap());
+    assert!(app.app_request.is_none());
+    let _ = app.update(Msg::Open(Panel::RemoveGitHub(id(200))));
+    let mut ui = simulator(&app, size);
+    ui.click("Remove access").unwrap();
+    let _ = app.update(ui.into_messages().next().unwrap());
+    assert!(app.panel.is_none());
+    assert!(
+        matches!(&app.app_request, Some(r) if r.id == id(200) && r.target == Some(ApplicationSetupAction::SignOutGitHub))
+    );
+}
+
+#[test]
+fn github_sign_in_does_not_count_as_an_ai_provider() {
+    let _guard = lock();
+    let mut app = github_fixture("signed_in");
+    for c in &mut app.snapshot.as_mut().unwrap().applications[0]
+        .observation
+        .components
+    {
+        if c.name != "GitHub CLI" {
+            c.account = "signed_out".into();
+        }
+    }
+    let mut ui = simulator(&app, (1180.0, 1040.0));
+    assert!(
+        ui.find("Sign into at least one provider. Credentials stay inside this VM.")
+            .is_ok()
+    );
 }
 
 fn setup_operation(

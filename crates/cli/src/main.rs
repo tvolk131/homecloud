@@ -71,11 +71,17 @@ enum Command {
     AppSetup {
         application: Uuid,
         /// Sign into Codex instead of connecting the T3 account.
-        #[arg(long, conflicts_with = "claude")]
+        #[arg(long, group = "target")]
         codex: bool,
         /// Sign into Claude instead of connecting the T3 account.
-        #[arg(long)]
+        #[arg(long, group = "target")]
         claude: bool,
+        /// Sign Git and the GitHub CLI in this VM into GitHub.
+        #[arg(long, group = "target")]
+        github: bool,
+        /// Remove saved GitHub CLI accounts from this VM. GitHub keeps the token valid.
+        #[arg(long, group = "target")]
+        github_sign_out: bool,
     },
     Invite {
         name: String,
@@ -251,7 +257,27 @@ async fn main() -> Result<()> {
         Command::ReserveRetry {operation}=>Request::RetryHostReserves {operation_id:operation},
         Command::ReserveDiscard {operation}=>Request::DiscardHostReserves {operation_id:operation},
         Command::AppInstall { vm, homecloud_host } => Request::EnsureApplication { vm_id: vm, application_kind: if homecloud_host { ApplicationKind::HomecloudHost } else { ApplicationKind::T3 }, idempotency_key: Uuid::new_v4() },
-        Command::AppSetup { application, codex, claude } => Request::StartApplicationSetup { application_id: application, setup_action: if codex { ApplicationSetupAction::SignInCodex } else if claude { ApplicationSetupAction::SignInClaude } else { ApplicationSetupAction::ConnectT3 }, idempotency_key: Uuid::new_v4() },
+        Command::AppSetup {
+            application,
+            codex,
+            claude,
+            github,
+            github_sign_out,
+        } => Request::StartApplicationSetup {
+            application_id: application,
+            setup_action: if codex {
+                ApplicationSetupAction::SignInCodex
+            } else if claude {
+                ApplicationSetupAction::SignInClaude
+            } else if github {
+                ApplicationSetupAction::SignInGitHub
+            } else if github_sign_out {
+                ApplicationSetupAction::SignOutGitHub
+            } else {
+                ApplicationSetupAction::ConnectT3
+            },
+            idempotency_key: Uuid::new_v4(),
+        },
         Command::Retry { operation } => Request::RetryOperation {
             operation_id: operation,
         },

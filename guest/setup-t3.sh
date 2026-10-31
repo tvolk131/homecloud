@@ -6,7 +6,9 @@ version="${1:?Pass the exact version matching your T3 desktop client}"
 case "$version" in *[!0-9A-Za-z.+-]*|'') exit 2 ;; esac
 umask 077
 mkdir -p "$HOME/.t3" "$HOME/.local/bin"
+installed_t3=0
 if [ ! -x "$HOME/.local/bin/t3" ] || [ "$("$HOME/.local/bin/t3" --version)" != "t3 v$version" ]; then
+  installed_t3=1
   installer="$(mktemp)"
   trap 'rm -f "$installer"' EXIT
   curl --proto '=https' --tlsv1.2 -fsSL https://t3.codes/install.sh -o "$installer"
@@ -32,10 +34,19 @@ uid="$(id -u)"
 export PATH="$HOME/.local/bin:$PATH"
 export XDG_RUNTIME_DIR="/run/user/$uid"
 export DBUS_SESSION_BUS_ADDRESS="unix:path=$XDG_RUNTIME_DIR/bus"
-was_running=0
-if systemctl --user is-active --quiet t3code.service; then was_running=1; fi
+# Installing an existing service can retain its process. Explicit repair must
+# activate the provider PATH even if the unit/drop-in files already match. A
+# process already started with that PATH finds newly installed tools itself, so
+# adding a tool to a working VM does not interrupt its T3 sessions.
+restart=0
+if systemctl --user is-active --quiet t3code.service; then
+  pid="$(systemctl --user show --property=MainPID --value t3code.service 2>/dev/null || true)"
+  running_path="$(tr '\0' '\n' 2>/dev/null < "/proc/$pid/environ" | sed -n 's/^PATH=//p' || true)"
+  case ":$running_path:" in
+    *":$HOME/.local/bin:"*) [ "$installed_t3" = 0 ] || restart=1 ;;
+    *) restart=1 ;;
+  esac
+fi
 systemctl --user daemon-reload
 t3 service install
-# Installing an existing service can retain its process. Explicit repair must
-# activate the new PATH even if the unit/drop-in files already match.
-if [ "$was_running" = 1 ]; then t3 service restart; fi
+if [ "$restart" = 1 ]; then t3 service restart; fi

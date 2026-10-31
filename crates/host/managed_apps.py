@@ -28,7 +28,8 @@ def application(runtime, vm, app, action):
     # Inspecting an older VM must discover new account capabilities without
     # reinstalling T3 or restarting a user's active sessions.
     sources = {file: Path(__file__).with_name(file).read_text()
-               for file in ['managed-app.py', 'setup-t3.sh', 'setup-providers.py', 'codex_auth.py', 'claude_auth.py', 'account_metadata.py']}
+               for file in ['managed-app.py', 'setup-t3.sh', 'setup-providers.py', 'codex_auth.py', 'claude_auth.py',
+                         'github_auth.py', 'account_metadata.py']}
     writer = """import json,os
 from pathlib import Path
 root=Path('/usr/local/libexec/homecloud'); root.mkdir(parents=True,exist_ok=True,mode=0o755)
@@ -47,7 +48,8 @@ for name,source in json.load(__import__('sys').stdin).items():
         assert operation['application_id'] == app_id
         kind = operation['kind']
         target = operation.get('setup_action', 'connect_t3')
-        assert kind in ('install', 'setup') and target in ('connect_t3', 'sign_in_codex', 'sign_in_claude')
+        assert kind in ('install', 'setup') and target in ('connect_t3', 'sign_in_codex', 'sign_in_claude',
+                                                           'sign_in_github', 'sign_out_github')
         if action['kind'] == 'submit_code':
             assert kind == 'setup' and target == 'sign_in_claude'
             guest('python3', script, 'submit', app_id, operation_id, input=json.dumps({'code': action['code']}))
