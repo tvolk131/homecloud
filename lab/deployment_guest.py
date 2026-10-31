@@ -6,6 +6,7 @@ import json
 import os
 from pathlib import Path
 import signal
+import shutil
 import sqlite3
 import subprocess
 import sys
@@ -45,6 +46,50 @@ def proof(s):
             'incus_pid':run('systemctl','show','incus','--property=MainPID','--value').stdout.strip()}
 
 
+def storage_summary(snapshot, earliest, now, smartctl_available):
+    assert snapshot['me']['role']=='admin','Storage checkpoint requires an enrolled administrator'
+    storage=snapshot['inventory'].get('storage')
+    assert storage is not None,'Storage inventory is absent'
+    for source in ('disk_collection','pool_collection'):
+        observation=storage[source]
+        assert not observation.get('error'),source+': '+str(observation.get('error'))
+        observed=observation.get('observed_at')
+        assert observed is not None and earliest<=observed<=now and now-observed<=180,source+' is not fresh'
+    disks=storage['disks'];identities={disk['id'] for disk in disks}
+    assert len(disks)>=2,'Boot and pool disks must both be visible'
+    boot=[disk['path'] for disk in disks if any('/' in device['mountpoints'] for device in disk['devices'])]
+    assert boot,'Boot mount is not associated with a disk'
+    pool=next((pool for pool in storage['pools'] if pool['name']=='hcnested'),None)
+    assert pool is not None and pool['state']=='ONLINE' and pool['managed'],'Managed nested pool is not ONLINE'
+    def leaves(vdev):
+        if not vdev['children']:return [vdev]
+        return [leaf for child in vdev['children'] for leaf in leaves(child)]
+    devices=[leaf for vdev in pool['vdevs'] for leaf in leaves(vdev)]
+    assert devices and all(leaf.get('path') and leaf.get('disk_id') in identities for leaf in devices),'Pool leaves are not linked to disks'
+    for disk in disks:
+        smart=disk['smart']
+        assert smart['state']!='pending','SMART observation is still pending'
+        if not smartctl_available:
+            assert smart['state']=='unavailable' and smart.get('passed') is None and smart['collection'].get('error'),'Missing smartctl must not imply healthy disks'
+    return {'disk_count':len(disks),'boot_disks':boot,'managed_pool':pool['name'],
+            'pool_state':pool['state'],'linked_vdev_leaves':len(devices),
+            'disk_observed_at':storage['disk_collection']['observed_at'],
+            'pool_observed_at':storage['pool_collection']['observed_at'],
+            'smartctl_available':smartctl_available,
+            'smart_states':{disk['path']:disk['smart']['state'] for disk in disks}}
+
+
+def storage_checkpoint(earliest):
+    deadline=time.monotonic()+100;last='No snapshot received'
+    while time.monotonic()<deadline:
+        snapshot=cli('status')
+        try:summary=storage_summary(snapshot,earliest,int(time.time()),shutil.which('smartctl') is not None)
+        except AssertionError as error:last=str(error);time.sleep(2);continue
+        engine().save(ROOT/'storage-snapshot.json',snapshot)
+        return summary
+    raise RuntimeError('Candidate-active storage checkpoint failed: '+last)
+
+
 def main():
     action=sys.argv[1];s=state();mod=engine() if (SOURCE/'scripts/host_deploy.py').exists() else None
     if action=='adopt':
@@ -76,8 +121,11 @@ def main():
         assert proof(s)==before;print(json.dumps({'install_preflight':True,'proof':proof(s)}));return
     if action=='upgrade':
         cli('grant',s['owner'],'--memory',1,'--cores',1,'--disk',24)
+        started_at=int(time.time())
         result=json.loads(run('python3',mod.GUARD,'upgrade','--bundle',str(BUNDLE),'--sha256',sys.argv[2],timeout=120).stdout)
         assert proof(s)==s['baseline'];s['successful_upgrade']=result;save()
+        if '--storage-check' in sys.argv[3:]:
+            s['storage_checkpoint']=storage_checkpoint(started_at);save()
         # This is acknowledged *after* the deployment checkpoint. A software
         # rollback must retain it rather than restoring an old database copy.
         cli('grant',s['owner'],'--memory',2,'--cores',1,'--disk',24)
@@ -85,7 +133,7 @@ def main():
         time.sleep(7);mod.Deployment().verify(mod.Deployment().receipt())
         run('python3',mod.GUARD,'rollback',result['deployment'],timeout=120)
         assert cli('status')['me']['grant']['memory_bytes']==2*1024**3
-        assert proof(s)==s['baseline'];print(json.dumps({'upgrade':True,'rollback':True,'acknowledged_grant_preserved':True,'proof':proof(s)}));return
+        assert proof(s)==s['baseline'];print(json.dumps({'upgrade':True,'rollback':True,'acknowledged_grant_preserved':True,'proof':proof(s),'storage':s.get('storage_checkpoint')}));return
     if action=='kill':
         manifest,files=mod.read_bundle(BUNDLE,sys.argv[2])
         pid=os.fork()

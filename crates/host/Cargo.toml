@@ -8,8 +8,10 @@ anyhow.workspace = true
 async-trait.workspace = true
 homecloud-core.workspace = true
 serde.workspace = true
-serde_json.workspace = true
+serde_json = { workspace = true, features = ["arbitrary_precision"] }
 tokio.workspace = true
 reqwest.workspace = true
 nix.workspace = true
 uuid.workspace = true
+[dev-dependencies]
+tempfile.workspace = true

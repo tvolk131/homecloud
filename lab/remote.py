@@ -1,13 +1,16 @@
 """Local SSH transport for this explicitly authorized, disposable lab host."""
 import json
+import os
 from pathlib import Path
 import shlex
 import subprocess
 
 ROOT = Path(__file__).resolve().parent.parent
-ACCESS = ROOT / '.host-access'
+SSH_CONFIG = Path(os.environ.get('HOMECLOUD_SSH_CONFIG',
+    Path.home() / '.config/homecloud/host-access/resolvr-box/ssh_config')).expanduser().resolve()
+ACCESS = SSH_CONFIG.parent
 REMOTE = '/usr/local/libexec/home-cloud-lab'
-SSH = ['/usr/bin/ssh', '-F', str(ACCESS / 'ssh_config'), '-o', 'BatchMode=yes',
+SSH = ['/usr/bin/ssh', '-F', str(SSH_CONFIG), '-o', 'BatchMode=yes',
        '-o', 'ServerAliveInterval=10', '-o', 'ServerAliveCountMax=3', 'hclab-host']
 
 

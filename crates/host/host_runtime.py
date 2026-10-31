@@ -641,6 +641,7 @@ def main():
     if kind=='application':return {'kind':'application','data':managed_apps.application(sys.modules[__name__],request['vm'],request['application'],request['command'])}
     if kind=='reserve_status':return {'kind':'reserve_policy','data':resource_reserves.report(c['_reserve_base'],c['_reserve_record'])}
     if kind=='inventory':return {'kind':'inventory','data':inventory(c)}
+    if kind=='storage':return {'kind':'storage','data':json.loads(run('/usr/local/bin/homecloudd','collect-storage',timeout=120).stdout)}
     if kind=='observe':return {'kind':'observations','data':observe(request['vms'])}
     if kind=='verify_ssh':
         vm=request['vm'];d=owned(vm);assert state(vm)=='running','VM is not running'

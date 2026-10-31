@@ -7,6 +7,7 @@ use iced::widget::{column, row};
 use iced_m3::tabs::{Tab, tabs};
 mod allocations;
 mod budget;
+mod storage;
 use uuid::Uuid;
 
 // Stable identity colors, generated as M3 tonal pairs in the current theme.
@@ -160,16 +161,21 @@ pub(super) fn directory<'a>(app: &App, s: &'a Snapshot) -> Element<'a, Msg> {
 }
 
 pub(super) fn navigation(app: &App) -> Element<'static, Msg> {
-    tabs(
-        [
-            Tab::new(HostTab::Overview, "Overview"),
-            Tab::new(HostTab::Allocations, "Allocations"),
-            Tab::new(HostTab::Hardware, "Hardware"),
-        ],
-        Some(app.host_tab),
-    )
-    .on_select(Msg::HostTab)
-    .into()
+    let mut items = vec![
+        Tab::new(HostTab::Overview, "Overview"),
+        Tab::new(HostTab::Allocations, "Allocations"),
+        Tab::new(HostTab::Hardware, "Hardware"),
+    ];
+    if app
+        .snapshot
+        .as_ref()
+        .is_some_and(|s| s.me.role == Role::Admin)
+    {
+        items.push(Tab::new(HostTab::Storage, "Disks & ZFS"));
+    }
+    tabs(items, Some(app.host_tab))
+        .on_select(Msg::HostTab)
+        .into()
 }
 
 pub(super) fn view<'a>(app: &'a App, s: &'a Snapshot, width: f32) -> Element<'a, Msg> {
@@ -181,6 +187,7 @@ pub(super) fn view<'a>(app: &'a App, s: &'a Snapshot, width: f32) -> Element<'a,
         HostTab::Overview => overview(app, s, width),
         HostTab::Allocations => allocations::view(app, s),
         HostTab::Hardware => hardware(app, s, width),
+        HostTab::Storage => storage::view(app, s),
     })
     .into()
 }

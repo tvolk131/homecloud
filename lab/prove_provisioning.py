@@ -6,7 +6,7 @@ from pathlib import Path
 import subprocess
 import tempfile
 import time
-from remote import ACCESS, ROOT, save, script, upload
+from remote import ROOT, SSH_CONFIG, save, script, upload
 
 upload('guest_cloud_init.py', 'provisioning_guest.py')
 public_key = (Path.home() / '.ssh/id_ed25519.pub').read_text().strip()
@@ -24,7 +24,7 @@ for number in (1, 2, 3):
         known = tmp / 'known_hosts'
         known.write_text(alias + ' ' + ' '.join(entry['host_key'].split()[:2]) + '\n')
         config = tmp / 'config'
-        config.write_text(f'''Include "{ACCESS / 'ssh_config'}"
+        config.write_text(f'''Include "{SSH_CONFIG}"
 Host proof
     HostName {entry['address']}
     User dev
@@ -35,7 +35,7 @@ Host proof
     UserKnownHostsFile "{known}"
     HostKeyAlias {alias}
     ConnectTimeout 10
-    ProxyCommand /usr/bin/ssh -F "{ACCESS / 'ssh_config'}" -W %h:%p hclab-host
+    ProxyCommand /usr/bin/ssh -F "{SSH_CONFIG}" -W %h:%p hclab-host
 ''')
         def ssh(command):
             return subprocess.run(['/usr/bin/ssh', '-F', str(config), 'proof', command],

@@ -6,6 +6,9 @@ mod memory_tests;
 #[cfg(test)]
 mod reserve_tests;
 mod reserves;
+mod storage;
+#[cfg(test)]
+mod storage_tests;
 use anyhow::{Result, ensure};
 use homecloud_client::{DeviceProof, read_frame, write_frame};
 use homecloud_core::*;
@@ -24,7 +27,7 @@ use std::{
 };
 use tokio::{
     io::AsyncWriteExt,
-    sync::{Mutex, Semaphore},
+    sync::{Mutex, RwLock, Semaphore},
 };
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -63,6 +66,8 @@ pub struct Service {
     application_reconciliation: Mutex<()>,
     reserve_admission: Mutex<()>,
     application_actions: Mutex<HashMap<uuid::Uuid, BrowserAction>>,
+    storage: RwLock<StorageInventory>,
+    storage_collection: Mutex<()>,
     _controller_lock: std::fs::File,
 }
 impl Service {
@@ -76,6 +81,8 @@ impl Service {
             application_reconciliation: Mutex::new(()),
             reserve_admission: Mutex::new(()),
             application_actions: Mutex::new(HashMap::new()),
+            storage: RwLock::new(StorageInventory::default()),
+            storage_collection: Mutex::new(()),
             _controller_lock: controller_lock,
         }))
     }
@@ -245,6 +252,11 @@ impl Service {
                         ..Default::default()
                     },
                     _ => HostInventory::default(),
+                };
+                inventory.storage = if me.role == Role::Admin {
+                    Some(self.storage.read().await.clone())
+                } else {
+                    None
                 };
                 let users = users
                     .into_iter()

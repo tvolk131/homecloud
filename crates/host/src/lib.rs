@@ -5,6 +5,8 @@ use serde::{Deserialize, Serialize};
 use std::{collections::BTreeMap, path::PathBuf, sync::Arc};
 use tokio::{io::AsyncWriteExt, process::Command, sync::Mutex};
 
+pub mod storage;
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Observation {
     pub state: String,
@@ -34,6 +36,7 @@ pub enum HostRequest {
         command: ApplicationCommand,
     },
     Inventory,
+    Storage,
     CancelMemoryCapacity {
         operation: MemoryCapacityOperation,
     },
@@ -71,6 +74,7 @@ pub enum HostResponse {
     Diagnostics(VmDiagnostics),
     Application(ApplicationReport),
     Inventory(HostInventory),
+    Storage(StorageInventory),
     MemoryCapacity(MemoryCapacityStatus),
     MemoryCapacityCancelled {
         operation_id: uuid::Uuid,
@@ -182,6 +186,10 @@ impl Backend for Simulator {
                 job: None,
             })),
             HostRequest::Observe { .. } => Ok(HostResponse::Observations(vec![])),
+            HostRequest::Storage => Ok(HostResponse::Storage(StorageInventory {
+                warnings: vec!["Simulation does not discover disks or collect SMART data.".into()],
+                ..Default::default()
+            })),
             HostRequest::Inventory => Ok(HostResponse::Inventory(HostInventory {
                 hostname: "Simulator — local development".into(),
                 cpu_model: "Simulated host".into(),

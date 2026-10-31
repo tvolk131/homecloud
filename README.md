@@ -24,6 +24,11 @@ The current development Mac is already paired with the lab host. The default
 paired-host metadata is `~/.config/homecloud/client.json`; Mac device keys live in Keychain. `HOMECLOUD_PROFILE` selects
 another profile; `HOMECLOUD_CLI` overrides the SSH helper path.
 
+Independent management SSH access for deployment rehearsals lives outside the
+checkout at `~/.config/homecloud/host-access/resolvr-box/ssh_config`; see
+[management SSH access](lab/README.md#management-ssh-access) for pins, permissions,
+and lab-runner configuration.
+
 App-wide UI preferences are saved separately in
 `~/Library/Application Support/dev.homecloud/preferences.json` on macOS. Linux
 uses `$XDG_CONFIG_HOME/homecloud/preferences.json`, falling back to
@@ -86,3 +91,9 @@ keys, raw guest logs, or machine-specific known-host credentials. The checked-in
 
 Client device keys use the native macOS Keychain; see [credential storage](docs/credentials.md).
 Use the separate [host software deployment procedure](docs/deployment.md) for upgrades.
+
+Administrators can inspect physical disks, imported ZFS topology and cached SMART
+observations in **Hosts → Disks & ZFS**. See [storage observability](docs/storage-observability.md)
+for freshness, prerequisites and the read-only/physical-validation boundaries.
+The collector is Rust code shipped in the existing host daemon; the privileged
+Python adapter only dispatches its fixed local command.

@@ -36,6 +36,10 @@ Rust tests, 125 Linux Rust tests and 136 Python tests, plus native/live proofs.
 
 ## Remaining acceptance work
 
+- [ ] Validate the read-only Disks & ZFS explorer on the physical host: all-disk
+  discovery, partition/vdev mapping, OS NVMe and actual SMART access. Background
+  Rust collection, durable SMART caching, admin scoping and native views have
+  deterministic coverage; see [storage observability](storage-observability.md).
 - [ ] Clean install and realistic resident-memory/VM-density tests on the intended
   physical hardware. Nested tests do not establish physical-host density.
 - [ ] Repeat mobile automatic/relay networking with monitored hotspot routing.
@@ -49,7 +53,8 @@ Rust tests, 125 Linux Rust tests and 136 Python tests, plus native/live proofs.
 
 ## Later or explicitly deferred
 
-- Full disk/SMART inventory, persistent alert history and idle-GPU advisories.
+- Persistent storage alert history, notifications, storage performance sampling
+  and idle-GPU advisories.
 - Supported T3 Connect account identity via an upstream status field.
 - Off-host backups and restore drills: deliberately deferred while host/data loss
   is acceptable. Local installation snapshots are not off-host VM-data backups.

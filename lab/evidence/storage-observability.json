@@ -1,0 +1,275 @@
+{
+  "observed_at_utc": "2026-10-30T04:50:10Z",
+  "source": {
+    "base_commit": "6f20f9eb01c8c21575aa36a239f4abf54e3cd752",
+    "snapshot_sha256": "c36751d58d5017940e5ee56ed058844a510b35161a4099fef332c30d01845a31",
+    "uncommitted_files_in_snapshot": [
+      "crates/daemon/tests/transport.rs",
+      "docs/validation.md"
+    ],
+    "private_state_and_credentials_excluded": true
+  },
+  "build": {
+    "rust_version": "1.99.0",
+    "target": "x86_64-unknown-linux-gnu",
+    "profile": "dev",
+    "method": "GNU cross-compilation in a local Linux arm64 Docker container",
+    "test_execution": "Linux x86-64 user-mode emulation through Docker Desktop Rosetta",
+    "network_disabled_during_build_and_tests": true,
+    "daemon_help": "passed",
+    "cli_help": "passed"
+  },
+  "tests": {
+    "linux_rust": {
+      "passed": 159,
+      "failed": 0,
+      "ignored": 0,
+      "scope": "workspace excluding homecloud-desktop"
+    },
+    "linux_python": {
+      "run": 139,
+      "passed": 137,
+      "failed": 0,
+      "skipped": 2,
+      "skip_reason": "tarfile.data_filter is unavailable in the container's Python"
+    },
+    "authenticated_storage_transport": "passed",
+    "admin_nested_storage_round_trip": "passed",
+    "member_storage_redaction": "passed",
+    "cached_and_failed_observations": "passed",
+    "frame_boundaries": "passed",
+    "local_lab_helpers": {
+      "platform": "macOS",
+      "passed": 21,
+      "failed": 0,
+      "new_management_access_regressions": 4,
+      "candidate_storage_checkpoint_regressions": 6
+    }
+  },
+  "bundle": {
+    "sha256": "b2d19f58c8a27431f801598c8b57f188ed3ab4a4c70cad1b91ca973b801feeff",
+    "bytes": 23446590,
+    "architecture": "x86_64",
+    "allowlisted_files": 20,
+    "archive_validation": "passed",
+    "daemon_sha256": "0a40b6c573d854f4c06e88680d8d30a4e723d98834b6492bfdd75348d52dbc4b",
+    "cli_sha256": "923e661e3d8c97cbaef7a53965a91bd97fdfbde2811f53e557780c2ac3844199"
+  },
+  "unchanged_from_main": [
+    "scripts/install_host.py",
+    "scripts/host_deploy.py",
+    "crates/host/native/qemu_cpu_launcher.c",
+    "crates/host/firewall.nft"
+  ],
+  "physical_host_preflight": {
+    "scope": "Read-only checks before creating the disposable host",
+    "authenticated_admin_api": "passed",
+    "management_ssh": {
+      "status": "passed",
+      "config": "~/.config/homecloud/host-access/resolvr-box/ssh_config",
+      "noninteractive_sudo": "passed",
+      "strict_host_key_checking": true,
+      "existing_pins_preserved": true,
+      "old_scratch_access_files_removed": true
+    },
+    "reported_pool_health": "ONLINE",
+    "controller_and_incus_active": true,
+    "permanent_vm_process_baselines_recorded_privately": true,
+    "worker_capacity": {
+      "memory_gib": 8,
+      "cpu_cores": 2,
+      "disk_charge_gib": 66,
+      "committed_disk_after_creation_gib": 114,
+      "existing_disk_grant_gib": 128,
+      "temporary_memory_grant_gib": 12,
+      "temporary_cpu_grant": 3,
+      "fits_current_capacity_and_backing": true
+    },
+    "mutating_operations_performed": 0
+  },
+  "disposable_host_rehearsal": {
+    "status": "passed_with_inventory_finding",
+    "blocker": null,
+    "managed_host_installation": "passed",
+    "harness": {
+      "source": "Reviewed working-tree scripts; not installed in the permanent controller",
+      "deployment_guest_sha256": "c079442b264f1a11f4322ae59c81a8d51c8c5299664972103b3791dd83671522",
+      "deployment_runner_sha256": "d439cfeb4710f47eb03eebb823e641f52136edad84b0ce1a807d625e20560c4e",
+      "candidate_active_storage_checkpoint": true
+    },
+    "native_environment": {
+      "architecture": "x86_64",
+      "kernel": "7.0.0-38-generic",
+      "incus": "6.0.5",
+      "zfs": "2.4.1-1ubuntu5.1",
+      "qemu": "10.2.1"
+    },
+    "workers_created": 1,
+    "workers_deleted": 1,
+    "grants_changed": true,
+    "original_grant_restored": true,
+    "software_deployed": true,
+    "software_deployment_scope": "Disposable managed host only",
+    "permanent_software_deployed": false,
+    "checks": {
+      "native_installer_preflight": "passed",
+      "guarded_deployment_preflight": "passed",
+      "candidate_upgrade": "passed",
+      "real_privileged_collector_to_enrolled_admin_snapshot": "passed",
+      "software_rollback": "passed",
+      "acknowledged_post_checkpoint_grant_preserved": "passed",
+      "sigkill_mid_update_guard_recovery": "passed",
+      "nonstarting_daemon_rejected": "passed",
+      "explicit_failed_start_rollback": "passed",
+      "baseline_daemon_restored": "passed"
+    },
+    "storage": {
+      "visible_block_disks": 3,
+      "boot_disks": ["/dev/sda"],
+      "managed_pool": "hcnested",
+      "pool_state": "ONLINE",
+      "linked_vdev_leaves": 1,
+      "disk_observed_at": 1793335296,
+      "pool_observed_at": 1793335296,
+      "observations_newer_than_upgrade_start": true,
+      "smartctl_available": false,
+      "smart_states": {
+        "/dev/sda": "unavailable",
+        "/dev/sdb": "unavailable",
+        "/dev/zd0": "unavailable"
+      },
+      "smart_health_not_invented": true,
+      "raw_snapshot_retained_privately": true
+    },
+    "inner_continuity": {
+      "qemu_pid_unchanged": true,
+      "incus_pid_unchanged": true,
+      "endpoint_identity_unchanged": true,
+      "durable_proof_data_unchanged": true,
+      "controller_database_retained": true
+    },
+    "cleanup": {
+      "normal_api_deletion": true,
+      "original_grant_restored": true,
+      "owned_test_volume_absent": true,
+      "owned_zfs_datasets_absent": true,
+      "temporary_candidate_removed": true,
+      "permanent_vm_states_and_pids_unchanged": true,
+      "permanent_controller_and_incus_pids_unchanged": true,
+      "checked_permanent_software_hashes_unchanged": true,
+      "host_reserves_and_capacity_unchanged": true,
+      "physical_pool_online": true
+    }
+  },
+  "findings": [
+    {
+      "area": "Physical versus logical disk classification",
+      "observation": "The nested ZFS zvol /dev/zd0 backing the inner VM is included alongside the boot and pool disks and receives a SMART probe",
+      "follow_up": "Validate the rebuilt collector natively; the recorded deployment rehearsal covers the original pre-fix bundle",
+      "status": "fixed_in_source_pending_native_acceptance",
+      "resolution": "Use lsblk KNAME with a device-path fallback to exclude zd-plus-digits zvol devices before physical disk inventory and SMART scheduling; preserve guest disks and unmatched logical vdev leaves",
+      "regression_tests_added": 5,
+      "focused_storage_tests_passed": 32,
+      "macos_non_gui_workspace": {
+        "passed": 165,
+        "failed": 0,
+        "ignored": 1,
+        "ignored_reason": "Existing native macOS Keychain test requires an unlocked login Keychain",
+        "clippy_all_targets_warnings_denied": "passed"
+      },
+      "linux_non_gui_workspace": {
+        "passed": 164,
+        "failed": 0,
+        "ignored": 0,
+        "target": "x86_64-unknown-linux-gnu",
+        "execution": "Docker Desktop Rosetta; offline tracked-source-only build"
+      },
+      "rebuilt_candidate": {
+        "source_snapshot_sha256": "078e9ce2f82e4c505ee3dc16a0667cb61482625e79817693dcb614cd2e04646d",
+        "bundle_sha256": "23e3074f03ea79bde9d895d246ecff9e26f89c0cf6461e1dab682fa2a775aa57",
+        "bundle_bytes": 23464706,
+        "allowlisted_files": 20,
+        "archive_validation": "passed",
+        "daemon_sha256": "b589ad5cff7e0ca0509db71f4b378efa7650cf2daac4663a909529f75142a52d",
+        "cli_sha256": "923e661e3d8c97cbaef7a53965a91bd97fdfbde2811f53e557780c2ac3844199",
+        "daemon_and_cli_help": "passed",
+        "permanent_host_touched": false,
+        "native_acceptance": "pending"
+      },
+      "recorded_rehearsal_covers_source_fix": false
+    }
+  ],
+  "review_fixes": {
+    "status": "fixed_in_source_pending_native_acceptance",
+    "scheduling": {
+      "resolution": "Retain matching path-only attempt timestamps for fair ordering, including unsampled cycles and cache reloads, without reusing health readings or excluding unidentified guest disks",
+      "metadata_change_discards_hint": true,
+      "future_attempts_are_unsampled_for_ordering": true,
+      "regressions_added": 4
+    },
+    "failure_badge": {
+      "resolution": "Prioritize a reported failure over partial-command, freshness and probe-state warnings; preserve it through later missing-health partial reads with its original sample timestamp and Inspect diagnostics",
+      "fresh_passing_sample_clears_warning": true,
+      "parser_regressions_added": 2,
+      "native_ui_regressions_added": 3
+    },
+    "partial_read_badges": {
+      "resolution": "Distinguish fresh passing or unknown health with partial-command errors from an old sample or an unqualified green pass",
+      "stale_or_future_samples_still_not_current": true,
+      "native_ui_regressions_added": 1
+    },
+    "duplicate_identities": {
+      "resolution": "Use path IDs and scheduling-only cache reuse for every colliding WWN or model/serial identity; reject health reuse from older ambiguous caches even after a disk is removed",
+      "distinct_wwns_keep_unique_identity": true,
+      "regressions_added": 3
+    },
+    "focused_tests": {
+      "host_storage_passed": 41,
+      "native_storage_ui_passed": 9
+    },
+    "macos_workspace": {
+      "passed": 269,
+      "failed": 0,
+      "ignored": 1,
+      "ignored_reason": "Existing native macOS Keychain test requires an unlocked login Keychain",
+      "desktop_tests_passed": 95,
+      "screenshot_backend": "tiny-skia",
+      "native_screenshot_comparisons": "passed",
+      "screenshot_baselines_changed": false
+    },
+    "linux_non_gui_workspace": {
+      "passed": 173,
+      "failed": 0,
+      "ignored": 0,
+      "target": "x86_64-unknown-linux-gnu",
+      "execution": "Docker Desktop Rosetta; offline tracked-source-only build"
+    },
+    "source_checks": {
+      "clippy_all_targets_warnings_denied": "passed",
+      "formatting": "passed",
+      "diff_whitespace": "passed"
+    },
+    "rebuilt_candidate": {
+      "source_snapshot_sha256": "4ae05c307849e781ef84f650b3b15f46fe5caf6c172133f84db6f43a1fe72166",
+      "source_scope": "Tracked-source-only snapshot includes all compiled fixes; final documentation and evidence updates follow the snapshot",
+      "bundle_sha256": "2320791579727b1fccdea35a0bfbbbe4a8ec87331313e48f3cc48dfc238a2062",
+      "bundle_bytes": 23475873,
+      "architecture": "x86_64",
+      "allowlisted_files": 20,
+      "archive_validation": "passed",
+      "daemon_sha256": "31e38e68cf1be99a7eeb2166ca18a096d6fcf2d1363158791c15e1e2886a344c",
+      "cli_sha256": "923e661e3d8c97cbaef7a53965a91bd97fdfbde2811f53e557780c2ac3844199",
+      "daemon_and_cli_help": "passed",
+      "supersedes_classification_only_candidate": true,
+      "supersedes_review_candidate_sha256": "1fdb367b33e84ab46a4ab442edf8939b86220deebe18e7eead0191ed55744335",
+      "native_acceptance": "pending"
+    },
+    "permanent_host_touched": false,
+    "recorded_rehearsal_covers_source_fixes": false
+  },
+  "not_yet_proven": [
+    "Native acceptance of the current artifact; the prior deployment rehearsal predates both the classification and SMART review fixes",
+    "Physical disk and vdev associations on the physical box",
+    "Physical disk controller visibility and SMART support"
+  ]
+}
