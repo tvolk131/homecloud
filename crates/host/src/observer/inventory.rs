@@ -360,17 +360,39 @@ impl<C: Commands> Observer<C> {
             .await;
         if let Ok(output) = output
             && output.success
+            && let Some(summary) = telemetry_summary(&output.stdout)
         {
-            let values: Vec<_> = output.stdout.trim().split(',').map(str::trim).collect();
-            if values.len() == 4 {
-                return Ok(format!(
-                    "Guest GPU responding: {}% utilization; {}/{} MiB VRAM; {} C. Guest-reported, not an independent hardware health guarantee.",
-                    values[0], values[1], values[2], values[3]
-                ));
-            }
+            return Ok(summary);
         }
         Ok(unavailable.into())
     }
+}
+
+// The guest controls this output. Keep a malformed sample local to telemetry
+// rather than allowing it to enlarge or inject text into the shared inventory.
+fn telemetry_summary(output: &str) -> Option<String> {
+    if output.len() > 128 {
+        return None;
+    }
+    let values: Vec<_> = output.trim().split(',').map(str::trim).collect();
+    if values.len() != 4 || values.iter().any(|value| value.len() > 16) {
+        return None;
+    }
+    let utilization: f64 = values[0].parse().ok()?;
+    let used: u64 = values[1].parse().ok()?;
+    let total: u64 = values[2].parse().ok()?;
+    let temperature: f64 = values[3].parse().ok()?;
+    if !utilization.is_finite()
+        || !(0.0..=100.0).contains(&utilization)
+        || !temperature.is_finite()
+        || !(-100.0..=200.0).contains(&temperature)
+        || used > total
+    {
+        return None;
+    }
+    Some(format!(
+        "Guest GPU responding: {utilization}% utilization; {used}/{total} MiB VRAM; {temperature} C. Guest-reported, not an independent hardware health guarantee."
+    ))
 }
 
 #[cfg(test)]

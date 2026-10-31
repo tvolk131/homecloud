@@ -10,7 +10,9 @@ The daemon invokes the root-owned observer at
 with no arguments. The observer requires Linux and root, reads one bounded JSON
 request from stdin, and accepts only `inventory` and `observe`. Host paths and
 external commands are fixed. Command output is bounded while reading, including
-optional GPU telemetry from a guest. It expects `/usr/bin/incus`, `/usr/bin/lspci`,
+optional GPU telemetry from a guest. GPU samples must contain short, finite
+numeric fields; malformed samples leave inventory and GPU assignment visible.
+It expects `/usr/bin/incus`, `/usr/bin/lspci`,
 `/usr/sbin/zfs` and `/usr/sbin/zpool` on the validated Ubuntu host.
 
 The observer reads the root-owned pool policy and private reserve journal to

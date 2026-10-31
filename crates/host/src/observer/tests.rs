@@ -441,3 +441,61 @@ async fn inventory_reports_current_boot_and_rejects_invalid_shutdown_identity() 
             .is_err()
     );
 }
+
+#[tokio::test]
+async fn hostile_gpu_samples_cannot_break_or_inject_text_into_shared_inventory() {
+    let root = fixture();
+    let mut record = instance(&vm());
+    record["expanded_devices"] = record["devices"].clone();
+    let long = "9".repeat(400_000);
+    let samples = [
+        format!("{long},{long},{long},{long}"),
+        "10, 1024, 8192, PRIVATE-INJECTED-TEXT".into(),
+        "NaN, 1024, 8192, 42".into(),
+        "10, 1024, 8192, inf".into(),
+        "101, 1024, 8192, 42".into(),
+        "10, 9000, 8192, 42".into(),
+        "10, 1024, 8192, 42, extra".into(),
+    ];
+    for sample in samples {
+        let mut commands = inventory_commands(json!([record.clone()]));
+        commands.add(
+            &[
+                "incus",
+                "exec",
+                &vm().incus_name(),
+                "--",
+                "nvidia-smi",
+                "--query-gpu=utilization.gpu,memory.used,memory.total,temperature.gpu",
+                "--format=csv,noheader,nounits",
+            ],
+            json!(sample),
+            true,
+        );
+        let observer = Observer {
+            root: root.path().into(),
+            commands,
+        };
+        let inventory = observer
+            .inventory_with_policy(serde_json::from_value(policy()).unwrap())
+            .await
+            .unwrap();
+        assert_eq!(inventory.gpus[0].assigned_vm, Some(vm().id));
+        assert_eq!(inventory.gpus[0].readiness.state, "assigned");
+        assert!(
+            inventory.gpus[0]
+                .telemetry
+                .as_ref()
+                .unwrap()
+                .starts_with("Unavailable")
+        );
+        assert!(inventory.warnings.is_empty());
+        let wire = serde_json::to_vec(&inventory).unwrap();
+        assert!(wire.len() < 4096);
+        assert!(
+            !String::from_utf8(wire)
+                .unwrap()
+                .contains("PRIVATE-INJECTED-TEXT")
+        );
+    }
+}
