@@ -40,12 +40,19 @@ impl Backend for ProcessBackend {
         let mut child = command
             .spawn()
             .context("Starting privileged host adapter")?;
-        child
+        let written = child
             .stdin
             .take()
             .context("Host adapter stdin")?
             .write_all(&serde_json::to_vec(&request)?)
-            .await?;
+            .await;
+        let incomplete_request = match written {
+            Ok(()) => None,
+            // A helper may reject privileges before reading stdin. Collect its
+            // response rather than discarding the real error for a pipe race.
+            Err(error) if error.kind() == std::io::ErrorKind::BrokenPipe => Some(error),
+            Err(error) => return Err(error).context("Writing host adapter request"),
+        };
         let output = tokio::time::timeout(
             std::time::Duration::from_secs(240),
             child.wait_with_output(),
@@ -65,6 +72,10 @@ impl Backend for ProcessBackend {
             serde_json::from_slice(&output.stdout).context("Invalid host adapter response")?;
         if let HostResponse::Error(message) = response {
             anyhow::bail!("{message}");
+        }
+        if let Some(error) = incomplete_request {
+            return Err(error)
+                .context("Host adapter closed stdin before receiving the complete request");
         }
         Ok(response)
     }

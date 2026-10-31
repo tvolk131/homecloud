@@ -147,16 +147,71 @@ async fn observer_requires_linux_and_privilege_before_reading_host_files() {
         },
         sudo: false,
     };
+    let error = backend.request(HostRequest::Inventory).await.unwrap_err();
+    let expected = if cfg!(target_os = "linux") {
+        "Run through the installed privileged adapter"
+    } else {
+        "The host observer requires Linux"
+    };
+    assert!(
+        error.to_string().contains(expected),
+        "Unexpected adapter error: {error:#}"
+    );
+}
+
+fn request_larger_than_a_pipe_buffer() -> HostRequest {
+    HostRequest::Backing {
+        users: vec![homecloud_core::User {
+            id: uuid::Uuid::nil(),
+            name: "fixture".repeat(32 * 1024),
+            role: homecloud_core::Role::User,
+            active: true,
+            grant: Default::default(),
+            committed: Default::default(),
+            gpu_allowed: false,
+        }],
+    }
+}
+
+fn rejecting_before_stdin(response: &str) -> ProcessBackend {
+    ProcessBackend {
+        command: HostCommand {
+            program: "/bin/sh".into(),
+            args: vec![
+                "-c".into(),
+                "exec 0<&-; printf '%s' \"$1\"".into(),
+                "fixture".into(),
+                response.into(),
+            ],
+        },
+        sudo: false,
+    }
+}
+
+#[tokio::test]
+async fn early_rejection_preserves_the_response_when_stdin_closes_before_the_write() {
+    let backend = rejecting_before_stdin(
+        r#"{"kind":"error","data":"Run through the installed privileged adapter"}"#,
+    );
+    let error = backend
+        .request(request_larger_than_a_pipe_buffer())
+        .await
+        .unwrap_err();
+    assert_eq!(
+        error.to_string(),
+        "Run through the installed privileged adapter"
+    );
+}
+
+#[tokio::test]
+async fn an_early_success_cannot_confirm_an_incompletely_written_request() {
+    let backend = rejecting_before_stdin(r#"{"kind":"ok"}"#);
     assert!(
         backend
-            .request(HostRequest::Inventory)
+            .request(request_larger_than_a_pipe_buffer())
             .await
             .unwrap_err()
             .to_string()
-            .contains(if cfg!(target_os = "linux") {
-                "Run through the installed privileged adapter"
-            } else {
-                "The host observer requires Linux"
-            })
+            .contains("complete request")
     );
 }
