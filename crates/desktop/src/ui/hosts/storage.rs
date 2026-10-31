@@ -58,6 +58,24 @@ fn collection<'a>(name: &str, status: &'a StorageCollection, now: u64) -> Elemen
 }
 
 fn health(disk: &PhysicalDisk, inventory: &StorageInventory, now: u64) -> (&'static str, bool) {
+    let sample_current = disk
+        .smart
+        .collection
+        .observed_at
+        .is_some_and(|observed| observed <= now && now - observed <= 1800);
+    if disk.smart.passed == Some(false) {
+        let current = !inventory.disk_collection.stale(now, 180)
+            && disk.smart.state == SmartState::Current
+            && sample_current;
+        return (
+            if current {
+                "SMART reports failure"
+            } else {
+                "SMART reported failure (last sample)"
+            },
+            false,
+        );
+    }
     if inventory.disk_collection.stale(now, 180) {
         return ("SMART not current", false);
     }
@@ -66,13 +84,14 @@ fn health(disk: &PhysicalDisk, inventory: &StorageInventory, now: u64) -> (&'sta
         SmartState::Sleeping => ("SMART skipped: low power", false),
         SmartState::Unsupported => ("SMART unsupported", false),
         SmartState::Unavailable => ("SMART unavailable", false),
-        SmartState::Current if disk.smart.collection.stale(now, 1800) => {
-            ("SMART not current", false)
-        }
+        SmartState::Current if !sample_current => ("SMART not current", false),
+        SmartState::Current if disk.smart.collection.error.is_some() => match disk.smart.passed {
+            Some(true) => ("SMART passed · partial read", false),
+            _ => ("SMART health not reported · partial read", false),
+        },
         SmartState::Current => match disk.smart.passed {
             Some(true) => ("SMART passed", true),
-            Some(false) => ("SMART reports failure", false),
-            None => ("SMART health not reported", false),
+            _ => ("SMART health not reported", false),
         },
     }
 }

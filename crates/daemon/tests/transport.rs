@@ -1,10 +1,310 @@
 use homecloud_client::{Client, DeviceProof, Profile, read_frame, write_frame};
 use homecloud_core::*;
 use homecloud_daemon::{Config, Service, serve};
-use homecloud_host::Simulator;
+use homecloud_host::{Backend, HostRequest, HostResponse, Simulator};
 use homecloud_store::Store;
 use iroh::SecretKey;
-use std::sync::Arc;
+use std::sync::{
+    Arc,
+    atomic::{AtomicBool, AtomicUsize, Ordering},
+};
+
+#[tokio::test]
+async fn real_quic_storage_preserves_nested_observations_and_redacts_members() {
+    struct StorageBackend {
+        inner: Simulator,
+        inventory: StorageInventory,
+        calls: AtomicUsize,
+        failed: AtomicBool,
+    }
+    #[async_trait::async_trait]
+    impl Backend for StorageBackend {
+        async fn request(&self, request: HostRequest) -> anyhow::Result<HostResponse> {
+            if matches!(request, HostRequest::Storage) {
+                self.calls.fetch_add(1, Ordering::SeqCst);
+                anyhow::ensure!(
+                    !self.failed.load(Ordering::SeqCst),
+                    "Injected storage collection failure"
+                );
+                return Ok(HostResponse::Storage(self.inventory.clone()));
+            }
+            self.inner.request(request).await
+        }
+    }
+
+    let credentials = TestCredentials::default();
+    let temp = tempfile::tempdir().unwrap();
+    let store = Store::open(temp.path().join("state.db"), Config::default().limits).unwrap();
+    let (_, token) = store.bootstrap("Administrator").unwrap();
+    let expected = storage_inventory();
+    let backend = Arc::new(StorageBackend {
+        inner: Simulator::new(temp.path().join("observed.json")),
+        inventory: expected.clone(),
+        calls: AtomicUsize::new(0),
+        failed: AtomicBool::new(false),
+    });
+    let service = Service::new(store, backend.clone()).unwrap();
+    let host = iroh::Endpoint::builder(iroh::endpoint::presets::Minimal)
+        .alpns(vec![CONTROL_ALPN.to_vec()])
+        .bind_addr("127.0.0.1:0")
+        .unwrap()
+        .bind()
+        .await
+        .unwrap();
+    let address = iroh::EndpointAddr::new(host.id()).with_ip_addr(
+        host.bound_sockets()
+            .into_iter()
+            .find(|socket| socket.ip().is_loopback())
+            .unwrap(),
+    );
+    let task = tokio::spawn(serve(service.clone(), host.clone()));
+    let (admin, admin_user) = Client::enroll_with_store(
+        &temp.path().join("admin.json"),
+        address.clone(),
+        token,
+        Default::default(),
+        &credentials,
+    )
+    .await
+    .unwrap();
+    let (token, member_id, _) = service
+        .store
+        .invite(
+            &admin.device_id(),
+            "Member",
+            Role::User,
+            Resources::default(),
+            false,
+            1,
+        )
+        .unwrap();
+    let (member, _) = Client::enroll_with_store(
+        &temp.path().join("member.json"),
+        address,
+        token,
+        Default::default(),
+        &credentials,
+    )
+    .await
+    .unwrap();
+
+    assert_eq!(backend.calls.load(Ordering::SeqCst), 0);
+    service.collect_storage_once().await.unwrap();
+    for _ in 0..2 {
+        let admin_response = admin.rpc_response(Request::Snapshot).await.unwrap();
+        assert!(serde_json::to_vec(&admin_response).unwrap().len() < MAX_FRAME);
+        let Response::Snapshot(snapshot) = admin_response else {
+            panic!("Expected administrator snapshot");
+        };
+        assert_eq!(snapshot.me.id, admin_user.id);
+        assert_eq!(snapshot.me.role, Role::Admin);
+        assert_eq!(
+            serde_json::to_value(snapshot.inventory.storage.as_ref().unwrap()).unwrap(),
+            serde_json::to_value(&expected).unwrap()
+        );
+
+        let member_response = member.rpc_response(Request::Snapshot).await.unwrap();
+        let encoded = serde_json::to_value(&member_response).unwrap();
+        assert!(encoded["data"]["inventory"].get("storage").is_none());
+        let encoded = encoded.to_string();
+        for marker in [
+            "SYNTHETIC-PRIVATE-SERIAL",
+            "SYNTHETIC-PRIVATE-POOL",
+            "/dev/sda",
+            "/dev/nvme0n1",
+            "18446744073709551616",
+        ] {
+            assert!(!encoded.contains(marker), "Member response leaked {marker}");
+        }
+        let Response::Snapshot(snapshot) = member_response else {
+            panic!("Expected member snapshot");
+        };
+        assert_eq!(snapshot.me.id, member_id);
+        assert_eq!(snapshot.me.role, Role::User);
+        assert!(snapshot.inventory.storage.is_none());
+    }
+    assert_eq!(backend.calls.load(Ordering::SeqCst), 1);
+
+    backend.failed.store(true, Ordering::SeqCst);
+    assert!(service.collect_storage_once().await.is_err());
+    let snapshot = admin.snapshot().await.unwrap();
+    let storage = snapshot.inventory.storage.unwrap();
+    assert_eq!(
+        serde_json::to_value(&storage.disks).unwrap(),
+        serde_json::to_value(&expected.disks).unwrap()
+    );
+    assert_eq!(
+        serde_json::to_value(&storage.pools).unwrap(),
+        serde_json::to_value(&expected.pools).unwrap()
+    );
+    for (collection, previous) in [
+        (&storage.disk_collection, &expected.disk_collection),
+        (&storage.pool_collection, &expected.pool_collection),
+    ] {
+        assert_eq!(collection.observed_at, previous.observed_at);
+        assert!(collection.attempted_at.unwrap() >= previous.attempted_at.unwrap());
+        assert_eq!(
+            collection.error.as_deref(),
+            Some("Injected storage collection failure")
+        );
+    }
+    assert!(member.snapshot().await.unwrap().inventory.storage.is_none());
+    assert_eq!(backend.calls.load(Ordering::SeqCst), 2);
+
+    admin.close().await;
+    member.close().await;
+    host.close().await;
+    task.abort();
+}
+
+#[tokio::test]
+async fn storage_frames_enforce_the_limit_before_writing_or_reading_the_body() {
+    let mut inventory = storage_inventory();
+    inventory.warnings.push(String::new());
+    let length = serde_json::to_vec(&inventory).unwrap().len();
+    *inventory.warnings.last_mut().unwrap() = "x".repeat(MAX_FRAME - length);
+    assert_eq!(serde_json::to_vec(&inventory).unwrap().len(), MAX_FRAME);
+
+    let mut frame = Vec::new();
+    write_frame(&mut frame, &inventory).await.unwrap();
+    assert_eq!(frame.len(), MAX_FRAME + 4);
+    let decoded: StorageInventory = read_frame(&mut frame.as_slice()).await.unwrap();
+    assert_eq!(
+        serde_json::to_value(&decoded).unwrap(),
+        serde_json::to_value(&inventory).unwrap()
+    );
+
+    inventory.warnings.last_mut().unwrap().push('x');
+    let mut rejected = Vec::new();
+    let error = write_frame(&mut rejected, &inventory).await.unwrap_err();
+    assert_eq!(error.to_string(), "Frame too large");
+    assert!(rejected.is_empty());
+
+    let oversized_length = ((MAX_FRAME + 1) as u32).to_be_bytes();
+    let error = read_frame::<_, StorageInventory>(&mut oversized_length.as_slice())
+        .await
+        .unwrap_err();
+    assert_eq!(error.to_string(), "Frame too large");
+}
+
+fn storage_inventory() -> StorageInventory {
+    let collection = StorageCollection {
+        attempted_at: Some(1_790_000_000),
+        observed_at: Some(1_790_000_000),
+        error: None,
+    };
+    let disks = vec![
+        PhysicalDisk {
+            id: "wwn:0x5000c50000000001".into(),
+            path: "/dev/sda".into(),
+            model: Some("Synthetic SATA".into()),
+            serial: Some("SYNTHETIC-PRIVATE-SERIAL-SATA".into()),
+            wwn: Some("0x5000c50000000001".into()),
+            transport: Some("sata".into()),
+            size_bytes: Some(2_000_000_000_000),
+            rotational: Some(true),
+            devices: vec![
+                StorageBlockDevice {
+                    path: "/dev/sda1".into(),
+                    filesystem: Some("vfat".into()),
+                    mountpoints: vec!["/boot/efi".into()],
+                },
+                StorageBlockDevice {
+                    path: "/dev/sda2".into(),
+                    filesystem: Some("zfs_member".into()),
+                    mountpoints: vec![],
+                },
+            ],
+            smart: SmartObservation {
+                collection: collection.clone(),
+                state: SmartState::Current,
+                passed: Some(true),
+                temperature_celsius: Some(32),
+                power_on_hours: Some(12_345),
+                metrics: vec![SmartMetric {
+                    name: "reallocated_sector_ct".into(),
+                    value: "0".into(),
+                }],
+                self_tests: vec!["Short offline: Completed without error".into()],
+            },
+        },
+        PhysicalDisk {
+            id: "wwn:eui.0000000000000002".into(),
+            path: "/dev/nvme0n1".into(),
+            model: Some("Synthetic NVMe".into()),
+            serial: Some("SYNTHETIC-PRIVATE-SERIAL-NVME".into()),
+            wwn: Some("eui.0000000000000002".into()),
+            transport: Some("nvme".into()),
+            size_bytes: Some(2_000_000_000_000),
+            rotational: Some(false),
+            devices: vec![StorageBlockDevice {
+                path: "/dev/nvme0n1p1".into(),
+                filesystem: Some("zfs_member".into()),
+                mountpoints: vec![],
+            }],
+            smart: SmartObservation {
+                collection: StorageCollection {
+                    attempted_at: Some(1_789_999_900),
+                    observed_at: Some(1_789_999_900),
+                    error: None,
+                },
+                state: SmartState::Current,
+                passed: Some(true),
+                temperature_celsius: Some(39),
+                power_on_hours: Some(4_321),
+                metrics: vec![SmartMetric {
+                    name: "data_units_read".into(),
+                    value: "18446744073709551616".into(),
+                }],
+                self_tests: vec![],
+            },
+        },
+    ];
+    let children = disks
+        .iter()
+        .enumerate()
+        .map(|(index, disk)| StorageVdev {
+            guid: format!("1844674407370955161{index}"),
+            name: disk.devices.last().unwrap().path.clone(),
+            kind: "disk".into(),
+            role: "data".into(),
+            state: "ONLINE".into(),
+            path: Some(disk.devices.last().unwrap().path.clone()),
+            disk_id: Some(disk.id.clone()),
+            read_errors: Some(0),
+            write_errors: Some(0),
+            checksum_errors: Some(index as u64),
+            children: vec![],
+        })
+        .collect();
+    StorageInventory {
+        disk_collection: collection.clone(),
+        pool_collection: collection,
+        disks,
+        pools: vec![StoragePool {
+            name: "SYNTHETIC-PRIVATE-POOL".into(),
+            guid: "18446744073709551600".into(),
+            state: "ONLINE".into(),
+            managed: true,
+            status: Some("No known data errors".into()),
+            scan: Some("scrub repaired 0B with 0 errors".into()),
+            vdevs: vec![StorageVdev {
+                guid: "18446744073709551601".into(),
+                name: "mirror-0".into(),
+                kind: "mirror".into(),
+                role: "data".into(),
+                state: "ONLINE".into(),
+                read_errors: Some(0),
+                write_errors: Some(0),
+                checksum_errors: Some(1),
+                children,
+                ..Default::default()
+            }],
+            warnings: vec!["Synthetic pool warning".into()],
+        }],
+        warnings: vec!["Synthetic storage warning".into()],
+    }
+}
 
 #[tokio::test]
 async fn real_quic_requires_enrollment_and_rechecks_device_revocation() {

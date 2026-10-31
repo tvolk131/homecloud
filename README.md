@@ -24,6 +24,11 @@ The current development Mac is already paired with the lab host. The default
 paired-host metadata is `~/.config/homecloud/client.json`; Mac device keys live in Keychain. `HOMECLOUD_PROFILE` selects
 another profile; `HOMECLOUD_CLI` overrides the SSH helper path.
 
+Independent management SSH access for deployment rehearsals lives outside the
+checkout at `~/.config/homecloud/host-access/resolvr-box/ssh_config`; see
+[management SSH access](lab/README.md#management-ssh-access) for pins, permissions,
+and lab-runner configuration.
+
 Use **Open Terminal** for ordinary SSH over Iroh. In **New VM**, select
 **T3 Code**, or open an existing VM’s details. Homecloud installs
 T3's boot service and native Codex/Claude provider CLIs, then guides browser account

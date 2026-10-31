@@ -3,16 +3,15 @@
 import json
 from pathlib import Path
 import subprocess
+from remote import ACCESS, ROOT, SSH, SSH_CONFIG
 
-root = Path(__file__).resolve().parent.parent
-access = root / '.host-access'
+root = ROOT
+access = ACCESS
 evidence = root / 'lab/evidence'
 evidence.mkdir(exist_ok=True)
 known_hosts = access / 'known_hosts'
 key = Path.home() / '.ssh/id_ed25519'
-ssh = ['/usr/bin/ssh', '-o', 'BatchMode=yes', '-o', 'ConnectTimeout=5',
-       '-o', 'StrictHostKeyChecking=yes', '-o', f'UserKnownHostsFile={known_hosts}',
-       '-o', 'IdentitiesOnly=yes', '-i', str(key), 'tommy@192.168.86.204']
+ssh = SSH
 documents = {}
 for source, target in [('storage.json', 'storage.json'),
                        ('verification.json', 'verification.json'),
@@ -48,17 +47,8 @@ for vm, details in report['ssh'].items():
         text += f'{alias} {public_key}\n'
 known_hosts.write_text(text)
 known_hosts.chmod(0o600)
-config_path = access / 'ssh_config'
-config = f'''Host hclab-host
-    HostName 192.168.86.204
-    User tommy
-    IdentityFile "{key}"
-    IdentitiesOnly yes
-    UserKnownHostsFile "{known_hosts}"
-    StrictHostKeyChecking yes
-    ConnectTimeout 10
-    ServerAliveInterval 15
-'''
+config_path = access / 'lab_guests.conf'
+config = ''
 for vm, details in report['ssh'].items():
     config += f'''
 Host {vm}
@@ -71,9 +61,10 @@ Host {vm}
     StrictHostKeyChecking yes
     ConnectTimeout 10
     ServerAliveInterval 15
-    ProxyCommand /usr/bin/ssh -F "{config_path}" -W %h:%p hclab-host
+    ProxyCommand /usr/bin/ssh -F "{SSH_CONFIG}" -W %h:%p hclab-host
 '''
 config_path.write_text(config)
 config_path.chmod(0o600)
-print(json.dumps({'evidence_directory': str(evidence), 'ssh_config': str(config_path),
+print(json.dumps({'evidence_directory': str(evidence), 'ssh_config': str(SSH_CONFIG),
+                  'guest_ssh_config': str(config_path),
                   'guest_public_keys_pinned': list(report['ssh'])}, indent=2))

@@ -14,6 +14,25 @@ fn disk_payload() -> Value {
     ]})
 }
 
+fn mixed_disk_payload(path_only_count: usize) -> Value {
+    let mut devices = vec![disk_payload()["blockdevices"][0].clone()];
+    devices.extend((0..path_only_count).map(|index| {
+        json!({"path": format!("/dev/fixture{index}"), "type": "disk", "model": "QEMU HARDDISK"})
+    }));
+    json!({"blockdevices": devices})
+}
+
+fn duplicate_disk_payload(wwn: bool) -> Value {
+    let mut first = disk_payload()["blockdevices"][0].clone();
+    first["children"] = json!([]);
+    if !wwn {
+        first["wwn"] = Value::Null;
+    }
+    let mut second = first.clone();
+    second["path"] = json!("/dev/sdb");
+    json!({"blockdevices": [first, second]})
+}
+
 fn pool_payload() -> Value {
     json!({"pools": {"tank": {"name": "tank", "pool_guid": 100, "state": "ONLINE",
         "scan_stats": {"function": "scrub", "state": "finished"},
@@ -119,6 +138,75 @@ fn physical_inventory_includes_boot_mounts_partitions_and_stable_ids() {
 }
 
 #[test]
+fn disk_discovery_requests_kernel_device_names() {
+    let (program, args, _) = Probe::Disks.command();
+    assert_eq!(program, "lsblk");
+    let columns = args
+        .windows(2)
+        .find(|arguments| arguments[0] == "--output")
+        .unwrap();
+    assert!(columns[1].split(',').any(|column| column == "KNAME"));
+}
+
+#[test]
+fn zvols_are_excluded_by_kernel_name_with_a_device_path_fallback() {
+    for (path, kernel_name) in [
+        ("/dev/zd0", Value::Null),
+        ("/dev/zd16", json!("zd16")),
+        ("/dev/zd16384", json!("/dev/zd16384")),
+        ("/dev/zvol/tank/guest", json!("/dev/zd32")),
+    ] {
+        let mut payload = disk_payload();
+        payload["blockdevices"].as_array_mut().unwrap().push(json!({
+            "path": path, "kname": kernel_name, "type": "disk", "size": 32_000_000_000_u64,
+            "model": null, "serial": null, "wwn": null,
+            "children": [{"path": format!("{path}p1"), "type": "part", "fstype": "ext4"}]
+        }));
+        let disks = parse::disks(&payload).unwrap();
+        assert_eq!(disks.len(), 2, "zvol {path} was counted as a physical disk");
+        assert_eq!(disks[0].devices[1].path, "/dev/sda1");
+        assert_eq!(disks[1].devices[1].mountpoints, ["/"]);
+    }
+}
+
+#[test]
+fn guest_disks_and_disks_without_hardware_metadata_remain_discoverable() {
+    let payload = json!({"blockdevices": [
+        {"path": "/dev/sda", "kname": "/dev/sda", "type": "disk", "model": "QEMU HARDDISK"},
+        {"path": "/dev/vda", "type": "disk", "model": null, "serial": null, "wwn": null},
+        {"path": "/dev/xvda", "type": "disk", "fstype": "zfs_member"},
+        {"path": "/dev/disk/by-id/zd0", "kname": "/dev/nvme0n1", "type": "disk"},
+        {"path": "/dev/zda", "type": "disk"},
+        {"path": "/dev/zd", "type": "disk"},
+        {"path": "/dev/zd0-other", "type": "disk"}
+    ]});
+    let disks = parse::disks(&payload).unwrap();
+    assert_eq!(disks.len(), 7);
+    assert_eq!(disks[0].model.as_deref(), Some("QEMU HARDDISK"));
+    assert!(disks[1].model.is_none());
+    assert!(disks[1].serial.is_none());
+    assert!(disks[1].wwn.is_none());
+    assert_eq!(
+        disks[2].devices[0].filesystem.as_deref(),
+        Some("zfs_member")
+    );
+}
+
+#[test]
+fn logical_vdev_leaves_remain_visible_without_a_physical_disk_match() {
+    let payload = json!({"blockdevices": [{"path": "/dev/zd0", "type": "disk"}]});
+    let disks = parse::disks(&payload).unwrap();
+    let mut pools = pool_payload();
+    pools["pools"]["tank"]["vdevs"]["tank"]["vdevs"]["disk"]["path"] = json!("/dev/zd0");
+    let pools = parse::pools(&pools, &disks, "tank").unwrap();
+    let leaf = &pools[0].vdevs[0].children[0];
+    assert_eq!(leaf.path.as_deref(), Some("/dev/zd0"));
+    assert_eq!(leaf.state, "ONLINE");
+    assert_eq!(leaf.guid, "101");
+    assert!(leaf.disk_id.is_none());
+}
+
+#[test]
 fn collection_errors_preserve_actionable_causes_and_remain_bounded() {
     let error = anyhow::anyhow!("Permission denied").context("Starting smartctl");
     assert_eq!(
@@ -141,9 +229,30 @@ fn identities_are_unique_and_invalid_paths_are_rejected() {
         .unwrap()
         .push(duplicate);
     let disks = parse::disks(&payload).unwrap();
-    assert_eq!(disks[2].id, "wwn:0x5000a:/dev/sdb");
+    assert_eq!(disks[0].id, "path:/dev/sda");
+    assert_eq!(disks[2].id, "path:/dev/sdb");
     payload["blockdevices"][0]["path"] = json!("/dev/../tmp/invalid");
     assert!(parse::disks(&payload).is_err());
+}
+
+#[test]
+fn all_colliding_disk_identities_use_paths_independently_of_enumeration_order() {
+    for wwn in [true, false] {
+        let mut payload = duplicate_disk_payload(wwn);
+        for _ in 0..2 {
+            let disks = parse::disks(&payload).unwrap();
+            for disk in disks {
+                assert_eq!(disk.id, format!("path:{}", disk.path));
+                assert_eq!(disk.serial.as_deref(), Some("SYNTHETIC-A"));
+            }
+            payload["blockdevices"].as_array_mut().unwrap().reverse();
+        }
+    }
+    let mut payload = duplicate_disk_payload(true);
+    payload["blockdevices"][1]["wwn"] = json!("0x5000b");
+    let disks = parse::disks(&payload).unwrap();
+    assert_eq!(disks[0].id, "wwn:0x5000a");
+    assert_eq!(disks[1].id, "wwn:0x5000b");
 }
 
 #[test]
@@ -255,6 +364,65 @@ fn smart_health_and_log_exit_bits_are_not_probe_failures() {
     assert_eq!(result.metrics[0].value, "2");
     assert!(result.self_tests[0].contains("Completed without error"));
     assert!(result.collection.error.is_none());
+}
+
+#[test]
+fn partial_smart_failure_is_retained_when_later_probes_fail_or_skip() {
+    let mut payload = smart_payload();
+    payload["smart_status"]["passed"] = json!(false);
+    let failed = parse::smart(&payload, 4 | 8, 100, SmartObservation::default());
+    assert_eq!(failed.state, SmartState::Current);
+    assert_eq!(failed.passed, Some(false));
+    assert_eq!(failed.collection.observed_at, Some(100));
+    assert!(failed.collection.error.is_some());
+    for (code, state) in [
+        (99, SmartState::Sleeping),
+        (98, SmartState::Unsupported),
+        (1, SmartState::Unavailable),
+    ] {
+        let later = parse::skipped_smart(code, failed.clone(), 200)
+            .unwrap_or_else(|| parse::smart(&json!({}), code, 200, failed.clone()));
+        assert_eq!(later.state, state);
+        assert_eq!(later.passed, Some(false));
+        assert_eq!(later.collection.observed_at, Some(100));
+        assert_eq!(later.collection.attempted_at, Some(200));
+    }
+}
+
+#[test]
+fn missing_health_in_a_partial_read_cannot_clear_a_previous_smart_failure() {
+    let mut payload = smart_payload();
+    payload["smart_status"]["passed"] = json!(false);
+    let failed = parse::smart(&payload, 8, 100, SmartObservation::default());
+    for code in [0, 4] {
+        for message in [None, Some("SMART Status command failed")] {
+            let mut partial = json!({"temperature": {"current": 60}});
+            if let Some(message) = message {
+                partial["smartctl"] = json!({"messages": [{"string": message}]});
+            }
+            let mut previous = failed.clone();
+            for now in [200, 300] {
+                let retained = parse::smart(&partial, code, now, previous);
+                assert_eq!(retained.state, SmartState::Unavailable);
+                assert_eq!(retained.passed, Some(false));
+                assert_eq!(retained.temperature_celsius, Some(32));
+                assert_eq!(retained.collection.observed_at, Some(100));
+                assert_eq!(retained.collection.attempted_at, Some(now));
+                assert_eq!(
+                    retained.collection.error.as_deref(),
+                    Some(message.unwrap_or(
+                        "SMART health status not returned; last reported failure retained"
+                    ))
+                );
+                previous = retained;
+            }
+            let recovered = parse::smart(&smart_payload(), 4, 400, previous);
+            assert_eq!(recovered.state, SmartState::Current);
+            assert_eq!(recovered.passed, Some(true));
+            assert_eq!(recovered.collection.observed_at, Some(400));
+            assert!(recovered.collection.error.is_some());
+        }
+    }
 }
 
 #[test]
@@ -414,6 +582,203 @@ async fn bounded_batches_prioritize_unsampled_disks() {
 }
 
 #[tokio::test]
+async fn path_only_disks_do_not_starve_due_identified_disks() {
+    for path_only_count in [31, 32, 40, 64, 96] {
+        let runner = FixtureRunner::new();
+        runner.0.lock().unwrap().disks = mixed_disk_payload(path_only_count);
+        let mut stable = parse::disks(&disk_payload()).unwrap().remove(0);
+        stable.smart = parse::smart(&smart_payload(), 0, 100, SmartObservation::default());
+        let mut inventory = StorageInventory {
+            disks: vec![stable],
+            ..Default::default()
+        };
+        for cycle in 0..=path_only_count / SMART_BATCH {
+            let calls_before = runner.smart_calls();
+            inventory = observe(
+                runner.clone(),
+                "tank",
+                inventory,
+                1000 + cycle as u64 * 60,
+                SMART_BATCH,
+            )
+            .await;
+            assert!(runner.smart_calls() - calls_before <= SMART_BATCH);
+        }
+        let fixture = runner.0.lock().unwrap();
+        let mut attempts = BTreeMap::<&str, usize>::new();
+        for probe in &fixture.calls {
+            if let Probe::Smart { path, .. } = probe {
+                *attempts.entry(path).or_default() += 1;
+            }
+        }
+        assert_eq!(
+            attempts.get("/dev/sda"),
+            Some(&1),
+            "{path_only_count} path-only disks"
+        );
+        assert_eq!(attempts.len(), path_only_count + 1);
+        assert!(inventory.disks[0].smart.collection.observed_at.unwrap() >= 1000);
+        assert!(fixture.maximum_active <= SMART_WORKERS);
+    }
+}
+
+#[tokio::test]
+async fn path_only_scheduling_survives_cache_reload_without_reusing_readings() {
+    let runner = FixtureRunner::new();
+    runner.0.lock().unwrap().disks = mixed_disk_payload(40);
+    let state = tempfile::tempdir().unwrap();
+    collect_cached(runner.clone(), state.path(), "tank", 100)
+        .await
+        .unwrap();
+    let second = collect_cached(runner.clone(), state.path(), "tank", 160)
+        .await
+        .unwrap();
+    let pending: Vec<_> = second
+        .disks
+        .iter()
+        .filter(|disk| disk.smart.state == SmartState::Pending)
+        .collect();
+    assert_eq!(pending.len(), 8);
+    for disk in pending {
+        assert_eq!(disk.smart.collection.attempted_at, Some(100));
+        assert!(disk.smart.collection.observed_at.is_none());
+        assert!(disk.smart.collection.error.is_none());
+        assert!(disk.smart.passed.is_none());
+        assert!(disk.smart.temperature_celsius.is_none());
+        assert!(disk.smart.power_on_hours.is_none());
+        assert!(disk.smart.metrics.is_empty());
+        assert!(disk.smart.self_tests.is_empty());
+    }
+    let fixture = runner.0.lock().unwrap();
+    let attempted: std::collections::BTreeSet<_> = fixture
+        .calls
+        .iter()
+        .filter_map(|probe| match probe {
+            Probe::Smart { path, .. } => Some(path),
+            _ => None,
+        })
+        .collect();
+    assert_eq!(attempted.len(), 41);
+}
+
+#[tokio::test]
+async fn path_only_metadata_changes_discard_scheduling_hints() {
+    for changed_field in [None, Some("model"), Some("size")] {
+        let runner = FixtureRunner::new();
+        runner.0.lock().unwrap().disks = mixed_disk_payload(1);
+        let first = observe(
+            runner.clone(),
+            "tank",
+            StorageInventory::default(),
+            100,
+            SMART_BATCH,
+        )
+        .await;
+        if let Some(field) = changed_field {
+            runner.0.lock().unwrap().disks["blockdevices"][1][field] = if field == "model" {
+                json!("Replacement disk")
+            } else {
+                json!(1234)
+            };
+        }
+        let second = observe(runner, "tank", first, 160, 0).await;
+        let disk = &second.disks[1];
+        assert_eq!(
+            disk.smart.collection.attempted_at,
+            changed_field.is_none().then_some(100)
+        );
+        assert!(disk.smart.collection.observed_at.is_none());
+        assert!(disk.smart.passed.is_none());
+        assert_eq!(disk.smart.state, SmartState::Pending);
+    }
+}
+
+#[tokio::test]
+async fn future_scheduling_hints_cannot_starve_disks_after_clock_rollback() {
+    let runner = FixtureRunner::new();
+    let payload = mixed_disk_payload(32);
+    let mut disks = parse::disks(&payload).unwrap();
+    for disk in &mut disks {
+        let attempted_at = if disk.serial.is_some() { 1000 } else { 900 };
+        disk.smart = parse::smart(
+            &smart_payload(),
+            0,
+            attempted_at,
+            SmartObservation::default(),
+        );
+    }
+    runner.0.lock().unwrap().disks = payload;
+    let first = observe(
+        runner.clone(),
+        "tank",
+        StorageInventory {
+            disks,
+            ..Default::default()
+        },
+        100,
+        SMART_BATCH,
+    )
+    .await;
+    assert_eq!(first.disks[0].smart.collection.observed_at, Some(100));
+    let second = observe(runner.clone(), "tank", first, 160, SMART_BATCH).await;
+    assert!(second.disks.iter().all(|disk| {
+        disk.smart
+            .collection
+            .attempted_at
+            .is_some_and(|attempted| attempted <= 160)
+    }));
+}
+
+#[tokio::test]
+async fn zvols_leave_the_inventory_without_consuming_the_smart_budget() {
+    let runner = FixtureRunner::new();
+    {
+        let mut fixture = runner.0.lock().unwrap();
+        let mut devices: Vec<_> = (0..40)
+            .map(|index| json!({"path": format!("/dev/zd{index}"), "type": "disk"}))
+            .collect();
+        devices.extend(disk_payload()["blockdevices"].as_array().unwrap().clone());
+        fixture.disks = json!({"blockdevices": devices});
+    }
+    let previous = StorageInventory {
+        disks: vec![PhysicalDisk {
+            id: "path:/dev/zd0".into(),
+            path: "/dev/zd0".into(),
+            smart: parse::smart(&smart_payload(), 0, 50, SmartObservation::default()),
+            ..Default::default()
+        }],
+        ..Default::default()
+    };
+    let result = observe(runner.clone(), "tank", previous, 100, 2).await;
+    assert_eq!(result.disks.len(), 2);
+    assert_eq!(result.disk_collection.observed_at, Some(100));
+    assert!(result.disk_collection.error.is_none());
+    assert!(result.warnings.is_empty());
+    assert_eq!(runner.smart_calls(), 2);
+    assert!(
+        result
+            .disks
+            .iter()
+            .all(|disk| disk.smart.state == SmartState::Current)
+    );
+    let fixture = runner.0.lock().unwrap();
+    let mut paths: Vec<_> = fixture
+        .calls
+        .iter()
+        .filter_map(|probe| match probe {
+            Probe::Smart { path, .. } => Some(path.as_str()),
+            _ => None,
+        })
+        .collect();
+    paths.sort_unstable();
+    assert_eq!(paths, ["/dev/nvme0n1", "/dev/sda"]);
+    assert_eq!(
+        result.pools[0].vdevs[0].children[0].disk_id.as_deref(),
+        Some(result.disks[0].id.as_str())
+    );
+}
+
+#[tokio::test]
 async fn smart_probe_concurrency_and_batch_size_are_bounded() {
     let runner = FixtureRunner::new();
     let disks: Vec<_> = (0..40).map(|index| json!({"path": format!("/dev/fixture{index}"), "type": "disk", "serial": format!("FIXTURE-{index}")})).collect();
@@ -471,6 +836,81 @@ async fn replacement_disk_and_path_only_identity_do_not_inherit_cached_smart() {
         let second = observe(runner.clone(), "tank", first, 160, SMART_BATCH).await;
         assert_eq!(runner.smart_calls(), 3);
         assert_eq!(second.disks[0].smart.collection.observed_at, Some(160));
+    }
+}
+
+#[tokio::test]
+async fn colliding_identities_do_not_reuse_health_after_reordering_or_removal() {
+    for wwn in [true, false] {
+        for remove_first in [true, false] {
+            let runner = FixtureRunner::new();
+            runner.0.lock().unwrap().disks = duplicate_disk_payload(wwn);
+            let mut first = observe(
+                runner.clone(),
+                "tank",
+                StorageInventory::default(),
+                100,
+                SMART_BATCH,
+            )
+            .await;
+            first.disks[0].smart.passed = Some(false);
+            {
+                let mut fixture = runner.0.lock().unwrap();
+                let devices = fixture.disks["blockdevices"].as_array_mut().unwrap();
+                if remove_first {
+                    devices.remove(0);
+                } else {
+                    devices.reverse();
+                }
+                fixture.smart_code = 99;
+            }
+            let second = observe(runner.clone(), "tank", first, 160, SMART_BATCH).await;
+            assert_eq!(runner.smart_calls(), 2 + second.disks.len());
+            for disk in second.disks {
+                assert_eq!(disk.smart.state, SmartState::Sleeping);
+                assert!(disk.smart.passed.is_none());
+                assert!(disk.smart.collection.observed_at.is_none());
+                assert_eq!(disk.smart.collection.attempted_at, Some(160));
+            }
+        }
+    }
+}
+
+#[tokio::test]
+async fn legacy_ambiguous_cache_cannot_assign_a_removed_disks_health_to_its_survivor() {
+    for wwn in [true, false] {
+        let runner = FixtureRunner::new();
+        let mut payload = duplicate_disk_payload(wwn);
+        let mut previous = StorageInventory {
+            disks: parse::disks(&payload).unwrap(),
+            ..Default::default()
+        };
+        let identity = if wwn {
+            "wwn:0x5000a"
+        } else {
+            "serial:Fixture HDD:SYNTHETIC-A"
+        };
+        previous.disks[0].id = identity.into();
+        previous.disks[1].id = format!("{identity}:/dev/sdb");
+        for disk in &mut previous.disks {
+            disk.smart = parse::smart(&smart_payload(), 0, 100, SmartObservation::default());
+        }
+        previous.disks[0].smart.passed = Some(false);
+        let state = tempfile::tempdir().unwrap();
+        save_cache(state.path(), &previous).unwrap();
+        payload["blockdevices"].as_array_mut().unwrap().remove(0);
+        {
+            let mut fixture = runner.0.lock().unwrap();
+            fixture.disks = payload;
+            fixture.smart_code = 99;
+        }
+        let current = collect_cached(runner.clone(), state.path(), "tank", 160)
+            .await
+            .unwrap();
+        assert_eq!(runner.smart_calls(), 1);
+        assert_eq!(current.disks[0].smart.state, SmartState::Sleeping);
+        assert!(current.disks[0].smart.passed.is_none());
+        assert!(current.disks[0].smart.collection.observed_at.is_none());
     }
 }
 

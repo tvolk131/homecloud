@@ -63,13 +63,33 @@ fn canonical(path: &str) -> String {
         .unwrap_or_else(|_| path.to_owned())
 }
 
+fn is_zvol(node: &Value, path: &str) -> bool {
+    let kernel_path = text(&node["kname"]).unwrap_or_else(|| path.to_owned());
+    Path::new(&kernel_path)
+        .file_name()
+        .and_then(|name| name.to_str())
+        .and_then(|name| name.strip_prefix("zd"))
+        .is_some_and(|suffix| {
+            !suffix.is_empty() && suffix.bytes().all(|byte| byte.is_ascii_digit())
+        })
+}
+
+pub(super) fn disk_identity(
+    model: Option<&str>,
+    serial: Option<&str>,
+    wwn: Option<&str>,
+) -> Option<String> {
+    wwn.map(|wwn| format!("wwn:{wwn}"))
+        .or_else(|| serial.map(|serial| format!("serial:{}:{serial}", model.unwrap_or_default())))
+}
+
 pub(super) fn disks(payload: &Value) -> Result<Vec<PhysicalDisk>> {
     let Some(roots) = payload["blockdevices"].as_array() else {
         bail!("lsblk did not report a blockdevices array");
     };
     let mut disks = Vec::new();
     let mut paths = BTreeSet::new();
-    let mut identities = BTreeSet::new();
+    let mut identities = BTreeMap::<String, usize>::new();
     for root in roots {
         let mut nodes = Vec::new();
         descendants(root, &mut nodes, 0)?;
@@ -85,23 +105,15 @@ pub(super) fn disks(payload: &Value) -> Result<Vec<PhysicalDisk>> {
                         .any(|part| matches!(part, std::path::Component::ParentDir)),
                 "lsblk reported a disk without a valid /dev path"
             );
-            if !paths.insert(path.clone()) {
+            if is_zvol(node, &path) || !paths.insert(path.clone()) {
                 continue;
             }
             let model = text(&node["model"]);
             let serial = text(&node["serial"]);
             let wwn = text(&node["wwn"]);
-            let mut identity = if let Some(wwn) = &wwn {
-                format!("wwn:{wwn}")
-            } else if let Some(serial) = &serial {
-                format!("serial:{}:{serial}", model.as_deref().unwrap_or_default())
-            } else {
-                format!("path:{path}")
-            };
-            if !identities.insert(identity.clone()) {
-                identity.push_str(&format!(":{path}"));
-                identities.insert(identity.clone());
-            }
+            let identity = disk_identity(model.as_deref(), serial.as_deref(), wwn.as_deref())
+                .unwrap_or_else(|| format!("path:{path}"));
+            *identities.entry(identity.clone()).or_default() += 1;
             let mut nodes = Vec::new();
             descendants(node, &mut nodes, 0)?;
             let devices = nodes
@@ -134,6 +146,11 @@ pub(super) fn disks(payload: &Value) -> Result<Vec<PhysicalDisk>> {
                 size_bytes: number(&node["size"]),
                 smart: SmartObservation::default(),
             });
+        }
+    }
+    for disk in &mut disks {
+        if identities.get(&disk.id).is_some_and(|count| *count > 1) {
+            disk.id = format!("path:{}", disk.path);
         }
     }
     Ok(disks)
@@ -348,6 +365,18 @@ pub(super) fn smart(
         );
     }
     let passed = payload["smart_status"]["passed"].as_bool();
+    if passed.is_none() && previous.passed == Some(false) {
+        return smart_failure(
+            previous,
+            now,
+            SmartState::Unavailable,
+            if error.is_empty() {
+                "SMART health status not returned; last reported failure retained"
+            } else {
+                &error
+            },
+        );
+    }
     let temperature_celsius = payload["temperature"]["current"]
         .as_i64()
         .or_else(|| payload["temperature"]["current"].as_str()?.parse().ok());

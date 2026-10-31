@@ -14,7 +14,9 @@ p.add_argument('--state',required=True);p.add_argument('--ssh-config',required=T
 p.add_argument('--cli',default=str(Path(__file__).resolve().parents[1]/'target/debug/homecloud'))
 p.add_argument('--ssh-key',default=str(Path.home()/'.ssh/id_ed25519.pub'))
 p.add_argument('--bundle-sha256');p.add_argument('--host-bundle',default='/tmp/homecloud-stabilization.tar.gz')
+p.add_argument('--storage-check',action='store_true')
 a=p.parse_args();repo=Path(__file__).resolve().parents[1]
+if a.storage_check and a.action!='upgrade':p.error('--storage-check is only valid with upgrade')
 if a.action!='inner' and (not a.bundle_sha256 or not re.fullmatch('[0-9a-f]{64}',a.bundle_sha256)):
     p.error('--bundle-sha256 is required')
 r=ManagedRunner(a);action=a.action;source=Path(__file__).with_name('deployment_guest.py').read_text();digest=a.bundle_sha256
@@ -49,4 +51,7 @@ elif action=='inner':
   time.sleep(2)
  else:raise TimeoutError('inner VM readiness')
  note('baseline',guest('record',inner['inner'],owner))
-else:note(action,guest(action,digest,timeout=200))
+else:
+ arguments=[action,digest]
+ if a.storage_check:arguments.append('--storage-check')
+ note(action,guest(*arguments,timeout=300 if a.storage_check else 200))

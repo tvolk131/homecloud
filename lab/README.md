@@ -6,13 +6,41 @@ request keys and a versioned, fsynced manifest. Failed proofs retain resources f
 inspection; a timeout is never permission to free a claim or force power off.
 Run only one grant-changing proof at a time.
 
+## Management SSH access
+
+Keep the independent, pinned management connection outside every checkout at
+`~/.config/homecloud/host-access/resolvr-box/ssh_config`, alongside `known_hosts`.
+This is separate from Homecloud's paired Iroh client profile. The private key
+stays in `~/.ssh`; use mode 0700 for the access directory and 0600 for its files.
+Preserve `StrictHostKeyChecking yes` and the existing host-key pins when moving
+the files. Update absolute `UserKnownHostsFile`, `Include`, and `ProxyCommand`
+paths; do not discover or replace trusted keys with an unverified key scan.
+
+Pass this path explicitly to runners with `--ssh-config`. Older helpers using
+`remote.py`, `fetch_evidence.py`, `verify_client.py`, or `prove_provisioning.py`
+default to the same location; `HOMECLOUD_SSH_CONFIG` overrides their config path.
+They do not search old checkouts or fall back to a repository-local directory.
+The main config includes the sibling `lab_guests.conf` **before** its host
+stanzas. `fetch_evidence.py` regenerates only that guest file and verifies guest
+key pins, never rewriting the physical host's address or management settings.
+Keep these access files private and out of Git.
+
+Verify the independent connection before a deployment rehearsal:
+
+```sh
+ssh -F "$HOME/.config/homecloud/host-access/resolvr-box/ssh_config" \
+  -o BatchMode=yes hclab-host 'hostname; sudo -n true'
+```
+
+## Control API proofs
+
 ```
 python3 lab/control_runner.py boot --state /private/tmp/hc-boot.json \
-  --ssh-config .host-access/ssh_config --cli target/debug/homecloud
+  --ssh-config "$HOME/.config/homecloud/host-access/resolvr-box/ssh_config" --cli target/debug/homecloud
 python3 lab/control_runner.py resume --state /private/tmp/hc-boot.json \
-  --ssh-config .host-access/ssh_config --cli target/debug/homecloud
+  --ssh-config "$HOME/.config/homecloud/host-access/resolvr-box/ssh_config" --cli target/debug/homecloud
 python3 lab/control_runner.py cleanup --state /private/tmp/hc-boot.json \
-  --ssh-config .host-access/ssh_config --cli target/debug/homecloud
+  --ssh-config "$HOME/.config/homecloud/host-access/resolvr-box/ssh_config" --cli target/debug/homecloud
 ```
 
 `resume` waits for the recorded creations; `cleanup` cancels an incomplete creation
@@ -126,6 +154,14 @@ build host and its SHA-256 to `copy`, then run `adopt` only for a pre-receipt wo
 `inner`, `install-check`, `check`, `upgrade`, `kill`, and `bad-start` in sequence.
 All commands take the same `--state`, pinned `--ssh-config` and Mac `--cli` as the
 managed-host runner; artifact commands also require `--bundle-sha256`.
+
+For storage observability, add `--storage-check` to `upgrade`. Before rollback it
+checks an enrolled administrator's real controller snapshot for fresh disk/pool
+observations, the boot disk, the ONLINE managed `hcnested` pool, vdev-to-disk
+links, and honest SMART unavailability when smartctl is missing. It retains the
+private snapshot in the worker and records a credential-free summary in the
+manifest. Failure retains the upgraded worker for inspection, not automatic
+cleanup. Virtual disks do not prove physical hardware SMART support.
 
 `upgrade` changes an acknowledged grant after its snapshot, then proves software
 rollback retains it. `kill` sends SIGKILL to a disposable updater after its first

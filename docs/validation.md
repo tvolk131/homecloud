@@ -1460,3 +1460,156 @@ then passed authenticated status and SSH with Incus/QEMU PIDs unchanged.
 The earlier fault and clean-install evidence above
 identifies the exact pre-integration bundle tested rather than claiming those
 fault campaigns were rerun for the dependency-only rebuild.
+
+## Storage observability transport regression
+
+`crates/daemon/tests/transport.rs` exercises a populated storage snapshot through
+a real loopback Iroh QUIC server and enrolled Rust clients. The administrator
+receives SATA/NVMe identities, partitions and boot mounts, nested mirror vdevs
+linked to physical disks, error counters, SMART metrics/history and independent
+observation timestamps. Exact JSON comparison also checks GUIDs and SMART counter
+strings beyond JavaScript's integer precision and, for counters, beyond `u64`.
+The member's encoded response omits storage and its private identifying markers.
+Repeated snapshots do not collect storage. An injected collection failure retains
+the last observations while reporting collection errors to the administrator,
+without exposing storage to the member.
+
+The full administrator response is checked against the existing 1 MiB frame
+budget. A companion test uses the shared framing helpers to round-trip a storage
+payload exactly at that limit, reject an oversized outbound payload before
+writing a header, and reject an oversized inbound length without a body.
+
+These are synthetic, rootless tests, not physical disk or SMART acceptance.
+Deployment fault rehearsal belongs in a manifest-owned disposable managed host
+on the box, using the [existing guarded runner](../lab/README.md#software-deployment-proofs),
+not the permanent controller. Physical hardware collection still needs separate
+read-only acceptance; a nested host cannot prove visibility into the box's real
+disk controllers or SMART support.
+
+The matching Linux x86-64 daemon and CLI were subsequently cross-built with Rust
+1.99.0 from a credential-free source snapshot. All 159 non-GUI Rust tests passed
+under Linux x86-64 user-mode emulation, including the real QUIC storage tests.
+The host Python suite ran 139 tests with two intentional `tarfile.data_filter`
+skips. Both candidate binaries passed their help-command smoke checks. The
+20-file software bundle passed the deployment engine's archive, architecture,
+allowlist, syntax and per-file hash validation. Those emulated runs alone did not
+constitute native Ubuntu service or privileged collector acceptance.
+
+Read-only authenticated preflight against the physical host succeeded and reported
+the pool ONLINE. The pinned independent management SSH configuration now lives at
+`~/.config/homecloud/host-access/resolvr-box/ssh_config`, outside every checkout.
+Its existing host-key pins, strict checking and noninteractive sudo were verified;
+the original scratch copies were retired. Legacy helpers use the stable location
+or an explicit override, and generated guest entries cannot overwrite the
+physical host's management settings. All 21 local lab-helper tests passed,
+including four access-location/pin-preservation regressions and six real-storage
+checkpoint validator tests.
+
+Read-only process baselines were captured for the controller, Incus and both
+permanent VMs. Backing and capacity admitted an 8 GiB/two-core disposable host:
+its 66 GiB disk charge brought committed disk to 114 GiB within the existing
+128 GiB grant. Its temporary 12 GiB/three-core grant was restored during cleanup.
+
+### Disposable native deployment rehearsal
+
+The exact candidate bundle completed the guarded native Linux rehearsal in that
+manifest-owned managed host. Its independent installation and nested KVM worked;
+Incus 6.0.5, OpenZFS 2.4.1 and QEMU 10.2.1 passed the existing baseline checks.
+No legacy adoption or guard bypass was needed.
+
+- Native installer and software-deployment preflights passed.
+- Upgrade with `--storage-check` verified the real root adapter, daemon cache and
+  enrolled administrator snapshot before rollback: fresh boot/pool observations,
+  the ONLINE managed `hcnested` pool and a linked vdev leaf. Missing smartctl
+  produced explicit unavailable observations without invented SMART health.
+- Software rollback retained a grant acknowledged after the deployment checkpoint.
+- SIGKILL during payload replacement recovered through the real pre-start guard.
+- A fixture daemon that passed `--help` but could not start was rejected; explicit
+  rollback retained the controller database and restored the baseline daemon.
+- The same inner QEMU/Incus PIDs, endpoint identity and durable proof file survived
+  every upgrade, rollback and fault. The fixture was never run on the permanent
+  controller.
+
+Normal API cleanup deleted the worker and its owned custom volume/ZFS datasets,
+restored the original grant and removed the temporary candidate. Permanent VM
+states/PIDs, controller/Incus PIDs, checked installed software hashes, host
+reserves and capacity matched the pre-run baseline; the physical pool stayed
+ONLINE. Raw snapshots and the manifest remain private. Permanent controller
+software was not upgraded.
+
+The rehearsal also exposed an inventory classification follow-up: the logical
+zvol `/dev/zd0` backing the inner VM appears alongside the boot/pool disks and
+receives an unavailable SMART probe. The collector now requests lsblk's kernel
+device names and excludes logical zvols before building disk inventory or
+scheduling SMART probes. Five Rust regressions cover kernel-name/path detection,
+preserved guest disks and hardware metadata gaps, visible unmatched vdev leaves,
+and removal of cached zvol entries without consuming the bounded SMART budget.
+
+After the fix, all 32 focused storage tests passed, alongside 165 non-GUI Rust
+workspace tests on macOS and 164 on Linux x86-64 (the latter through Docker
+Desktop Rosetta). The existing native Keychain test remains intentionally ignored on
+macOS. Workspace clippy with all targets and warnings denied, formatting, and
+diff whitespace checks passed. A fresh tracked-source-only snapshot was rebuilt
+offline; the resulting Linux daemon/CLI passed help checks, and the new bundle
+passed the existing allowlist, content-hash, syntax and executable-format
+validator. Its source and bundle hashes are recorded alongside the finding.
+
+The recorded rehearsal still describes the original source snapshot and bundle;
+it is not an exact-artifact deployment rehearsal for this classification fix.
+Refreshed native acceptance and real physical disk/controller/SMART acceptance
+remain pending. The exact source snapshot, bundle digest, passed rehearsal checks
+and finding's source-fix status are recorded in
+[`storage-observability.json`](../lab/evidence/storage-observability.json).
+
+### SMART review corrections
+
+Two further review findings were independently reproduced against the local
+classification fix: path-only disks could monopolize the bounded probe queue,
+and a failed SMART result could disappear from the main badge behind a freshness
+or probe warning. The source fixes preserve only path-based scheduling attempt
+timestamps, not unidentified-device health readings, and prioritize failed-health
+badges while explicitly labelling retained failures as last-sample information.
+
+Five host regressions cover fairness across multiple batches, cache reloads
+without reused readings, metadata replacement, clock rollback, and retention of
+a partial failed-health observation through later skipped/failed probes. Three
+native UI regressions cover partial-command errors, retained failures across
+stale/skipped/unavailable discovery and probe states, and recovery after a fresh
+passing sample. These initial corrections passed all 37 focused storage tests
+and all eight storage UI tests.
+
+A fresh independent review identified a remaining partial-read case: a later
+temperature/metrics-only result could clear an earlier failed health result.
+The parser now retains that failed observation and its original timestamp until
+an explicit health result replaces it. Fresh passing or unknown health results
+with partial-command errors use explicit partial-read badges rather than
+misstating sample freshness. Duplicate WWN/model-serial identities now all fall
+back to path-based scheduling-only caching; older caches with ambiguous
+identities cannot transfer a removed disk's health to a surviving disk.
+
+Four additional host regressions and one additional native UI regression cover
+missing-health failure retention and recovery, order-independent duplicate IDs,
+reordered/removed disks, legacy ambiguous caches, and stale/future partial-read
+samples. The updated 41 focused storage tests and nine storage UI tests pass.
+
+The full macOS Rust workspace passes with 269 tests, including 95 desktop tests
+and the native screenshot comparisons using the suite's deterministic tiny-skia
+backend. The existing native Keychain test remains intentionally ignored. All
+173 non-GUI Linux x86-64 Rust tests pass through Docker Desktop Rosetta. Workspace
+Clippy with all targets and warnings denied, formatting, and diff whitespace
+checks pass; no screenshot baselines changed.
+
+A refreshed tracked-source-only snapshot was rebuilt offline. The resulting
+Linux daemon/CLI pass help checks, and the new 20-file bundle passes the existing
+allowlist, content-hash, syntax and executable-format validator. Source, binary,
+and bundle hashes are recorded under `review_fixes` in the evidence file; this
+candidate supersedes both the earlier classification-only bundle and the initial
+SMART-review-corrections bundle. The snapshot
+includes all compiled fixes but precedes these final documentation/evidence
+updates.
+
+Neither the original native deployment rehearsal nor the earlier
+classification-only bundle establishes native acceptance of the current
+controller. Refreshed native acceptance and real physical disk/controller/SMART
+acceptance remain pending. No permanent-host operation or deployment is part of
+these local corrections.

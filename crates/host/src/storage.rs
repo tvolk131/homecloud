@@ -42,7 +42,7 @@ impl Probe {
                     "--bytes",
                     "--paths",
                     "--output",
-                    "NAME,PATH,SIZE,TYPE,MODEL,SERIAL,WWN,TRAN,ROTA,FSTYPE,MOUNTPOINTS",
+                    "NAME,KNAME,PATH,SIZE,TYPE,MODEL,SERIAL,WWN,TRAN,ROTA,FSTYPE,MOUNTPOINTS",
                 ],
                 10,
             ),
@@ -201,21 +201,38 @@ async fn discover(
     batch: usize,
 ) -> Result<(Vec<PhysicalDisk>, bool)> {
     let mut disks = parse::disks(&runner.run(Probe::Disks).await?.json("lsblk")?)?;
+    let mut previous_identities = BTreeMap::<String, usize>::new();
+    for disk in &previous.disks {
+        if let Some(identity) = parse::disk_identity(
+            disk.model.as_deref(),
+            disk.serial.as_deref(),
+            disk.wwn.as_deref(),
+        ) {
+            *previous_identities.entry(identity).or_default() += 1;
+        }
+    }
     let previous: BTreeMap<_, _> = previous.disks.iter().map(|disk| (&disk.id, disk)).collect();
     let mut pending = Vec::new();
     for (index, disk) in disks.iter_mut().enumerate() {
+        let stable_identity = !disk.id.starts_with("path:");
         if let Some(old) = previous.get(&disk.id)
-            && (disk.serial.is_some() || disk.wwn.is_some())
             && old.model == disk.model
             && old.serial == disk.serial
             && old.wwn == disk.wwn
             && old.size_bytes == disk.size_bytes
         {
-            disk.smart = old.smart.clone();
+            if stable_identity && previous_identities.get(&disk.id) == Some(&1) {
+                disk.smart = old.smart.clone();
+            } else if !stable_identity {
+                disk.smart.collection.attempted_at = old.smart.collection.attempted_at;
+            }
         }
         let attempted = disk.smart.collection.attempted_at;
-        if attempted.is_none_or(|attempted| attempted > now || now - attempted >= SMART_INTERVAL) {
-            pending.push((attempted, index));
+        if !stable_identity
+            || attempted
+                .is_none_or(|attempted| attempted > now || now - attempted >= SMART_INTERVAL)
+        {
+            pending.push((attempted.filter(|attempted| *attempted <= now), index));
         }
     }
     pending.sort_by_key(|(attempted, _)| *attempted);

@@ -3,12 +3,12 @@
 import hashlib
 import json
 import os
-from pathlib import Path
 import subprocess
+from remote import ACCESS, ROOT, SSH_CONFIG
 
-root = Path(__file__).resolve().parent.parent
-access = root / '.host-access'
-config = access / 'ssh_config'
+root = ROOT
+access = ACCESS
+config = SSH_CONFIG
 report = json.loads((root / 'lab/evidence/verification.json').read_text())
 connected = subprocess.run(['/usr/bin/ssh', '-F', str(config), '-o', 'BatchMode=yes',
     'hclab-vm01', 'id -un'], capture_output=True, text=True, check=True, timeout=20)
