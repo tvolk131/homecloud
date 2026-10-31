@@ -85,6 +85,7 @@ pub(super) fn fixture() -> App {
     ];
     let inventory = HostInventory {
         storage: None,
+        shutdown_boot_id: None,
         hostname: "homecloud-01".into(),
         cpu_model: "Intel Core i7-8700K".into(),
         physical_cores: 6,
@@ -115,6 +116,7 @@ pub(super) fn fixture() -> App {
         warnings: vec![],
     };
     let snapshot = Snapshot {
+        host_shutdown: None,
         memory_health: None,
         host_reserves: None,
         disk_overhead_gib_per_vm: 2,
@@ -322,6 +324,11 @@ fn screenshot_regressions() {
         "host-storage-disks-small",
         "host-storage-stale",
         "host-storage-unavailable-small",
+        "host-shutdown-confirmation",
+        "host-shutdown-confirmation-small",
+        "host-shutdown-draining",
+        "host-shutdown-failed-small",
+        "host-shutdown-unreachable",
         "memory-vms-blocked-small",
         "memory-vm-blocked",
         "memory-host-recovery",
@@ -498,6 +505,45 @@ fn screenshot_regressions() {
                         Some(StorageInventory::default());
                 }
             }
+            "host-shutdown-confirmation"
+            | "host-shutdown-confirmation-small"
+            | "host-shutdown-draining"
+            | "host-shutdown-failed-small"
+            | "host-shutdown-unreachable" => {
+                if name.ends_with("small") {
+                    size = (800.0, 600.0);
+                }
+                app = crate::shutdown_ui_tests::fixture();
+                app.page = Page::Host;
+                if name.contains("confirmation") {
+                    let _ = app.update(Msg::Open(Panel::ShutdownHost {
+                        boot_id: app
+                            .snapshot
+                            .as_ref()
+                            .unwrap()
+                            .inventory
+                            .shutdown_boot_id
+                            .clone()
+                            .unwrap(),
+                        request_key: id(920),
+                        hostname: "homecloud-01".into(),
+                    }));
+                } else {
+                    let mut op = crate::shutdown_ui_tests::operation();
+                    if name.contains("failed") {
+                        op.phase = HostShutdownPhase::NeedsReview;
+                        op.error=Some("Could not shut down T3 development: graceful shutdown did not complete. The host remains on.".into());
+                    }
+                    if name.contains("unreachable") {
+                        op.phase = HostShutdownPhase::PoweroffRequested;
+                        op.poweroff_attempted = true;
+                        op.remaining.clear();
+                        app.snapshot_unavailable = true;
+                    }
+                    app.snapshot.as_mut().unwrap().host_shutdown = Some(op);
+                }
+            }
+
             "memory-vms-blocked-small"
             | "memory-vm-blocked"
             | "memory-host-recovery"
@@ -1902,7 +1948,7 @@ fn sign_in_feedback_starts_immediately_survives_ack_and_a_stale_snapshot() {
     );
     let _ = app.update(Msg::Reply(Ok(Response::ApplicationOperation(op.clone()))));
     assert!(!app.busy);
-    let _ = app.update(Msg::Snapshot(Ok(Box::new(stale))));
+    let _ = app.update(Msg::Snapshot(0, Ok(Box::new(stale))));
     assert!(
         app.snapshot
             .as_ref()
@@ -2096,7 +2142,7 @@ fn successful_provider_setup_announces_completion_and_collapses_the_browser_flow
     let mut next = app.snapshot.clone().unwrap();
     next.application_operations[0].phase = ApplicationPhase::Succeeded;
     next.applications[0].observation.components[0].account = "signed_in".into();
-    let _ = app.update(Msg::Snapshot(Ok(Box::new(next))));
+    let _ = app.update(Msg::Snapshot(0, Ok(Box::new(next))));
     let mut ui = simulator(&app, (1180.0, 820.0));
     assert!(
         ui.find("Codex sign-in complete. You can use it in T3 Code.")
@@ -2243,16 +2289,16 @@ fn lifecycle_progress_starts_immediately_survives_stale_snapshots_and_offline_is
         error: None,
     };
     let _ = app.update(Msg::Reply(Ok(Response::Operation(op))));
-    let _ = app.update(Msg::Snapshot(Ok(Box::new(stale.clone()))));
+    let _ = app.update(Msg::Snapshot(0, Ok(Box::new(stale.clone()))));
     let mut ui = simulator(&app, (1180.0, 820.0));
     ui.click(lifecycle_id(id(10))).unwrap();
     assert!(ui.into_messages().next().is_none());
-    let _ = app.update(Msg::Snapshot(Err("offline".into())));
+    let _ = app.update(Msg::Snapshot(0, Err("offline".into())));
     let mut ui = simulator(&app, (1180.0, 820.0));
     assert!(ui.find("Status unavailable").is_ok());
     ui.click(lifecycle_id(id(11))).unwrap();
     assert!(ui.into_messages().next().is_none());
-    let _ = app.update(Msg::Snapshot(Ok(Box::new(stale))));
+    let _ = app.update(Msg::Snapshot(0, Ok(Box::new(stale))));
     assert!(!app.snapshot_unavailable);
 }
 

@@ -5,6 +5,7 @@ use uuid::Uuid;
 pub(super) fn can_edit(app: &App, s: &Snapshot, vm: &Vm) -> bool {
     !app.busy
         && !app.snapshot_unavailable
+        && !app.shutdown_blocks_work()
         && lifecycle::unfinished(s, vm).is_none()
         && matches!(
             lifecycle::state(app, s, vm),
@@ -107,6 +108,7 @@ fn advanced<'a>(app: &'a App, s: &'a Snapshot, vm: &'a Vm) -> Element<'a, Msg> {
     // Creation can be cancelled without releasing claims before host cleanup.
     let can_delete = !app.busy
         && !app.snapshot_unavailable
+        && !app.shutdown_blocks_work()
         && s.operations
             .iter()
             .filter(|op| op.vm_id == vm.id && !matches!(op.phase.as_str(), "succeeded" | "failed"))

@@ -135,6 +135,65 @@ def stop(vm, force=False):
     instance_runtime.finished(sys.modules[__name__],vm)
 
 
+def shutdown_boot():
+    return str(uuid.UUID(Path('/proc/sys/kernel/random/boot_id').read_text().strip()))
+
+
+def shutdown_fence_path(operation_id):
+    return STATE / ('shutdown-cancelled-' + uuid.UUID(operation_id).hex + '.json')
+
+
+def check_shutdown_fence(operation_id, boot_id):
+    assert boot_id == shutdown_boot(), 'Host restarted; request a new shutdown'
+    assert not shutdown_fence_path(operation_id).exists(), 'Shutdown cancellation is already fenced on the host; finish cancellation to resume VMs'
+    return {'kind':'ok'}
+
+
+def cancel_shutdown(operation_id, boot_id):
+    assert boot_id == shutdown_boot(), 'Host restarted; request a new shutdown'
+    save(shutdown_fence_path(operation_id), {'operation_id':uid(operation_id),'boot_id':boot_id})
+    fd=os.open(STATE,os.O_RDONLY|os.O_DIRECTORY)
+    try:os.fsync(fd)
+    finally:os.close(fd)
+    return {'kind':'ok'}
+
+
+def drain_guest(operation_id, vm, boot_id):
+    check_shutdown_fence(operation_id, boot_id)
+    assert owned(vm, missing=True) is not None, 'Recorded VM instance is missing. Cancel host shutdown and recover or delete this VM before trying again.'
+    # Host shutdown retains Running intent, GPU devices, CPU policy and claims.
+    try:stop(vm)
+    except RuntimeError as error:
+        if str(error).startswith('conflict: graceful shutdown did not complete'):
+            raise RuntimeError('Graceful guest shutdown did not complete. The host remains on. Retry host shutdown, or cancel it and recover this VM before trying again.') from None
+        raise
+    return {'kind':'ok'}
+
+
+def check_shutdown(boot_id, vms):
+    assert boot_id == shutdown_boot(), 'Host restarted; request a new shutdown'
+    # Include unmanaged/frozen guests: the OS must not silently force them off.
+    actual = api('GET', '/1.0/instances?recursion=1&all-projects=true')
+    assert all(v['status'].lower() == 'stopped' for v in actual), 'A guest is still active; host remains on'
+    for vm in vms:
+        owned(vm)
+        assert state(vm) == 'stopped' and not instance_runtime.live_processes(sys.modules[__name__], vm), 'Guest shutdown is not confirmed; host remains on'
+    return {'kind':'ok'}
+
+
+def power_off(operation_id, boot_id, vms):
+    operation_id=uid(operation_id)
+    try:
+        check_shutdown_fence(operation_id, boot_id)
+        check_shutdown(boot_id, vms)
+    except Exception as error:
+        # No OS shutdown command ran. A matching acknowledged rejection can
+        # restore cancellation, unless an earlier attempt is still ambiguous.
+        return {'kind':'power_off_rejected','data':{'operation_id':operation_id,'boot_id':boot_id,'message':str(error)}}
+    run('systemctl', 'poweroff', timeout=15)
+    return {'kind':'power_off_queued','data':{'operation_id':operation_id,'boot_id':boot_id}}
+
+
 def start(vm):
     return instance_runtime.start(sys.modules[__name__],vm)
 
@@ -599,7 +658,7 @@ def inventory(c):
     except Exception as error:
         available=0;pool_health='unavailable';warnings.append('ZFS inventory unavailable: '+str(error))
     if available<c['minimum_pool_available_bytes']:warnings.append('Pool accounting headroom below operating floor; growth is blocked')
-    return {'hostname':os.uname().nodename,'cpu_model':next((l.split(':',1)[1].strip() for l in cpu.splitlines() if l.startswith('model name')),'unknown'),'physical_cores':len(groups),'memory_bytes':int(next(l.split()[1] for l in mem.splitlines() if l.startswith('MemTotal:')))*1024,'pool':c['pool'],'pool_available_bytes':available,'minimum_pool_available_bytes':c['minimum_pool_available_bytes'],'pool_health':pool_health,'iommu':iommu,'gpus':cards,'warnings':warnings}
+    return {'shutdown_boot_id':shutdown_boot(),'hostname':os.uname().nodename,'cpu_model':next((l.split(':',1)[1].strip() for l in cpu.splitlines() if l.startswith('model name')),'unknown'),'physical_cores':len(groups),'memory_bytes':int(next(l.split()[1] for l in mem.splitlines() if l.startswith('MemTotal:')))*1024,'pool':c['pool'],'pool_available_bytes':available,'minimum_pool_available_bytes':c['minimum_pool_available_bytes'],'pool_health':pool_health,'iommu':iommu,'gpus':cards,'warnings':warnings}
 
 
 def observe(vms):
@@ -637,6 +696,7 @@ def main():
     assert len(raw)<=1024*1024,'Host request exceeds limit'
     request=json.loads(raw)
     kind=request['kind']
+    if kind=='shutdown_status':return {'kind':'shutdown_boot','data':shutdown_boot()}
     if kind=='diagnostics':return {'kind':'diagnostics','data':instance_runtime.diagnostics(sys.modules[__name__],request['vm'])}
     if kind=='application':return {'kind':'application','data':managed_apps.application(sys.modules[__name__],request['vm'],request['application'],request['command'])}
     if kind=='reserve_status':return {'kind':'reserve_policy','data':resource_reserves.report(c['_reserve_base'],c['_reserve_record'])}
@@ -653,6 +713,11 @@ def main():
     with (STATE/'operations.lock').open('a') as lock:
         fcntl.flock(lock,fcntl.LOCK_EX)
         c=load_config()
+        if kind=='cancel_shutdown':return cancel_shutdown(request['operation_id'],request['boot_id'])
+        if kind=='check_shutdown_fence':return check_shutdown_fence(request['operation_id'],request['boot_id'])
+        if kind=='check_shutdown':return check_shutdown(request['boot_id'],request['vms'])
+        if kind=='drain_guest':return drain_guest(request['operation_id'],request['vm'],request['boot_id'])
+        if kind=='power_off':return power_off(request['operation_id'],request['boot_id'],request['vms'])
         if kind=='cancel_memory_capacity':return {'kind':'memory_capacity_cancelled','data':memory_capacity.cancel(sys.modules[__name__],c,request['operation'])}
         if kind=='adopt_memory_capacity':return {'kind':'memory_capacity','data':memory_capacity.adopt(sys.modules[__name__],c,request['operation'])}
         if kind=='discard_reserves':return {'kind':'discarded_reserves','data':resource_reserves.discard(sys.modules[__name__],c,request['operation'])}

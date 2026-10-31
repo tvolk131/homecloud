@@ -22,6 +22,8 @@ mod reserve_ui_tests;
 mod reserves;
 mod resources;
 #[cfg(test)]
+mod shutdown_ui_tests;
+#[cfg(test)]
 mod storage_ui_tests;
 mod ui;
 #[cfg(test)]
@@ -51,12 +53,20 @@ enum HostTab {
 }
 #[derive(Clone)]
 enum Panel {
+    ShutdownHost {
+        boot_id: String,
+        request_key: Uuid,
+        hostname: String,
+    },
     Create,
     SetupDiagnostics(Uuid),
     HostReserves,
     ReviewMemoryCapacity,
     EditWorkspace(Uuid),
-    ConfirmEdit { vm_id: Uuid, changes: WorkspaceEdit },
+    ConfirmEdit {
+        vm_id: Uuid,
+        changes: WorkspaceEdit,
+    },
     Invite,
     Grant,
     Invitation,
@@ -87,6 +97,9 @@ enum Field {
 const FIELD_COUNT: usize = Field::ArcLimit as usize + 1;
 #[derive(Clone)]
 enum Msg {
+    ShutdownHost,
+    RetryHostShutdown(Uuid),
+    CancelHostShutdown(Uuid),
     Edit(Field, String),
     ResourceValue(Field, u64),
     SaveHostReserves,
@@ -119,7 +132,7 @@ enum Msg {
     Pair,
     Loaded(Result<Arc<Client>, String>),
     Refresh,
-    Snapshot(Result<Box<Snapshot>, String>),
+    Snapshot(u64, Result<Box<Snapshot>, String>),
     Reply(Result<Response, String>),
     Create,
     CreateReply(Uuid, Result<Response, String>),
@@ -172,6 +185,9 @@ struct App {
     reserve_draft: Option<reserves::ReserveDraft>,
     memory_review: Option<MemoryCapacityStatus>,
     accepted_reserve: Option<HostReserveOperation>,
+    accepted_shutdown: Option<HostShutdownOperation>,
+    accepted_shutdown_generation: u64,
+    refresh_generation: u64,
     error: Option<String>,
     notice: String,
     busy: bool,
@@ -214,6 +230,21 @@ fn result<T>(r: anyhow::Result<T>) -> Result<T, String> {
     r.map_err(|e| e.to_string())
 }
 impl App {
+    fn shutdown_blocks_work(&self) -> bool {
+        self.snapshot
+            .as_ref()
+            .and_then(|s| s.host_shutdown.as_ref())
+            .is_some_and(|op| op.phase.blocks_work())
+    }
+    fn can_shutdown_host(&self) -> bool {
+        !self.busy
+            && !self.snapshot_unavailable
+            && !self.shutdown_blocks_work()
+            && self
+                .snapshot
+                .as_ref()
+                .is_some_and(|s| s.me.role == Role::Admin && s.inventory.shutdown_boot_id.is_some())
+    }
     fn blank(profile: PathBuf) -> Self {
         let mut fields: [String; FIELD_COUNT] = Default::default();
         for (field, value) in [
@@ -238,6 +269,9 @@ impl App {
             reserve_draft: None,
             memory_review: None,
             accepted_reserve: None,
+            accepted_shutdown: None,
+            accepted_shutdown_generation: 0,
+            refresh_generation: 0,
             error: None,
             notice: String::new(),
             busy: false,
@@ -344,6 +378,10 @@ impl App {
             .into()
     }
     fn rpc(&mut self, r: Request) -> Task<Msg> {
+        if self.shutdown_blocks_work() && r.changes_host_workload() {
+            self.error = Some("Host shutdown is in progress. Review it on the Hosts page.".into());
+            return Task::none();
+        }
         let Some(c) = self.client.clone() else {
             return Task::none();
         };
@@ -375,6 +413,9 @@ impl App {
         })
     }
     fn submit_saved_create(&mut self) -> Task<Msg> {
+        if self.shutdown_blocks_work() {
+            return Task::none();
+        }
         if self.busy
             || self.create_inflight.is_some()
             || self.create_error.is_some()
@@ -510,7 +551,11 @@ impl App {
         self.update(Msg::Refresh)
     }
     fn change(&mut self, mutation: Mutation) -> Task<Msg> {
-        if self.busy || self.create_inflight.is_some() || self.snapshot_unavailable {
+        if self.busy
+            || self.create_inflight.is_some()
+            || self.snapshot_unavailable
+            || self.shutdown_blocks_work()
+        {
             return Task::none();
         }
         if let Mutation::Create { spec } = mutation {
@@ -583,6 +628,43 @@ impl App {
     }
     fn update(&mut self, msg: Msg) -> Task<Msg> {
         match msg {
+            Msg::ShutdownHost => {
+                if self.busy || self.snapshot_unavailable || self.shutdown_blocks_work() {
+                    return Task::none();
+                }
+                if let Some(Panel::ShutdownHost {
+                    boot_id,
+                    request_key,
+                    ..
+                }) = &self.panel
+                    && self.snapshot.as_ref().is_some_and(|s| {
+                        s.me.role == Role::Admin
+                            && s.inventory.shutdown_boot_id.as_ref() == Some(boot_id)
+                    })
+                {
+                    return self.rpc(Request::ShutdownHost {
+                        idempotency_key: *request_key,
+                        expected_boot_id: boot_id.clone(),
+                    });
+                }
+            }
+            Msg::RetryHostShutdown(operation_id) | Msg::CancelHostShutdown(operation_id) => {
+                if self.busy
+                    || self.snapshot_unavailable
+                    || !self
+                        .snapshot
+                        .as_ref()
+                        .is_some_and(|s| s.me.role == Role::Admin)
+                {
+                    return Task::none();
+                }
+                let cancel = matches!(msg, Msg::CancelHostShutdown(_));
+                return self.rpc(if cancel {
+                    Request::CancelHostShutdown { operation_id }
+                } else {
+                    Request::RetryHostShutdown { operation_id }
+                });
+            }
             Msg::ReviewHostMemory => {
                 if self
                     .snapshot
@@ -613,6 +695,17 @@ impl App {
             }
             Msg::Open(panel) => {
                 self.error = None;
+                if let Panel::ShutdownHost { boot_id, .. } = &panel
+                    && (self.busy
+                        || self.snapshot_unavailable
+                        || self.shutdown_blocks_work()
+                        || !self.snapshot.as_ref().is_some_and(|s| {
+                            s.me.role == Role::Admin
+                                && s.inventory.shutdown_boot_id.as_ref() == Some(boot_id)
+                        }))
+                {
+                    return Task::none();
+                }
                 if matches!(panel, Panel::Create) && self.create_pending.is_some() {
                     self.panel = Some(panel);
                     return Task::none();
@@ -726,7 +819,7 @@ impl App {
                 }
             }
             Msg::SubmitAuthorization(application_id, operation_id) => {
-                if self.app_request.is_some() {
+                if self.app_request.is_some() || self.shutdown_blocks_work() {
                     return Task::none();
                 }
                 let code = AuthorizationCode(
@@ -992,16 +1085,49 @@ impl App {
                 }
                 if let Some(c) = self.client.clone() {
                     self.refreshing = true;
+                    self.refresh_generation = self.refresh_generation.saturating_add(1);
+                    let generation = self.refresh_generation;
                     return Task::perform(
                         async move { result(c.snapshot().await.map(Box::new)) },
-                        Msg::Snapshot,
+                        move |r| Msg::Snapshot(generation, r),
                     );
                 }
             }
-            Msg::Snapshot(r) => {
+            Msg::Snapshot(generation, r) => {
+                if generation < self.refresh_generation {
+                    return Task::none();
+                }
                 self.refreshing = false;
                 match r {
                     Ok(mut s) => {
+                        if s.me.role != Role::Admin {
+                            self.accepted_shutdown = None;
+                        }
+                        if let Some(accepted) = self.accepted_shutdown.clone() {
+                            if s.inventory
+                                .shutdown_boot_id
+                                .as_ref()
+                                .is_some_and(|boot| *boot != accepted.boot_id)
+                                || s.host_shutdown.as_ref().is_some_and(|op| {
+                                    (op.id == accepted.id && op.revision >= accepted.revision)
+                                        || (op.id != accepted.id
+                                            && generation > self.accepted_shutdown_generation)
+                                })
+                            {
+                                self.accepted_shutdown = None;
+                            } else {
+                                s.host_shutdown = Some(accepted)
+                            }
+                        }
+                        if s.host_shutdown
+                            .as_ref()
+                            .is_some_and(|op| op.phase.blocks_work())
+                            && matches!(self.panel, Some(Panel::ShutdownHost { .. }))
+                        {
+                            self.close_panel();
+                            self.page = Page::Host;
+                            self.error = None;
+                        }
                         if s.me.role != Role::Admin {
                             self.accepted_reserve = None;
                         }
@@ -1148,7 +1274,11 @@ impl App {
                     }
                     Err(e) => {
                         self.snapshot_unavailable = true;
-                        self.error = Some(format!("Host unavailable: {e}"));
+                        self.error = if self.shutdown_blocks_work() {
+                            None
+                        } else {
+                            Some(format!("Host unavailable: {e}"))
+                        };
                     }
                 }
             }
@@ -1157,6 +1287,21 @@ impl App {
                 self.vm_request = None;
                 let application_request = self.app_request.take();
                 match r {
+                    Ok(Response::HostShutdownOperation(op)) => {
+                        self.accepted_shutdown = Some(op.clone());
+                        self.accepted_shutdown_generation = self.refresh_generation;
+                        if let Some(s) = &mut self.snapshot {
+                            s.host_shutdown = Some(op.clone())
+                        }
+                        self.close_panel();
+                        self.page = Page::Host;
+                        self.error = None;
+                        self.notice = if op.phase == HostShutdownPhase::Cancelled {
+                            "Host shutdown cancelled. Resuming verified VMs that were set to run; missing or unavailable VMs need separate recovery.".into()
+                        } else {
+                            String::new()
+                        };
+                    }
                     Ok(Response::Invitation { token, .. }) => {
                         self.invite = Some(token);
                         self.panel = Some(Panel::Invitation);
@@ -1454,7 +1599,7 @@ impl App {
                     Msg::InstallApplication(id) => (id, ApplicationKind::T3),
                     _ => unreachable!(),
                 };
-                if self.app_request.is_some() {
+                if self.app_request.is_some() || self.shutdown_blocks_work() {
                     return Task::none();
                 }
                 self.app_request = Some(ApplicationRequest {
@@ -1469,7 +1614,7 @@ impl App {
                 });
             }
             Msg::SetupApplication(application_id, setup_action) => {
-                if self.app_request.is_some() {
+                if self.app_request.is_some() || self.shutdown_blocks_work() {
                     return Task::none();
                 }
                 self.app_request = Some(ApplicationRequest {
@@ -1524,6 +1669,9 @@ impl App {
                 }
             }
             Msg::Ssh(id, install) => {
+                if self.shutdown_blocks_work() {
+                    return Task::none();
+                }
                 if let Some(vm) = self
                     .snapshot
                     .as_ref()

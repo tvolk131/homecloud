@@ -6,6 +6,9 @@ mod memory_tests;
 #[cfg(test)]
 mod reserve_tests;
 mod reserves;
+mod shutdown;
+#[cfg(test)]
+mod shutdown_tests;
 mod storage;
 #[cfg(test)]
 mod storage_tests;
@@ -65,6 +68,7 @@ pub struct Service {
     reconciliation: Mutex<()>,
     application_reconciliation: Mutex<()>,
     reserve_admission: Mutex<()>,
+    shutdown_gate: RwLock<()>,
     application_actions: Mutex<HashMap<uuid::Uuid, BrowserAction>>,
     storage: RwLock<StorageInventory>,
     storage_collection: Mutex<()>,
@@ -73,6 +77,7 @@ pub struct Service {
 impl Service {
     pub fn new(store: Store, backend: Arc<dyn Backend>) -> Result<Arc<Self>> {
         let controller_lock = store.lock_controller()?;
+        store.interrupt_host_shutdown()?;
         Ok(Arc::new(Self {
             store,
             backend,
@@ -80,6 +85,7 @@ impl Service {
             reconciliation: Mutex::new(()),
             application_reconciliation: Mutex::new(()),
             reserve_admission: Mutex::new(()),
+            shutdown_gate: RwLock::new(()),
             application_actions: Mutex::new(HashMap::new()),
             storage: RwLock::new(StorageInventory::default()),
             storage_collection: Mutex::new(()),
@@ -121,7 +127,45 @@ impl Service {
         }
         let p = peer.clone();
         let me = self.db(move |s| s.authenticate(&p)).await?;
+        let _gate = if request.changes_host_workload() {
+            let gate = self.shutdown_gate.read().await;
+            self.ensure_host_not_shutting_down().await?;
+            Some(gate)
+        } else {
+            None
+        };
         match request {
+            Request::ShutdownHost {
+                idempotency_key,
+                expected_boot_id,
+            } => {
+                ensure!(me.role == Role::Admin, "Administrator required");
+                let p = peer.clone();
+                let expected = expected_boot_id.clone();
+                if let Some(op) = self
+                    .db(move |s| s.review_shutdown_request(&p, idempotency_key, &expected))
+                    .await?
+                {
+                    return Ok(Response::HostShutdownOperation(op));
+                }
+                let _gate = self.shutdown_admission().await?;
+                let boot_id = self.shutdown_boot().await?;
+                ensure!(
+                    boot_id == expected_boot_id,
+                    "Host restarted; refresh before shutting down"
+                );
+                self.db(move |s| s.request_host_shutdown(&peer, idempotency_key, boot_id))
+                    .await
+                    .map(Response::HostShutdownOperation)
+            }
+            Request::RetryHostShutdown { operation_id } => {
+                ensure!(me.role == Role::Admin, "Administrator required");
+                self.recover_shutdown(peer, operation_id, false).await
+            }
+            Request::CancelHostShutdown { operation_id } => {
+                ensure!(me.role == Role::Admin, "Administrator required");
+                self.recover_shutdown(peer, operation_id, true).await
+            }
             Request::CancelMemoryCapacity { operation_id } => {
                 ensure!(me.role == Role::Admin, "Administrator required");
                 let _worker = self.reconciliation.lock().await;
@@ -326,7 +370,16 @@ impl Service {
                     .db(move |s| s.memory_health(&memory_peer, verified))
                     .await?;
                 let capacity = self.db(|s| s.capacity()).await?;
+                let mut host_shutdown = self.db(|s| s.host_shutdown()).await?;
+                if me.role != Role::Admin
+                    && let Some(op) = &mut host_shutdown
+                {
+                    op.vm_ids.retain(|id| vms.iter().any(|vm| vm.id == *id));
+                    op.remaining.retain(|id| vms.iter().any(|vm| vm.id == *id));
+                    op.error = None;
+                }
                 Ok(Response::Snapshot(Box::new(Snapshot {
+                    host_shutdown,
                     host_reserves,
                     memory_health,
                     disk_overhead_gib_per_vm: self.store.limits().disk_overhead_gib_per_vm,
@@ -553,7 +606,18 @@ impl Service {
         }
     }
     pub async fn reconcile_once(&self) -> Result<()> {
+        let _gate = self.shutdown_gate.read().await;
         let _worker = self.reconciliation.lock().await;
+        if self.reconcile_host_shutdown().await? {
+            if self
+                .db(|s| s.host_shutdown())
+                .await?
+                .is_some_and(|op| op.phase == HostShutdownPhase::NeedsReview)
+            {
+                self.observe_vms_once().await?;
+            }
+            return Ok(());
+        }
         {
             let _admission = self.reserve_admission.lock().await;
             if let Err(error) = self.apply_memory_capacity().await {
@@ -641,6 +705,11 @@ impl Service {
                 }
             }
         }
+        self.observe_vms_once().await?;
+        reserve_result?;
+        Ok(())
+    }
+    async fn observe_vms_once(&self) -> Result<()> {
         let vms = self.db(|s| s.vms()).await?;
         if let HostResponse::Observations(observed) =
             self.backend.request(HostRequest::Observe { vms }).await?
@@ -654,7 +723,6 @@ impl Service {
                     .await?;
             }
         }
-        reserve_result?;
         Ok(())
     }
     async fn connection(self: Arc<Self>, conn: Connection) -> Result<()> {

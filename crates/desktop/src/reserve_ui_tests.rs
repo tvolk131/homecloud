@@ -102,7 +102,7 @@ fn accepted_reserve_progress_survives_stale_snapshots_and_announces_confirmation
     let op = operation();
     let _ = app.update(Msg::Reply(Ok(Response::HostReserveOperation(op.clone()))));
     assert_eq!(app.snapshot.as_ref().unwrap().capacity.cpu_cores, 3);
-    let _ = app.update(Msg::Snapshot(Ok(Box::new(old.clone()))));
+    let _ = app.update(Msg::Snapshot(0, Ok(Box::new(old.clone()))));
     assert_eq!(
         app.snapshot
             .as_ref()
@@ -119,7 +119,7 @@ fn accepted_reserve_progress_survives_stale_snapshots_and_announces_confirmation
     assert_eq!(app.snapshot.as_ref().unwrap().capacity.cpu_cores, 3);
     let mut missing = old.clone();
     missing.host_reserves = None;
-    let _ = app.update(Msg::Snapshot(Ok(Box::new(missing))));
+    let _ = app.update(Msg::Snapshot(0, Ok(Box::new(missing))));
     assert_eq!(app.snapshot.as_ref().unwrap().capacity.cpu_cores, 3);
     assert!(app.snapshot.as_ref().unwrap().host_reserves.is_some());
     let mut completed = old;
@@ -129,7 +129,7 @@ fn accepted_reserve_progress_survives_stale_snapshots_and_announces_confirmation
     done.phase = ReservePhase::Succeeded;
     view.operation = Some(done);
     completed.capacity = view.envelope.checked_sub(view.active.additional).unwrap();
-    let _ = app.update(Msg::Snapshot(Ok(Box::new(completed))));
+    let _ = app.update(Msg::Snapshot(0, Ok(Box::new(completed))));
     assert!(app.accepted_reserve.is_none());
     assert_eq!(app.notice, "Host reserves updated.");
 }

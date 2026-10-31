@@ -66,6 +66,19 @@ pub(crate) fn state(app: &App, s: &Snapshot, vm: &Vm) -> State {
     if app.snapshot_unavailable {
         return State::Unavailable;
     }
+    if let Some(op) = s.host_shutdown.as_ref().filter(|op| op.phase.blocks_work())
+        && op.vm_ids.contains(&vm.id)
+    {
+        return if vm.observed == "stopped" {
+            State::Stopped
+        } else if op.phase == HostShutdownPhase::Draining && op.remaining.first() == Some(&vm.id) {
+            State::Stopping
+        } else if vm.observed == "running" {
+            State::Running
+        } else {
+            State::Unavailable
+        };
+    }
     let request = app
         .vm_request
         .as_ref()
@@ -159,6 +172,7 @@ fn terminal_with_variant(app: &App, vm: &Vm, variant: Variant) -> Element<'stati
     .disabled(
         app.busy
             || app.snapshot_unavailable
+            || app.shutdown_blocks_work()
             || app.vm_request.as_ref().is_some_and(|(id, _)| *id == vm.id)
             || app
                 .snapshot
@@ -229,6 +243,7 @@ pub(super) fn control<'a>(app: &App, s: &Snapshot, vm: &Vm) -> Element<'a, Msg> 
         .on_press(action)
         .disabled(
             app.busy
+                || app.shutdown_blocks_work()
                 || status.busy()
                 || status == State::Unavailable
                 || blocked_review
@@ -253,6 +268,7 @@ pub(super) fn reviewed_stop<'a>(s: &'a Snapshot, vm: &Vm) -> Option<&'a Operatio
 pub(super) fn can_force(app: &App, s: &Snapshot, vm: &Vm) -> bool {
     !app.busy
         && !app.snapshot_unavailable
+        && !app.shutdown_blocks_work()
         && app.vm_request.is_none()
         && vm.observed != "stopped"
         && vm.desired != Lifecycle::Deleted
@@ -277,7 +293,7 @@ pub(super) fn recovery<'a>(app: &App, s: &'a Snapshot, vm: &Vm) -> Option<Elemen
                 desired: Lifecycle::Stopped
             })
         )
-        .disabled(app.busy || app.snapshot_unavailable)
+        .disabled(app.busy || app.snapshot_unavailable || app.shutdown_blocks_work())
     ]
     .spacing(8);
     if !stopped {

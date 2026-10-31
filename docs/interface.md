@@ -392,3 +392,33 @@ The reserve editor uses the smaller reviewed/physical RAM envelope during a
 shortage. Overlarge memory promises contribute zero extra reserve headroom and do
 not prevent opening the editor for recovery. Existing total reserves remain
 editable downward; no new unpromised capacity is invented by the form.
+
+## Physical host shutdown
+
+Administrators on a capable host use **Hosts → select host → Shut down host…**.
+The confirmation names the host, counts affected running VMs, explains that
+terminal/T3 sessions and running tasks will be interrupted, and explains how the
+host can be powered back on. Cancel dismisses the dialog without submitting work.
+Confirmation uses one request key for retries and rejects a changed kernel boot.
+Older hosts and the simulator do not advertise this action.
+
+An accepted request closes the dialog and shows **Shutting down VMs…**, then
+**Powering off host…**. The progress banner follows the user across pages;
+workload changes are disabled while shutdown is active or awaiting recovery.
+After connectivity is lost, **Host unreachable** explicitly leaves the final
+power state unverified. Disconnection is never presented as confirmed power-off.
+
+If a guest or final verification fails, the host stays on and the administrator
+can retry shutdown or **Cancel shutdown and resume VMs**. Cancellation explicitly
+resumes VMs with retained Running intent, including guests already drained.
+Once power-off has been attempted, an absent reply cannot prove cancellation is
+safe: recovery offers review/retry, and cancellation is unavailable.
+
+Status refreshes carry request generations so a later shutdown by another
+administrator replaces an earlier accepted/cancelled receipt. A response from
+before acceptance cannot erase that pending feedback. During draining, only the current guest shows Stopping; queued guests retain
+their observed state. Read-only observations refresh guest labels during review,
+so an out-of-band stop or restart is reflected without resuming workload changes.
+A power-off request that leaves the host reachable for one minute offers explicit
+review/retry without claiming cancellation is safe. Device revocation and account
+security actions remain available while VM/resource changes are paused.

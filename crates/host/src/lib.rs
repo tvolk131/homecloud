@@ -27,6 +27,29 @@ pub struct VmObservation {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "snake_case")]
 pub enum HostRequest {
+    ShutdownStatus,
+    CancelShutdown {
+        operation_id: uuid::Uuid,
+        boot_id: String,
+    },
+    CheckShutdownFence {
+        operation_id: uuid::Uuid,
+        boot_id: String,
+    },
+    CheckShutdown {
+        boot_id: String,
+        vms: Vec<Vm>,
+    },
+    DrainGuest {
+        operation_id: uuid::Uuid,
+        vm: Vm,
+        boot_id: String,
+    },
+    PowerOff {
+        operation_id: uuid::Uuid,
+        boot_id: String,
+        vms: Vec<Vm>,
+    },
     Diagnostics {
         vm: Vm,
     },
@@ -71,6 +94,16 @@ pub enum HostRequest {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "kind", content = "data", rename_all = "snake_case")]
 pub enum HostResponse {
+    PowerOffRejected {
+        operation_id: uuid::Uuid,
+        boot_id: String,
+        message: String,
+    },
+    PowerOffQueued {
+        operation_id: uuid::Uuid,
+        boot_id: String,
+    },
+    ShutdownBoot(String),
     Diagnostics(VmDiagnostics),
     Application(ApplicationReport),
     Inventory(HostInventory),
@@ -167,6 +200,14 @@ impl Backend for Simulator {
     async fn request(&self, request: HostRequest) -> Result<HostResponse> {
         let _guard = self.lock.lock().await;
         match request {
+            HostRequest::ShutdownStatus
+            | HostRequest::CancelShutdown { .. }
+            | HostRequest::CheckShutdownFence { .. }
+            | HostRequest::CheckShutdown { .. }
+            | HostRequest::DrainGuest { .. }
+            | HostRequest::PowerOff { .. } => {
+                anyhow::bail!("Host shutdown requires a capable Linux host")
+            }
             HostRequest::CancelMemoryCapacity { .. } => {
                 anyhow::bail!("Memory capacity recovery requires a real host")
             }

@@ -3,7 +3,15 @@ use super::*;
 impl Service {
     /// Independent of the VM resource-operation lane. Guest jobs outlive this call.
     pub async fn reconcile_applications_once(&self) -> Result<()> {
+        let _gate = self.shutdown_gate.read().await;
         let _guard = self.application_reconciliation.lock().await;
+        if self
+            .db(|s| s.host_shutdown())
+            .await?
+            .is_some_and(|op| op.phase.blocks_work())
+        {
+            return Ok(());
+        }
         let vms = self.db(|s| s.vms()).await?;
         let vm_operations = self.db(|s| s.operations()).await?;
         let operations = self.db(|s| s.application_operations()).await?;
