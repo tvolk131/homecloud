@@ -37,9 +37,9 @@ impl State {
     }
     pub fn color(self, theme: &Theme) -> Color {
         match self {
-            Self::Running => Color::from_rgb8(154, 224, 183),
+            Self::Running => status_colors::SUCCESS,
             Self::Starting | Self::Stopping | Self::Creating | Self::Updating => {
-                Color::from_rgb8(255, 207, 112)
+                status_colors::WARNING
             }
             Self::Attention | Self::Cleanup | Self::Blocked => theme.colors.error,
             _ => theme.colors.on_surface_variant,
@@ -201,7 +201,7 @@ pub(super) fn control<'a>(app: &App, s: &Snapshot, vm: &Vm) -> Element<'a, Msg> 
         iced_m3::circular_progress(0.72)
             .indeterminate(!app.reduced_motion)
             .size(24.0)
-            .colors([Color::from_rgb8(255, 207, 112)])
+            .colors([status_colors::WARNING])
             .into()
     } else {
         icon(if start {

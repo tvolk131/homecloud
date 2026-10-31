@@ -105,7 +105,7 @@ pub(super) fn view<'a>(app: &'a App, s: &'a Snapshot) -> Element<'a, Msg> {
                                     ResourceKind::Memory.format(vm.resources.memory_bytes as u128),
                                     ResourceKind::Cpu.format(vm.resources.cpu_cores as u128),
                                     ResourceKind::Storage.format(vm.resources.disk_bytes as u128),
-                                    state_label(vm)
+                                    lifecycle::state(app, s, vm).label()
                                 ))
                             ]
                             .spacing(4)

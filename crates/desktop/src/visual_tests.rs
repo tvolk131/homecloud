@@ -409,6 +409,8 @@ fn screenshot_regressions() {
         "settings",
         "people",
         "activity",
+        "activity-failed",
+        "activity-unknown",
         "create",
         "create-small",
         "resource-grant",
@@ -970,7 +972,7 @@ Setup did not complete.
                 i.gpus[0].readiness.state = "needs_firmware_configuration".into();
             }
             "people" => app.page = Page::People,
-            "activity" => {
+            "activity" | "activity-failed" | "activity-unknown" => {
                 app.page = Page::Activity;
                 let s = app.snapshot.as_mut().unwrap();
                 let mut op = s.operations[0].clone();
@@ -981,6 +983,17 @@ Setup did not complete.
                 };
                 op.phase = "needs_review".into();
                 op.error=Some("Guest driver did not respond after restart. Inspect the guest before retrying.".into());
+                if name == "activity-failed" {
+                    op.request = Mutation::State {
+                        vm_id: id(10),
+                        desired: Lifecycle::Stopped,
+                    };
+                    op.phase = "failed".into();
+                    op.error = Some("Superseded by an explicit shutdown/deletion request. Previous error: Guest shutdown timed out.".into());
+                } else if name == "activity-unknown" {
+                    op.phase = "future_phase".into();
+                    op.error = None;
+                }
                 s.operations.insert(0, op);
             }
             "create" => app.panel = Some(Panel::Create),
