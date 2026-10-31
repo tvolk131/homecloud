@@ -3,6 +3,7 @@ mod action_tests;
 mod apps;
 #[cfg(test)]
 mod memory_tests;
+mod metrics;
 #[cfg(test)]
 mod reserve_tests;
 mod reserves;
@@ -39,6 +40,8 @@ pub struct Config {
     pub host_script: PathBuf,
     #[serde(default = "default_true")]
     pub sudo: bool,
+    #[serde(default)]
+    pub metrics: Option<homecloud_host::metrics::MetricsConfig>,
 }
 fn default_true() -> bool {
     true
@@ -57,6 +60,7 @@ impl Default for Config {
             },
             host_script: "/usr/local/libexec/homecloud/host_runtime.py".into(),
             sudo: true,
+            metrics: None,
         }
     }
 }
@@ -72,6 +76,7 @@ pub struct Service {
     application_actions: Mutex<HashMap<uuid::Uuid, BrowserAction>>,
     storage: RwLock<StorageInventory>,
     storage_collection: Mutex<()>,
+    metrics: RwLock<metrics::MetricsCache>,
     _controller_lock: std::fs::File,
 }
 impl Service {
@@ -89,6 +94,7 @@ impl Service {
             application_actions: Mutex::new(HashMap::new()),
             storage: RwLock::new(StorageInventory::default()),
             storage_collection: Mutex::new(()),
+            metrics: RwLock::new(metrics::MetricsCache::default()),
             _controller_lock: controller_lock,
         }))
     }
@@ -379,6 +385,11 @@ impl Service {
                     op.error = None;
                 }
                 Ok(Response::Snapshot(Box::new(Snapshot {
+                    vm_metrics: self
+                        .metrics
+                        .read()
+                        .await
+                        .for_vms(&vms, homecloud_store::now()),
                     host_shutdown,
                     host_reserves,
                     memory_health,

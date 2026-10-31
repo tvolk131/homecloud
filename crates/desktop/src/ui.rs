@@ -10,6 +10,7 @@ mod resource_controls;
 mod setup;
 mod shutdown;
 mod status_colors;
+mod vm_metrics;
 mod workspace;
 mod workspaces;
 use homecloud_core::*;
@@ -245,7 +246,7 @@ pub fn view(app: &App) -> Element<'_, Msg> {
             };
             let body = match app.page {
                 Page::Workspaces => workspaces::view(app, snapshot, width),
-                Page::Workspace(id) => workspace::view(app, snapshot, id),
+                Page::Workspace(id) => workspace::view(app, snapshot, id, width),
                 Page::Hosts => hosts::directory(app, snapshot),
                 Page::Host => hosts::view(app, snapshot, width - 16.0),
                 Page::People if snapshot.me.role == Role::Admin => people(app, snapshot),

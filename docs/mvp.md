@@ -165,6 +165,13 @@ Clients cannot supply arbitrary host commands, paths, image URLs or network dest
 This adapter is Python for the first implementation; domain policy, identity,
 persistence, transport, clients and reconciliation are Rust. The CPU launcher is C.
 
+VM resource metrics use a separate unprivileged Rust HTTPS client to Incus's
+loopback metrics-only listener, with a pinned server certificate and a dedicated
+metrics-only client identity. The installer provisions this access as root once;
+runtime sampling does not pass through the privileged adapter. Incus's existing
+agent supplies guest usage, including actual root-filesystem space. See
+[VM metrics](metrics.md) for setup, scope and measurement semantics.
+
 ## Current roadmap
 
 The live backlog is maintained in [roadmap.md](roadmap.md). The dated

@@ -14,7 +14,7 @@ managed host. This is a deliberately narrow MVP installation contract.
 Prepare and review the host's pool, image, CPU topology, IOMMU configuration,
 network policy and capacity policy locally. The example lab policy is not a
 hardware detector or a general installation profile. Required tools include
-Incus/QEMU, ZFS, nftables, a working static C toolchain, PCI tools, sudo and
+Incus/QEMU, ZFS, nftables, OpenSSL, `runuser`, a working static C toolchain, PCI tools, sudo and
 `br_netfilter`; disk cloud-init transport also needs `mkisofs`.
 
 Build the daemon and CLI on the target Linux environment, and the guest runner as a
@@ -38,6 +38,8 @@ in an unpacked bundle); `--guest PATH` selects another. Check mode validates bin
 pool health, the cached image, nft syntax and static launcher compilation before
 changing host policy or services. Installation writes a software receipt and
 root pre-start guards for the controller and host-layout service.
+It also provisions authenticated, loopback-only Incus metrics for the unprivileged
+controller. See [VM metrics](metrics.md) for existing-host setup and certificate renewal.
 
 Re-running installation on an existing host requires `--maintenance`. This can
 restart Incus and alter CPU/firewall/ARC policy. It is not the ordinary upgrade
@@ -79,6 +81,12 @@ receipt and service guards, and checks versions, pool health and staging space. 
 deployment-engine changes; those require a reviewed maintenance installation.
 User grants, host reserve journals, hardware policy and network policy are not
 rewritten by a software update.
+
+## Enabling guest metrics
+
+An existing installation needs the one-time `--metrics-only` setup after installing
+a metrics-capable daemon. A software upgrade alone does not change the Incus listener
+or create credentials. This setup does not require a maintenance reinstall.
 
 ## Migrating from Python guest helpers
 

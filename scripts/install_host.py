@@ -1,19 +1,22 @@
 #!/usr/bin/python3
-"""Explicit local-root installation onto an already configured Incus/ZFS host.
+"""Local-root installation and one-time metrics setup on an Incus/ZFS host.
 
 Never formats disks. The operator supplies a reviewed hardware policy JSON.
 """
 import argparse
+import hashlib
 import host_deploy
 import importlib.util
 import json
 import os
 from pathlib import Path
 import pwd
+import re
 import shutil
 import subprocess
 import sys
 import time
+import tempfile
 
 ROOT=Path(__file__).resolve().parents[1]
 # Unpacked bundles keep binaries in bin/; a source checkout builds the static
@@ -24,14 +27,145 @@ def write(path,content,mode=0o644):
     path=Path(path);path.parent.mkdir(parents=True,exist_ok=True)
     path.write_text(content);path.chmod(mode)
 
+def incus_query(path):
+    return json.loads(subprocess.check_output(['incus','query',path],text=True))
+
+def metrics_preflight(port=None,config_dir=Path('/etc/homecloud'),rotate=False):
+    control=config_dir/'control.json'
+    config=json.loads(control.read_text()) if control.exists() else {}
+    metrics=config.get('metrics') or {}
+    if port is None:port=metrics.get('port',8444)
+    if type(port) is not int or not 1<=port<=65535:raise RuntimeError('Invalid metrics port')
+    for program in ['incus','openssl','runuser']:
+        if not shutil.which(program):raise RuntimeError('Missing prerequisite: '+program)
+    server=incus_query('/1.0')
+    settings=server['config'];address='127.0.0.1:'+str(port)
+    if str(settings.get('core.metrics_authentication','true')).lower() not in ('','true'):
+        raise RuntimeError('Refusing unauthenticated Incus metrics; enable core.metrics_authentication first')
+    if settings.get('core.metrics_address','') not in ('',address):
+        raise RuntimeError('An unrelated Incus metrics listener exists; review it manually instead of overwriting it')
+    certificate=server['environment']['certificate'].encode()
+    names=subprocess.check_output(['openssl','x509','-noout','-ext','subjectAltName'],input=certificate).decode()
+    names=re.findall(r'DNS:([A-Za-z0-9][A-Za-z0-9.\-]{0,252})(?=,|\s|$)',names)
+    if not names:raise RuntimeError('Incus server certificate needs a DNS subjectAltName for verified TLS')
+    directory=config_dir/'metrics'
+    if directory.is_symlink():raise RuntimeError('Metrics directory must not be a symlink')
+    previous=metrics.get('client_identity')
+    if previous and not rotate:
+        source=Path(previous)
+        if source.is_symlink() or not source.resolve().is_relative_to(directory.resolve()):
+            raise RuntimeError('Refusing to reuse a metrics identity outside the managed credential directory')
+        if not source.is_file():raise RuntimeError('Metrics identity is missing; restore its protected file or rerun with --rotate-metrics-client')
+        try:subprocess.run(['openssl','x509','-in',str(source),'-checkend','604800','-noout'],check=True,stdout=subprocess.DEVNULL,stderr=subprocess.PIPE)
+        except subprocess.CalledProcessError as error:raise RuntimeError('Metrics certificate expires soon; rerun with --rotate-metrics-client') from error
+    return address,certificate,names[0],bool(settings.get('core.metrics_address'))
+
+def metrics_file(path,data,gid):
+    descriptor,name=tempfile.mkstemp(prefix='.'+path.name+'-',dir=path.parent)
+    try:
+        with os.fdopen(descriptor,'wb') as output:
+            os.fchmod(output.fileno(),0o640);os.fchown(output.fileno(),0,gid)
+            output.write(data);output.flush();os.fsync(output.fileno())
+        os.replace(name,path)
+    finally:
+        if os.path.exists(name):os.unlink(name)
+
+def setup_metrics(daemon,port=None,check=False,rotate=False,config_dir=Path('/etc/homecloud')):
+    address,server_certificate,server_name,had_listener=metrics_preflight(port,config_dir,rotate)
+    port=int(address.rsplit(':',1)[1])
+    control=config_dir/'control.json';config=json.loads(control.read_text())
+    account=pwd.getpwnam('homecloud')
+    if check:
+        print('Metrics preflight passed; no listener, credentials or configuration changed.')
+        return
+    directory=config_dir/'metrics'
+    if directory.is_symlink():raise RuntimeError('Metrics directory must not be a symlink')
+    directory.mkdir(exist_ok=True);directory.chmod(0o750);os.chown(directory,0,account.pw_gid)
+    registered=None;listener_changed=False;installed=None;committed=False
+    try:
+        with tempfile.TemporaryDirectory(prefix='.setup-',dir=directory) as temporary:
+            stage=Path(temporary);stage.chmod(0o750);os.chown(stage,0,account.pw_gid)
+            identity=stage/'client.pem';public=stage/'client.crt';key=stage/'client.key'
+            previous=(config.get('metrics') or {}).get('client_identity')
+            if previous and not rotate:
+                source=Path(previous)
+                if source.is_symlink() or not source.resolve().is_relative_to(directory.resolve()):
+                    raise RuntimeError('Refusing to reuse a metrics identity outside the managed credential directory')
+                metrics_file(identity,source.read_bytes(),account.pw_gid)
+            else:
+                subprocess.run(['openssl','req','-x509','-newkey','ec','-pkeyopt','ec_paramgen_curve:P-256',
+                                '-nodes','-days','365','-subj','/CN=homecloud-metrics',
+                                '-addext','basicConstraints=critical,CA:FALSE','-addext','extendedKeyUsage=clientAuth',
+                                '-keyout',str(key),'-out',str(public)],check=True,stdout=subprocess.DEVNULL,stderr=subprocess.PIPE)
+                metrics_file(identity,public.read_bytes()+key.read_bytes(),account.pw_gid)
+                key.unlink()
+            certificate=subprocess.check_output(['openssl','x509','-in',str(identity),'-outform','PEM'])
+            metrics_file(public,certificate,account.pw_gid)
+            der=subprocess.check_output(['openssl','x509','-in',str(identity),'-outform','DER'])
+            fingerprint=hashlib.sha256(der).hexdigest()
+            trusted=incus_query('/1.0/certificates?recursion=1')
+            matching=[entry for entry in trusted if entry['fingerprint']==fingerprint]
+            if matching and any(entry['type']!='metrics' for entry in matching):
+                raise RuntimeError('Refusing a management-capable client certificate; metrics-only trust is required')
+            if not matching:
+                registered=fingerprint
+                run('incus','config','trust','add-certificate',str(public),'--type=metrics','--name=homecloud-metrics-'+fingerprint[:16])
+            if not had_listener:
+                listener_changed=True;run('incus','config','set','core.metrics_address',address)
+            metrics_file(stage/'server.crt',server_certificate,account.pw_gid)
+            staged=dict(config,metrics={'port':port,'server_name':server_name,'client_identity':str(identity),'server_certificate':str(stage/'server.crt')})
+            metrics_file(stage/'control.json',json.dumps(staged).encode(),account.pw_gid)
+            run('runuser','-u','homecloud','--',str(daemon.resolve()),'--config',str(stage/'control.json'),'check-metrics')
+            version=directory/(fingerprint[:16]+'-'+hashlib.sha256(server_certificate).hexdigest()[:12])
+            if version.is_symlink():raise RuntimeError('Metrics credential version must not be a symlink')
+            if version.exists():
+                for name in ['client.pem','server.crt']:
+                    if (version/name).is_symlink() or (version/name).read_bytes()!=(stage/name).read_bytes():
+                        raise RuntimeError('Existing metrics credential version differs; review it manually')
+                version.chmod(0o750);os.chown(version,0,account.pw_gid)
+                for name in ['client.pem','server.crt']:
+                    (version/name).chmod(0o640);os.chown(version/name,0,account.pw_gid)
+            else:
+                version.mkdir(mode=0o750);os.chown(version,0,account.pw_gid);installed=version
+                for name in ['client.pem','server.crt']:metrics_file(version/name,(stage/name).read_bytes(),account.pw_gid)
+            config['metrics']={'port':port,'server_name':server_name,'client_identity':str(version/'client.pem'),'server_certificate':str(version/'server.crt')}
+            metrics_file(control,(json.dumps(config,indent=2)+'\n').encode(),account.pw_gid)
+            committed=True
+    finally:
+        if not committed:
+            if listener_changed:subprocess.run(['incus','config','unset','core.metrics_address'],check=False)
+            if registered:subprocess.run(['incus','config','trust','remove',registered],check=False)
+            if installed:shutil.rmtree(installed)
+    print('Verified loopback-only, metrics-only TLS access. Restart homecloudd.service to load it; no Incus or VM restart is needed.')
+    if rotate:print('After restarting the controller, revoke the previous homecloud-metrics certificate and remove its old credential directory.')
+
+def setup_metrics_and_resume(daemon,port,rotate,resume):
+    try:setup_metrics(daemon,port,rotate=rotate)
+    finally:
+        try:
+            for name in resume:
+                if incus_query('/1.0/instances/'+name+'/state')['status']!='Running':run('incus','start',name)
+        finally:run('systemctl','restart','homecloudd.service')
+
 def main():
-    a=argparse.ArgumentParser();a.add_argument('--policy',required=True,type=Path);a.add_argument('--daemon',required=True,type=Path)
+    a=argparse.ArgumentParser();a.add_argument('--policy',type=Path);a.add_argument('--daemon',type=Path)
     a.add_argument('--cli',type=Path,help='Matching CLI (defaults to the daemon directory)')
     a.add_argument('--guest',type=Path,default=GUEST,help='Static guest runner pushed into managed VMs')
     a.add_argument('--check',action='store_true',help='Validate prerequisites and reviewed policy without installing')
     a.add_argument('--maintenance',action='store_true',help='Explicitly reinstall host policy; can interrupt management and workloads')
+    a.add_argument('--metrics-only',action='store_true',help='Provision authenticated loopback Incus metrics on an existing installation')
+    a.add_argument('--metrics-port',type=int,help='Metrics listener port (existing configured port, or 8444 on first setup)')
+    a.add_argument('--rotate-metrics-client',action='store_true',help='Issue a new metrics-only client identity; retain the previous identity until controller restart')
     args=a.parse_args()
     assert os.geteuid()==0,'Run locally with sudo'
+    if args.metrics_only:
+        if args.check:setup_metrics(args.daemon or Path('/usr/local/bin/homecloudd'),args.metrics_port,check=True,rotate=args.rotate_metrics_client)
+        else:
+            with host_deploy.Deployment().lock():
+                setup_metrics(args.daemon or Path('/usr/local/bin/homecloudd'),args.metrics_port,rotate=args.rotate_metrics_client)
+        return
+    if args.policy is None or args.daemon is None:a.error('--policy and --daemon are required unless --metrics-only is used')
+    metrics_preflight(args.metrics_port,rotate=args.rotate_metrics_client)
     c=json.loads(args.policy.read_text())
     for program in ['incus','zfs','zpool','nft','gcc','fuser','lspci']:
         assert shutil.which(program),'Missing prerequisite: '+program
@@ -103,6 +237,9 @@ def main():
     run('install','-m','0755',str(args.daemon),'/usr/local/bin/homecloudd')
     run('install','-m','0755',str(args.cli),'/usr/local/bin/homecloud')
     daemon={'limits':{'capacity':c['capacity'],'core_groups':c['cpu_groups'],'disk_overhead_gib_per_vm':c.get('disk_overhead_gib_per_vm',2)},'host_script':str(helper),'sudo':True}
+    if (config/'control.json').exists():
+        previous_metrics=json.loads((config/'control.json').read_text()).get('metrics')
+        if previous_metrics:daemon['metrics']=previous_metrics
     write(config/'control.json',json.dumps(daemon,indent=2),0o640)
     os.chown(config/'control.json',0,account.pw_gid)
     sudoers='homecloud ALL=(root) NOPASSWD: /usr/bin/python3 /usr/local/libexec/homecloud/host_runtime.py\n'
@@ -137,9 +274,7 @@ def main():
     run('systemctl','enable','homecloud-host-layout.service','homecloudd.service')
     run('systemctl','restart','homecloud-host-layout.service')
     run('systemctl','restart','incus.service')
-    for name in resume:
-        if module.api('GET','/1.0/instances/'+name+'/state')['status']!='Running':run('incus','start',name)
-    run('systemctl','restart','homecloudd.service')
+    setup_metrics_and_resume(Path('/usr/local/bin/homecloudd'),args.metrics_port,args.rotate_metrics_client,resume)
     deadline=time.monotonic()+35
     while time.monotonic()<deadline:
         if subprocess.run(['systemctl','is-active','--quiet','homecloudd']).returncode==0 and (state/'server.json').exists():break

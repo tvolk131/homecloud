@@ -47,6 +47,8 @@ Installed files:
 - `/etc/homecloud/host.json`: root-owned hardware policy.
 - `/etc/homecloud/control.json`: controller capacity and helper location, owned by
   `root:homecloud` with mode `0640` so the service account can read it.
+- `/etc/homecloud/metrics/`: versioned, root-owned metrics-only TLS credentials;
+  see [VM metrics](metrics.md) for setup and renewal. Never publish `client.pem`.
 - `/etc/homecloud/cpu-policy.tsv`: generated launch allocations.
 - `/var/lib/homecloud/control`: private SQLite database and Iroh endpoint secret.
 - `/var/lib/homecloud/host`: root-owned CPU/GPU handoff state.

@@ -49,12 +49,13 @@ pub(super) fn header<'a>(app: &'a App, s: &'a Snapshot, id: Uuid, width: f32) ->
     column![back, top].spacing(16).into()
 }
 
-pub(super) fn view<'a>(app: &'a App, s: &'a Snapshot, id: Uuid) -> Element<'a, Msg> {
+pub(super) fn view<'a>(app: &'a App, s: &'a Snapshot, id: Uuid, width: f32) -> Element<'a, Msg> {
     let Some(vm) = s.vms.iter().find(|v| v.id == id) else {
         return copy("This VM is no longer available.");
     };
     let mut resources = column![
         heading("Resources"),
+        typography("Assigned capacity", Type::TitleMedium),
         row![
             vm_stat(format!("{} GiB", vm.spec.memory_gib), "Memory"),
             vm_stat(
@@ -77,6 +78,7 @@ pub(super) fn view<'a>(app: &'a App, s: &'a Snapshot, id: Uuid) -> Element<'a, M
             "Disk retained. CPU and RAM will be allocated again when you start."
         }));
     }
+    resources = resources.push(vm_metrics::view(app, s, vm, width - 40.0));
     let mut body = column![].spacing(20);
     if let Some(recovery) = memory_health::vm_recovery(app, s, vm) {
         body = body.push(recovery);

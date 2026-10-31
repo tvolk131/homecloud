@@ -30,6 +30,8 @@ mod ui;
 mod ui_status_tests;
 #[cfg(test)]
 mod visual_tests;
+#[cfg(test)]
+mod vm_metrics_ui_tests;
 use std::{path::PathBuf, sync::Arc, time::Duration};
 use uuid::Uuid;
 

@@ -2086,10 +2086,12 @@ dependencies = [
  "homecloud-core",
  "nix",
  "reqwest",
+ "rustls",
  "serde",
  "serde_json",
  "tempfile",
  "tokio",
+ "tokio-rustls",
  "uuid",
 ]
 
