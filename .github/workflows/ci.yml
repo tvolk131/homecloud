@@ -1,5 +1,8 @@
 name: Rust
-on: [push, pull_request]
+on:
+  push:
+    branches: [master]
+  pull_request:
 permissions:
   contents: read
 jobs:
@@ -13,6 +16,10 @@ jobs:
         with:
           persist-credentials: false
       - run: cargo fmt --all -- --check
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          key: ${{ matrix.os }}
       - run: cargo test --locked --workspace --exclude homecloud-desktop
       - if: runner.os == 'macOS'
         run: cargo clippy --locked --workspace --all-targets -- -D warnings
