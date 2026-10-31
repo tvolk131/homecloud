@@ -1,0 +1,85 @@
+"""The host hands each VM one fixed guest runner and only invokes that binary."""
+import hashlib
+import json
+from pathlib import Path
+import sys
+import tempfile
+from types import SimpleNamespace
+import unittest
+from unittest.mock import patch
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+import managed_apps as m
+
+VM = {'id': '00000000-0000-4000-8000-000000000001'}
+APP = {'id': '00000000-0000-4000-8000-000000000002', 'vm_id': VM['id'], 'kind': 't3',
+       'desired_version': '0.1.2', 'start_on_boot': True}
+OP = '00000000-0000-4000-8000-000000000003'
+REPORT = {'observation': {'setup': 'ready', 'action': None, 'operation_message': ''}, 'job': None}
+
+
+class GuestRunnerTests(unittest.TestCase):
+    def setUp(self):
+        temp = tempfile.TemporaryDirectory(); self.addCleanup(temp.cleanup)
+        self.binary = Path(temp.name) / 'homecloud-guest'; self.binary.write_bytes(b'\x7fELF runner')
+        self.installed = None; self.calls = []
+
+    def application(self, action):
+        def run(*args, check=True, **kwargs):
+            self.calls.append(args)
+            if args[:2] == ('incus', 'file'):
+                self.installed = Path(args[-2]).read_bytes(); return SimpleNamespace(stdout='', returncode=0)
+            command = args[4:]
+            if command[:1] == ('sha256sum',):
+                if self.installed is None: return SimpleNamespace(stdout='', returncode=1)
+                return SimpleNamespace(stdout=hashlib.sha256(self.installed).hexdigest() + '  ' + m.RUNNER, returncode=0)
+            if command[:2] == ('systemctl', 'is-active'): return SimpleNamespace(stdout='', returncode=3)
+            if 'inspect' in command: return SimpleNamespace(stdout=json.dumps(REPORT), returncode=0)
+            return SimpleNamespace(stdout='', returncode=0)
+        runtime = SimpleNamespace(owned=lambda vm: None, state=lambda vm: 'running', vm_name=lambda vm: 'fixture', run=run)
+        with patch.object(m, 'RUNNER_SOURCE', self.binary):
+            return m.application(runtime, VM, APP, action)
+
+    def pushes(self):
+        return [c for c in self.calls if c[:3] == ('incus', 'file', 'push')]
+
+    def test_runner_is_pushed_once_then_replaced_only_when_its_hash_changes(self):
+        self.application({'kind': 'inspect'})
+        self.assertEqual(len(self.pushes()), 1)
+        push = self.pushes()[0]
+        self.assertEqual(push[3:9], ('--uid', '0', '--gid', '0', '--mode', '0755'))
+        staged = push[-1].removeprefix('fixture')
+        self.assertTrue(staged.startswith(m.RUNNER + '.new-'))
+        rename = next(c for c in self.calls if c[4:5] == ('mv',))
+        self.assertEqual(rename[4:], ('mv', '-f', '-T', staged, m.RUNNER))
+        removal = next(c for c in self.calls if c[4:6] == ('rm', '-f'))
+        self.assertIn(m.GUEST_DIR + '/managed-app.py', removal)
+
+        self.calls.clear(); self.application({'kind': 'inspect'})
+        self.assertEqual(self.pushes(), [])
+        self.binary.write_bytes(b'\x7fELF newer runner')
+        self.calls.clear(); self.application({'kind': 'inspect'})
+        self.assertEqual(len(self.pushes()), 1)
+
+    def test_owner_commands_and_jobs_run_only_the_fixed_binary(self):
+        operation = {'id': OP, 'application_id': APP['id'], 'kind': 'setup', 'setup_action': 'sign_in_github'}
+        self.application({'kind': 'start_setup', 'operation': operation})
+        owner = [c[c.index('--', 4) + 1:] for c in self.calls if 'runuser' in c]
+        self.assertTrue(owner)
+        for command in owner:
+            program = next(part for part in command if not part.startswith(('env', 'HOME=', 'PATH=', 'XDG_', 'DBUS_')))
+            self.assertEqual(program, m.RUNNER)
+        job = next(c for c in self.calls if 'systemd-run' in c)
+        self.assertEqual(job[job.index(m.RUNNER):], (m.RUNNER, 'job', APP['id'], OP, 'setup', '0.1.2',
+                         'homecloud-app-' + APP['id'].replace('-', '') + '-' + OP.replace('-', '') + '.service',
+                         'sign_in_github'))
+        self.assertFalse(any('python3' in c for c in self.calls))
+
+    def test_unknown_setup_action_is_rejected_before_starting_a_job(self):
+        operation = {'id': OP, 'application_id': APP['id'], 'kind': 'setup', 'setup_action': 'sign_in_anything'}
+        with self.assertRaises(AssertionError):
+            self.application({'kind': 'start_setup', 'operation': operation})
+        self.assertFalse(any('systemd-run' in c for c in self.calls))
+
+
+if __name__ == '__main__':
+    unittest.main()

@@ -160,8 +160,9 @@ alias currently uses relay-only mode for the provider-session check.
 Managed application setup now uses a separate application worker and supervised
 guest jobs. See [managed applications](managed-apps.md) for T3 account connection,
 recovery, and the distinction between Homecloud access and T3 Connect access.
-The installer deploys `managed_apps.py`, `managed-app.py`, and `setup-t3.sh` next to
-the fixed host helper; keep those files and the daemon at a matching version.
+The installer deploys `managed_apps.py` and the static `homecloud-guest` runner next
+to the fixed host helper; keep them and the daemon at a matching version. Inspection
+pushes the runner into a running VM whenever its SHA-256 differs from the guest copy.
 
 
 ## Graceful and forced shutdown

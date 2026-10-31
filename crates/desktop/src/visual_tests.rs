@@ -2418,7 +2418,7 @@ fn small_workspace_keeps_header_accounts_and_scrolled_settings_actions_visible()
 #[test]
 fn claude_terminal_fixture_urls_pass_the_real_desktop_browser_guard() {
     let fixtures: Vec<serde_json::Value> = serde_json::from_str(include_str!(
-        "../../../guest/fixtures/claude-auth-terminal.json"
+        "../../guest/fixtures/claude-auth-terminal.json"
     ))
     .unwrap();
     for fixture in fixtures {

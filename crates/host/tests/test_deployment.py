@@ -13,7 +13,13 @@ from unittest.mock import patch
 SOURCE=Path(__file__).resolve().parents[3]/'scripts/host_deploy.py'
 spec=importlib.util.spec_from_file_location('homecloud_deploy',SOURCE)
 d=importlib.util.module_from_spec(spec);spec.loader.exec_module(d)
-ELF=b'\x7fELF\x02\x01'+bytes(12)+b'>\x00'+b'fixture'
+def elf(interpreter=False):
+    """A minimal x86-64 ELF header with one program header."""
+    header=bytearray(64);header[:6]=b'\x7fELF\x02\x01';header[18:20]=b'>\x00'
+    header[32:40]=(64).to_bytes(8,'little');header[54:56]=(56).to_bytes(2,'little');header[56:58]=(1).to_bytes(2,'little')
+    program=bytearray(56);program[:4]=(3 if interpreter else 1).to_bytes(4,'little')
+    return bytes(header+program)
+ELF=elf()+b'fixture'
 
 
 def files(version):
@@ -140,10 +146,16 @@ class BundleValidation(unittest.TestCase):
         for field,value in [('state_format',2),('architecture','aarch64')]:
             sha=bundle(self.path,files('bad'),manifest_edit=lambda m:m.update({field:value}))
             with self.assertRaises(RuntimeError):d.read_bundle(self.path,sha)
-        content=files('bad');content['guest/managed-app.py']=b'def broken(\n'
+        content=files('bad');content['guest/managed-host.py']=b'def broken(\n'
         sha=bundle(self.path,content)
         with self.assertRaises(SyntaxError):d.read_bundle(self.path,sha)
         sha=bundle(self.path,files('bad'),manifest_edit=lambda m:m['files']['bin/homecloud'].update(sha256='0'*64))
         with self.assertRaisesRegex(RuntimeError,'content mismatch'):d.read_bundle(self.path,sha)
+    def test_guest_runner_must_be_static(self):
+        content=files('bad');content[d.GUEST_RUNNER]=elf(interpreter=True)
+        sha=bundle(self.path,content)
+        with self.assertRaisesRegex(RuntimeError,'static guest runner'):d.read_bundle(self.path,sha)
+        self.assertFalse(d.static_elf(elf()[:80]))
+        self.assertTrue(d.static_elf(elf()))
 
 if __name__=='__main__':unittest.main()

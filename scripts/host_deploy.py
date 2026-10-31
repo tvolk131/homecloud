@@ -30,9 +30,12 @@ GUARD = '/usr/local/libexec/homecloud-deploy.py'
 HELPER = '/usr/local/libexec/homecloud/'
 HOST_FILES = ('host_runtime.py','managed_apps.py','managed_host.py','memory_capacity.py',
               'resource_reserves.py','arc_policy.py','instance_runtime.py')
-GUEST_FILES = ('setup-t3.sh','managed-app.py','setup-providers.py','codex_auth.py',
-               'claude_auth.py','github_auth.py','account_metadata.py','managed-host.py')
+GUEST_FILES = ('managed-host.py',)
+# The guest runner is pushed into VMs, which may run an older Ubuntu than the
+# host, so it must be a static executable.
+GUEST_RUNNER = 'bin/homecloud-guest'
 PAYLOAD = {'bin/homecloudd':'/usr/local/bin/homecloudd','bin/homecloud':'/usr/local/bin/homecloud',
+           GUEST_RUNNER:HELPER+'homecloud-guest',
            **{'crates/host/'+n:HELPER+n for n in HOST_FILES},
            **{'guest/'+n:HELPER+n for n in GUEST_FILES}}
 BOUNDARY = ('crates/host/native/qemu_cpu_launcher.c','crates/host/firewall.nft','scripts/host_deploy.py')
@@ -75,6 +78,14 @@ def clear_cache(path):
             cached.unlink()
 
 
+def static_elf(data):
+    """True for a Linux x86-64 executable with no program interpreter."""
+    if not (len(data)>64 and data[:5]==b'\x7fELF\x02' and data[5]==1 and data[18:20]==b'>\x00'):return False
+    offset=int.from_bytes(data[32:40],'little');size=int.from_bytes(data[54:56],'little');count=int.from_bytes(data[56:58],'little')
+    if size<4 or offset+size*count>len(data):return False
+    return all(int.from_bytes(data[offset+i*size:offset+i*size+4],'little')!=3 for i in range(count))
+
+
 def read_bundle(path, expected):
     require(re.fullmatch('[0-9a-f]{64}',expected), 'Supply the reviewed bundle SHA-256')
     # Copy verified bytes to a private staging area, never reopen a user path later.
@@ -102,6 +113,7 @@ def read_bundle(path, expected):
         if name.startswith('bin/'):
             require(len(data)>20 and data[:5]==b'\x7fELF\x02' and data[5]==1 and data[18:20]==b'>\x00',
                     'Expected a Linux x86-64 executable: '+name)
+    require(static_elf(files[GUEST_RUNNER]),'Expected a static guest runner: '+GUEST_RUNNER)
     return manifest,files
 
 
@@ -129,7 +141,7 @@ class Services:
                 'Untested Incus/ZFS/QEMU versions; validate a maintenance migration first')
         self.run('systemctl','is-active','incus.service')
         with tempfile.TemporaryDirectory(prefix='homecloud-preflight-') as temporary:
-            for name in ('homecloudd','homecloud'):
+            for name in ('homecloudd','homecloud','homecloud-guest'):
                 candidate=Path(temporary)/name;candidate.write_bytes(files['bin/'+name]);candidate.chmod(0o700)
                 self.run(str(candidate),'--help',timeout=15)
         return {k:v.splitlines()[0] for k,v in versions.items()}

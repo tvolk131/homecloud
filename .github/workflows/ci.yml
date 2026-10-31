@@ -39,6 +39,12 @@ jobs:
         run: |
           cargo clippy --locked --workspace --exclude homecloud-desktop --all-targets -- -D warnings
           cc -Wall -Wextra -Werror -fsyntax-only crates/host/native/qemu_cpu_launcher.c
+      - name: Build the static guest runner
+        if: runner.os == 'Linux'
+        run: |
+          rustup target add x86_64-unknown-linux-musl
+          cargo build --locked --release --target x86_64-unknown-linux-musl -p homecloud-guest
+          python3 -c "import sys; sys.path.insert(0, 'scripts'); import host_deploy; assert host_deploy.static_elf(open(sys.argv[1], 'rb').read()), 'guest runner is not static'" target/x86_64-unknown-linux-musl/release/homecloud-guest
       - run: python3 -m py_compile crates/host/host_runtime.py scripts/install_host.py scripts/host_deploy.py scripts/bundle_host.py lab/prove_access.py
       - name: Test guest GitHub authentication and optional tools
         run: |

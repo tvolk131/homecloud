@@ -18,9 +18,11 @@ The lab pins Ubuntu 26.04/cloud to match its OpenZFS 2.4.1 and Incus 6.0 environ
 ordinary VMs retain their existing image. The cloud image keeps its native agent-based cloud-init transport. The guest profile excludes the worker’s uplink subnet from inner VM bridge allocation, avoiding overlap without a new network fabric. Nested KVM must be available in the
 worker. The fixed guest installer checks `/dev/kvm` before installing the host.
 
-Build Linux `homecloudd` and `homecloud`, then package only reviewed software:
+Build Linux `homecloudd`, `homecloud` and the static guest runner, then package only
+reviewed software:
 
 ```sh
+cargo build --locked --release --target x86_64-unknown-linux-musl -p homecloud-guest
 python3 scripts/bundle_host.py --bin-dir target/debug \
   --output /tmp/homecloud-host-bundle.tar.gz
 sudo install -m 0644 /tmp/homecloud-host-bundle.tar.gz \
