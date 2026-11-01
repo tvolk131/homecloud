@@ -2068,6 +2068,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "homecloud-nix-lab"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "rusqlite",
+ "serde",
+ "serde_json",
+ "tokio",
+ "uuid",
+]
+
+[[package]]
 name = "homecloud-store"
 version = "0.1.0"
 dependencies = [

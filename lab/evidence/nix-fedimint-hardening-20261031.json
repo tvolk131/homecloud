@@ -1,0 +1,227 @@
+{
+  "date": "2026-10-31",
+  "purpose": "Fedimint workload and shared-store hardening; lab only, not shipping acceptance",
+  "source": {
+    "project": "fedimint",
+    "originalRevision": "17336264b340f01b1cd786a2a46bb14b5da132af",
+    "trackedChanges": false,
+    "staging": "git archive HEAD; synthetic guest commits; no credentials or untracked files"
+  },
+  "versions": {
+    "nix": "2.35.4",
+    "hostKernel": "7.0.0-38-generic",
+    "clientKernel": "7.0.0-42-generic",
+    "incus": "6.0.5",
+    "virtiofsd": "1.13.2-6ubuntu0.1",
+    "rustc": "1.93.0 (254b59607 2026-01-19)"
+  },
+  "resourcesGiB": {
+    "clientA": {
+      "memory": 2,
+      "disk": 12,
+      "physicalCores": 1
+    },
+    "clientB": {
+      "memory": 2,
+      "disk": 12,
+      "physicalCores": 1
+    },
+    "worker": {
+      "memory": 8,
+      "disk": 64,
+      "physicalCores": 1
+    },
+    "sharedDatasetQuotaAndReservation": 64
+  },
+  "configuration": {
+    "stockNix": true,
+    "guestStoreIdentitiesTrusted": false,
+    "store": "mounted-ssh-ng://hc-nix-store",
+    "clientStoreServerReadOnly": true,
+    "finalClientStoreCacheMode": "unsafe",
+    "fetchCaches": "host and guest private, per client, at matching canonical paths",
+    "cargoTargets": "private guest /dev/sda2 ext4 root filesystems",
+    "workspaceAndProfileRoots": "separate writable per-client canonical exports",
+    "hostLocalBuildsAllowed": false,
+    "workerStoreSeparateCopy": true
+  },
+  "workload": {
+    "shellAttribute": "devShells.x86_64-linux.default",
+    "shellOutput": "/nix/store/fkncgqbqxi5c2pf58bv8m1lg5fivmb8n-nix-shell",
+    "cargoCommand": "cargo test --locked -p fedimint-hkdf -p fedimint-aead -p fedimint-util-error",
+    "unitTestsPerClient": {
+      "fedimint-aead": 5,
+      "fedimint-hkdf": 9,
+      "fedimint-util-error": 3
+    },
+    "passedPerClient": 17,
+    "failedPerClient": 0,
+    "docTestsPerClient": 0,
+    "fullWorkspaceOrFederationTests": false,
+    "coldStartBenchmark": false
+  },
+  "allocation": {
+    "develop-before": {
+      "storeAllocatedBytes": 3211175424,
+      "topLevelEntries": 11736,
+      "datasetUsedBytes": 3285999616
+    },
+    "develop-after": {
+      "storeAllocatedBytes": 3211183616,
+      "topLevelEntries": 11736,
+      "datasetUsedBytes": 3286007808
+    },
+    "reuse-before": {
+      "storeAllocatedBytes": 3211183616,
+      "topLevelEntries": 11736,
+      "datasetUsedBytes": 3286007808
+    },
+    "reuse-after": {
+      "storeAllocatedBytes": 3211183616,
+      "topLevelEntries": 11736,
+      "datasetUsedBytes": 3286007808
+    }
+  },
+  "measurements": {
+    "closurePaths": 414,
+    "closureNarBytes": 7266481936,
+    "wholePublishingStoreAllocatedBytes": 3211183616,
+    "datasetUsedBytes": 3286007808,
+    "datasetLogicalUsedBytes": 8225004544,
+    "rustcResolvedPath": "/nix/store/pf81lr0r1gddw5zyla1gj3viagll2z2j-cargo-deluxe-0.1.0/bin/rustc",
+    "rustcInode": {
+      "host": 321547,
+      "clientA": 321547,
+      "clientB": 321547
+    },
+    "cargoTargetAllocatedBytes": {
+      "clientA": 109518848,
+      "clientB": 109522944
+    },
+    "reuseStoreAllocatedGrowthBytes": 0,
+    "note": "NAR, whole-store allocated bytes, dataset usage and logical bytes have different scopes; worker duplication and private VM data remain"
+  },
+  "checks": {
+    "originalProofRerun": true,
+    "concurrentWorkerOutputVerified": true,
+    "crossClientRootCreationDenied": true,
+    "fullGcWithFedimintProfiles": true,
+    "liveAdditionWithDataCache": {
+      "passed": true,
+      "mountIdUnchanged": 115
+    },
+    "endpointOutage": true,
+    "rebootRecoveryWithNetworkReadiness": true,
+    "guestRootStoreWritesDenied": true
+  },
+  "runtimeRetention": {
+    "runtime-gc": {
+      "retainedDuringExecution": false,
+      "lateReadSucceeded": false,
+      "deleteExit": 0,
+      "classification": "known-retention-failure"
+    },
+    "runtime-client-gc": {
+      "retainedDuringExecution": false,
+      "lateReadSucceeded": false,
+      "deleteExit": 0,
+      "classification": "known-retention-failure"
+    },
+    "runtime-lease": {
+      "retainedDuringExecution": true,
+      "lateReadSucceeded": true,
+      "deleteExit": 1,
+      "classification": "bounded-positive-test"
+    },
+    "runtime-gc-lock": {
+      "retainedDuringExecution": true,
+      "lateReadSucceeded": true,
+      "deleteExit": 0,
+      "classification": "bounded-positive-test"
+    },
+    "runtime-client-gc-lock": {
+      "retainedDuringExecution": true,
+      "lateReadSucceeded": true,
+      "deleteExit": 0,
+      "classification": "bounded-positive-test"
+    }
+  },
+  "gcGuard": {
+    "implementation": "Rust shared flock on /nix/var/nix/gc.lock",
+    "deadlineSeconds": 300,
+    "blocksHostAndUntrustedClientCollectors": true,
+    "freshWorkerPublicationWhileHeld": true,
+    "collectsAfterRelease": true,
+    "vmLifecycleIntegration": false
+  },
+  "findings": [
+    {
+      "name": "unrooted guest runtime GC",
+      "severity": "release-blocker",
+      "observation": "host and untrusted client collectors deleted output still in use by a guest; late file read failed"
+    },
+    {
+      "name": "virtiofs mmap",
+      "severity": "release-blocker",
+      "observation": "Wild failed to mmap glibc Scrt1.o with none/metadata; tests passed with unsafe; long-run coherence and failure behavior unproven"
+    },
+    {
+      "name": "shared SQLite fetch cache",
+      "severity": "fixed-in-lab",
+      "observation": "disk I/O errors with shared cache; moved caches to private host/guest filesystems"
+    },
+    {
+      "name": "guest-private result roots",
+      "severity": "integration-limit",
+      "observation": "ordinary result links require managed canonical workspace paths"
+    },
+    {
+      "name": "runner failure propagation",
+      "severity": "fixed-in-lab",
+      "observation": "old shell logging masked Cargo failures; final passes use separate sh -e and regression coverage"
+    },
+    {
+      "name": "SSH script stdin consumption",
+      "severity": "fixed-in-lab",
+      "observation": "child incus commands could consume unread shell code; buffer full script then execute with closed stdin"
+    },
+    {
+      "name": "reboot network readiness",
+      "severity": "fixed-in-lab",
+      "observation": "wait for an actual store connection after boot and mount recovery"
+    }
+  ],
+  "validation": {
+    "rustRunnerTestsPassed": 4,
+    "clippyAllTargetsDenyWarnings": true,
+    "formatCheck": true
+  },
+  "notEstablished": [
+    "VM-lifecycle GC guard with fail-closed recovery",
+    "host reboot/power-loss safety",
+    "virtiofs interruption and cache coherence soak",
+    "storage exhaustion policy",
+    "Nix/kernel/Incus upgrade compatibility",
+    "malicious-client resource stress",
+    "transparent roots in arbitrary private guest paths",
+    "full Fedimint workspace build or federation integration tests"
+  ],
+  "cleanup": {
+    "status": "complete",
+    "fixturesDeleted": 3,
+    "sharedDatasetAndNixServicesRemoved": true,
+    "originalGrantRestoredExactly": true,
+    "managedDiskBudgetGiB": 128,
+    "permanentVmSpecsAndResourcesMatchBaseline": true,
+    "developmentVmRunning": true,
+    "developmentVmAgentResponds": true,
+    "ghCliTestOriginalPidPreserved": true,
+    "t3DevboxRemainsStopped": true,
+    "configFilesCanonicallyMatchBeforeBudgetBackup": true,
+    "configModesPreserved": true,
+    "metricsListenerAndCertificateHashesPreserved": true,
+    "temporaryRustToolchainRemoved": true,
+    "hostReleasedToCoordinatedThread": true,
+    "remainingHostArtifacts": "inactive root-owned audit evidence, archived root Nix fetch cache, and before/after disk-budget backups only"
+  }
+}
