@@ -100,9 +100,12 @@ dimension, including disabled accounts and commitments above a reduced grant.
 Allocations shows one card per person with memory, CPU and storage side by side,
 allocated/grant values and unused amounts. There is no resource-tab row. Expand
 Show VMs for that person's per-VM claims; admin Edit grant remains in the card header.
-Members see only their own grants and machines. Live CPU/RAM
-utilization and per-user physical ZFS consumption are not yet available and are
-never inferred from these guarantees. ZFS pool availability is shown separately
+Members see only their own grants and machines. Allocation graphics never infer
+live utilization or per-user physical ZFS consumption from these guarantees.
+VM details show guest CPU/RAM, root-filesystem usage and per-interface network
+rates separately from assigned capacity, with explicit freshness and unavailable
+states; see [VM metrics](metrics.md). Per-user physical ZFS consumption is not yet
+available. ZFS pool availability is shown separately
 in Hardware, not presented as unissued capacity.
 
 Administrators also see Host headroom in Overview: memory/cores outside

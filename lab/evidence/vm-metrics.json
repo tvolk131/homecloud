@@ -1,0 +1,206 @@
+{
+  "observed_at_utc": "2026-10-31T20:35:46.903424Z",
+  "source": {
+    "base_commit": "f95c9d6d3a0f8a067b60e971b2b77f59f715cdc9",
+    "reviewed_stack_base_commit": "fff8a4d0ab3d9a62d8f94b7281fa95befefc9259",
+    "working_tree_changes": "VM resource metrics implementation, tests, native screenshots, and documentation",
+    "private_state_and_credentials_excluded": true
+  },
+  "automated_validation": {
+    "macos_non_gui_rust": {
+      "passed": 309,
+      "ignored": 1,
+      "ignored_reason": "Existing opt-in native Keychain test"
+    },
+    "macos_desktop": {
+      "passed": 126,
+      "screenshot_regressions": "passed",
+      "screenshot_backend": "tiny-skia"
+    },
+    "python_host_tests_passed": 136,
+    "linux_metrics_tests_passed": 33,
+    "linux_metrics_tests_revision": "Initial live-deployment candidate, before independent review corrections",
+    "review_metrics_regressions_macos_passed": 37,
+    "linux_metrics_test_scope": "core, host mTLS/parser, daemon cache and snapshot visibility",
+    "workspace_clippy_all_targets_warnings_denied": "passed",
+    "rustfmt": "passed",
+    "diff_whitespace": "passed",
+    "macos_app_packaging_and_signing": "passed"
+  },
+  "deployment": {
+    "host": "resolvr-box",
+    "coordination": "Previous host user explicitly released the machine before live telemetry testing",
+    "deployment_id": "ce686ddb-c774-4f2b-a0d3-ea185c465f92",
+    "bundle_sha256": "7b5321aed640e3c8bf40748bab6fee4e041a73b0c9347c325383aada57f8a0e0",
+    "method": "Controller-only compatibility bundle through the installed guarded updater",
+    "compatibility": "Only daemon and CLI binaries changed; installed Python host and guest adapters, native helpers, firewall, and deployment boundary were preserved byte-for-byte",
+    "new_guest_runner_migration": false,
+    "post_review_fixes_deployed": false,
+    "restarted_services": ["homecloudd.service"],
+    "incus_restarted": false,
+    "vms_restarted": false,
+    "private_audit_directory": "/var/lib/homecloud/test-runs/vm-metrics-20261031-0169cc1a"
+  },
+  "security": {
+    "listener": "127.0.0.1:8444",
+    "trust_type": "metrics",
+    "authenticated_metrics_http_status": 200,
+    "unauthenticated_metrics_http_status": 403,
+    "authenticated_management_route_http_status": 404,
+    "homecloud_incus_unix_socket_access_denied": true,
+    "credential_owner": "root",
+    "credential_file_mode": "0640",
+    "host_policy_unchanged": true,
+    "control_settings_except_metrics_unchanged": true,
+    "installed_unprivileged_rust_probe": "Authenticated Incus metrics connection verified (2 managed VM samples)"
+  },
+  "authenticated_snapshots": {
+    "transport": "Disposable enrolled Linux CLI device over the normal QUIC/TLS control protocol",
+    "observed_at_unix": 1793478911,
+    "running": [
+      {
+        "vm_id": "e8acf92e-d829-4f44-b844-cc12d10c6344",
+        "state": "ready",
+        "cpu_percent": 6.218767351471442,
+        "memory_total_bytes": 16698920960,
+        "memory_available_bytes": 15256309760,
+        "root_total_bytes": 66433507328,
+        "root_free_bytes": 54249951232,
+        "root_available_bytes": 54233174016,
+        "network_interface": "enp5s0",
+        "receive_bytes_per_second": 11786.714912400934,
+        "send_bytes_per_second": 4090.0619094985473,
+        "qemu_pid_before_and_after": 89631
+      },
+      {
+        "vm_id": "fdf95f34-9a11-49ce-8cf4-7e927ce34c8b",
+        "state": "ready",
+        "cpu_percent": 13.713713713713574,
+        "memory_total_bytes": 4035670016,
+        "memory_available_bytes": 3050639360,
+        "root_total_bytes": 20634206208,
+        "root_free_bytes": 18376155136,
+        "root_available_bytes": 18359377920,
+        "network_interface": "enp5s0",
+        "receive_bytes_per_second": 299.056858427077,
+        "send_bytes_per_second": 143.2037627953345,
+        "qemu_pid_before_and_after": 3930767
+      }
+    ],
+    "stopped": {
+      "vm_id": "400009d6-9c98-4224-a929-beb7a4bb4067",
+      "state": "stopped",
+      "observed_at": null,
+      "cpu_percent": null,
+      "memory": null,
+      "root_filesystem": null,
+      "network": []
+    }
+  },
+  "guest_root_filesystem_proof": {
+    "vm_id": "fdf95f34-9a11-49ce-8cf4-7e927ce34c8b",
+    "method": "Compare authenticated controller samples with guest os.statvfs('/') before, during, and after a temporary posix_fallocate allocation",
+    "used_definition": "total_bytes - free_bytes, not total_bytes - available_bytes",
+    "guest_total_bytes": 20634206208,
+    "vm_admission_disk_claim_bytes_including_overhead": 23622320128,
+    "before": {
+      "guest_used_bytes": 2258083840,
+      "guest_free_bytes": 18376122368,
+      "guest_available_bytes": 18359345152,
+      "controller_used_bytes": 2258051072
+    },
+    "with_temporary_file": {
+      "file_bytes": 67108864,
+      "guest_used_bytes": 2325196800,
+      "guest_free_bytes": 18309009408,
+      "guest_available_bytes": 18292232192,
+      "controller_used_bytes": 2325196800,
+      "controller_free_bytes": 18309009408,
+      "controller_available_bytes": 18292232192,
+      "controller_used_increase_bytes": 67145728,
+      "guest_and_controller_filesystem_values_match_exactly": true
+    },
+    "after_removal": {
+      "guest_used_bytes": 2258108416,
+      "controller_used_bytes": 2258120704,
+      "controller_used_delta_from_before_bytes": 69632,
+      "temporary_file_and_directory_removed": true
+    },
+    "background_write_tolerance_bytes": 16777216,
+    "free_minus_available_reserved_bytes": 16777216,
+    "result": "Actual guest filesystem allocation rose by the temporary allocation and recovered within 68 KiB of the original controller sample"
+  },
+  "preserved_resource_policy": {
+    "configured_capacity": {
+      "memory_bytes": 44023414784,
+      "cpu_cores": 5,
+      "disk_bytes": 137438953472
+    },
+    "existing_additional_reserves": {
+      "memory_bytes": 0,
+      "cpu_cores": 1,
+      "disk_bytes": 0
+    },
+    "effective_snapshot_capacity": {
+      "memory_bytes": 44023414784,
+      "cpu_cores": 4,
+      "disk_bytes": 137438953472
+    },
+    "original_owner_grant": {
+      "memory_bytes": 34359738368,
+      "cpu_cores": 4,
+      "disk_bytes": 137438953472
+    },
+    "original_users_grants_and_device_states_unchanged": true
+  },
+  "cleanup": {
+    "temporary_test_devices_created_and_revoked": 2,
+    "temporary_client_profiles_removed": true,
+    "temporary_candidate_probe_binary_removed": true,
+    "homecloudd_active": true,
+    "prior_thread_audit_backups_preserved": true,
+    "old_state_database_backups_restored": false
+  },
+  "independent_review_corrections": {
+    "real_qemu_fallback_rejected_without_guest_root_sample": true,
+    "malformed_label_and_non_utf8_lines_isolated": true,
+    "malformed_injected_identity_tail_does_not_invalidate_another_vm": true,
+    "ambiguous_and_invalid_metrics_discard_only_the_affected_vm": true,
+    "network_interfaces_bounded_without_failing_other_vms": true,
+    "maintenance_preflight_checks_identity_lifetime_and_preserves_custom_port": true,
+    "metrics_failure_still_attempts_legacy_resume_and_controller_restart": true,
+    "gui_trusts_host_freshness_across_desktop_clock_skew": true,
+    "transitioning_and_unobservable_vms_not_claimed_stopped": true,
+    "unknown_future_metrics_states_do_not_break_snapshot_decoding": true,
+    "metrics_provisioning_tests_added_to_ci": true,
+    "re_review": "No blocking findings; additional malformed-tail injection regression and missing-identity diagnostic corrected afterward",
+    "final_local_validation": "309 non-GUI Rust tests, 126 native desktop tests, 136 Python host tests, workspace Clippy, formatting, and signed app packaging passed after the reviewed parent PR fixes",
+    "shared_host_retested": false,
+    "reason": "resolvr-box was released to another testing thread and remains reserved; the recorded live proof precedes these source corrections"
+  },
+  "parent_pr_review_followup": {
+    "pr7_fix_commit": "faa5a7efbce050e0575d8b8408aab1ec5fb3f514",
+    "pr8_fix_commit": "fff8a4d0ab3d9a62d8f94b7281fa95befefc9259",
+    "pr7_readiness_blocker_fixed": true,
+    "auth_install_and_identity_fixes_preserved_in_python_and_rust": true,
+    "multi_valued_and_path_scoped_helpers_preserved": true,
+    "git_preparation_failure_not_masked_by_existing_account": true,
+    "required_service_setup_precedes_bounded_optional_install": true,
+    "cleanup_only_failures_do_not_break_inspection": true,
+    "focused_re_review": "No blockers; its non-blocking findings were corrected with regressions before publishing",
+    "legacy_jobs_and_matching_hash_cleanup_regressions": "passed",
+    "install_budget_and_terminal_inheritance_regressions": "passed",
+    "python_job_state_and_cli_binding_regressions": "passed",
+    "maintenance_and_nested_host_migration_requirements_documented": true,
+    "live_rust_runner_migration_performed": false,
+    "host_access_during_parent_reviews": false
+  },
+  "limitations": [
+    "Shared Incus exposition does not provide cryptographic per-VM provenance; on versions with unescaped labels, a malicious replacement guest agent could forge complete metric lines. Telemetry is never an admission, authorization, or billing input",
+    "Annual metrics client certificate renewal is documented and checked during setup; an advance-expiry GUI warning is not implemented",
+    "The rebuilt Mac CLI required normal macOS Keychain approval; its blocked test process was stopped without changing Keychain permissions or adding plaintext credentials",
+    "Live authenticated snapshots were verified with the temporary Linux client, not by bypassing Mac Keychain",
+    "The native GUI passed deterministic screenshot and interaction tests, and the signed app was rebuilt; visual acceptance of live data in the reopened Mac app remains an operator step",
+    "Live outage injection was not performed on the shared host; automated tests cover stale data, collection failure, recovery, counter resets, and member visibility"
+  ]
+}

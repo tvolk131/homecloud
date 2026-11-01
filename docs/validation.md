@@ -1,6 +1,6 @@
 # Validation record
 
-## Current acceptance status — October 29
+## Current acceptance status — October 31
 
 - **Passed:** resource-claim/hardware lifecycle proofs, dedicated-core placement,
   storage backing policy, isolation, Iroh authorization and SSH access.
@@ -11,6 +11,10 @@
   concurrent starts/grants, owner-scoped health and persistent GUI guidance.
   See the two-user campaign below.
 - **Passed earlier:** relay-only hotspot control, overlapping SSH and SFTP.
+- **Passed:** authenticated Incus VM telemetry through controller snapshots;
+  actual guest root filesystem accounting, metrics-only TLS permissions, and
+  native GUI automated acceptance. Reopened Mac GUI live-data acceptance still
+  needs normal Keychain approval; see the October 31 metrics record below.
 - **Deferred repeat:** the October 28 automatic/relay comparison completed its
   operations, but the phone died and the Mac rejoined home Wi-Fi at an unknown
   time. Full runs and late fast samples do not count as hotspot acceptance. The
@@ -1613,3 +1617,116 @@ classification-only bundle establishes native acceptance of the current
 controller. Refreshed native acceptance and real physical disk/controller/SMART
 acceptance remain pending. No permanent-host operation or deployment is part of
 these local corrections.
+
+## VM resource metrics — October 31, 2026
+
+The native GUI now separates assigned capacity from guest CPU, available-memory
+usage, root filesystem usage, and per-interface receive/transmit rates. The
+unprivileged Rust controller samples authenticated, loopback-only Incus metrics
+directly; no guest-runner changes or Python runtime metrics bridge are involved.
+Setup, TLS boundaries, freshness, and counter semantics are documented in
+[`metrics.md`](metrics.md).
+
+Initial implementation validation passed 293 non-GUI Rust tests, 123 desktop tests including
+tiny-skia screenshot regressions, and 127 Python host tests. The existing opt-in
+native Keychain test remains ignored. Workspace Clippy with all targets and
+warnings denied, rustfmt, whitespace checks, and signed macOS app packaging
+passed. The 33 focused core/host/daemon metrics tests also passed natively on
+resolvr-box.
+
+After the other host-testing thread explicitly released resolvr-box, the installed
+guarded updater accepted a controller-only compatibility bundle. It preserved the
+host's existing Python guest/host adapters and privilege boundary byte-for-byte;
+the unrelated Rust guest-runner migration was not deployed. Only homecloudd was
+restarted. Incus and both running VM processes remained unchanged.
+
+Live security checks confirmed a `127.0.0.1:8444` listener, a dedicated Incus trust
+entry of type `metrics`, authenticated metrics HTTP 200, unauthenticated HTTP 403,
+and no management route on that listener. The controller still cannot access the
+Incus Unix socket. Credentials are root-owned `0640`; host policy and all control
+settings other than metrics are unchanged.
+
+A disposable enrolled Linux CLI device verified normal authenticated controller
+snapshots: both running VMs reported CPU, RAM, root filesystem values and network
+rates, while the stopped VM had no live usage. Guest `os.statvfs('/')` agreed
+exactly with the controller during a temporary 64 MiB allocation. Used space
+increased by that allocation plus ordinary background writes and returned within
+68 KiB of its original sampled value after removal. Free versus available space
+differed by 16 MiB, confirming that filesystem-reserved space must not be counted
+as used. Existing grants, reserves and original device states were preserved.
+
+All temporary guest files, client profiles, and the unused candidate probe binary
+were removed; both disposable test devices were revoked. Root-private audit data
+and the previous thread's receipts were retained. The rebuilt Mac CLI encountered
+normal Keychain approval and its blocked test process was stopped without changing
+permissions or adding plaintext credentials. The signed native app is rebuilt,
+but live visual acceptance after reopening it and approving Keychain remains an
+operator step. Automated tests, rather than disruptive live outage injection,
+cover stale/failure/recovery behavior and member-scoped visibility.
+
+Sanitized values, deployment digest, security results, disk-allocation proof, and
+acceptance limitations are recorded in
+[`vm-metrics.json`](../lab/evidence/vm-metrics.json).
+
+### Independent review corrections
+
+An independent review reproduced three blockers before PR creation: real Incus
+QEMU fallback includes apparently valid CPU/memory counters, a malformed guest
+label or excessive interfaces could fail every VM's scrape, and a metrics setup
+failure could interrupt maintenance before workload/controller restoration.
+
+The parser now requires a valid guest root filesystem sample, skips malformed
+label/non-UTF-8 lines, scopes ambiguous or invalid measurements to the affected
+VM, and bounds interfaces without rejecting healthy guests. Read-only installer
+preflight validates an existing identity's lifetime and reuses custom listener
+ports; subsequent metrics provisioning failure still attempts legacy guest resume
+and controller restart. GUI freshness trusts the host rather than the desktop's
+clock. Unobservable/transitioning VMs are not called stopped, and unknown future
+metrics states decode without rejecting the full snapshot. Provisioning tests now
+run in CI. Advance certificate-expiry GUI warnings remain a documented follow-up;
+operators must schedule annual renewal.
+
+A focused independent re-review found no remaining blockers. Its additional
+malformed-tail identity-injection case was also fixed and regression-tested using
+Incus-style label ordering, and missing identities now have an accurate diagnostic.
+The documented shared-exposition provenance limitation for malicious replacement
+agents remains; telemetry is informational and never an authorization, admission,
+or billing input.
+
+After these corrections, all 297 non-GUI Rust tests, 123 native desktop tests
+including screenshot comparisons, and 132 Python host tests pass. Workspace
+Clippy with warnings denied, formatting, whitespace/syntax checks, and refreshed
+signed Mac app packaging pass. These corrections were validated locally only:
+resolvr-box was released to another testing thread, so the live evidence above
+describes the earlier deployment, not an exact-artifact rehearsal of the reviewed
+source. No further host query, test, or deployment was performed.
+
+### Parent PR review follow-up
+
+Fresh independent reviews of the GitHub CLI and static guest-runner parents found
+a GitHub readiness blocker and several auth/install/migration edge cases. The
+Python fixes are preserved in the Rust replacement: optional gh never gates T3
+readiness or required tool installation, config-read errors cannot report a
+successful sign-out, unrelated Git credential helpers are preserved, and partial
+identity writes retain ownership metadata. The host retains legacy helpers while
+application jobs are active or unobservable, retries cleanup on a matching binary
+hash, and attempts staging cleanup after failed pushes. Rust installs share a
+1200-second command budget and PTY handles are close-on-exec. New regressions cover
+Python-written state and command-line unit/version binding. CI now executes the
+host handoff/deployment contracts and the musl binary's help/version smoke checks.
+
+The final restacked candidate passes 309 non-GUI Rust tests, 126 desktop tests
+including screenshots, and 136 Python host tests, plus workspace Clippy,
+formatting, and signed Mac packaging. The first Rust-runner deployment remains a
+separately approved maintenance migration, including already-installed nested
+hosts; normal updater rollback cannot cross that protected-boundary change. See
+the explicit plan in `deployment.md`. No host access or deployment was performed
+during these reviews, and live runner/auth-flow and Mac GUI acceptance remain
+operator steps rather than automated-test claims.
+
+A focused re-review found no blockers. Its further findings were corrected:
+multi-valued/path-scoped Git helpers are protected, preparation failures remain
+visible even when an account already exists, required T3 service setup precedes
+the separately bounded optional gh install, and cleanup-only failures no longer
+break inspection or repeat unit scans once legacy files are gone. These cases
+have regression coverage; no further live acceptance is implied.

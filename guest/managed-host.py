@@ -73,7 +73,7 @@ def install(operation,digest,wwn):
                 stage('packages','Installing Incus, ZFS and host prerequisites…')
                 assert Path('/dev/kvm').exists(),'Nested KVM is unavailable; enable nested virtualization on the outer host'
                 run('apt-get','update',timeout=240)
-                run('apt-get','install','-y','incus','qemu-system-x86','zfsutils-linux','nftables','gcc','libc6-dev','psmisc','pciutils','sudo','curl','genisoimage',timeout=900,env={**os.environ,'DEBIAN_FRONTEND':'noninteractive'})
+                run('apt-get','install','-y','incus','qemu-system-x86','zfsutils-linux','nftables','gcc','libc6-dev','psmisc','pciutils','sudo','curl','genisoimage','openssl','util-linux',timeout=900,env={**os.environ,'DEBIAN_FRONTEND':'noninteractive'})
                 run('modprobe','zfs')
             stage('bundle','Verifying and extracting the host software bundle…')
             bundle=BUNDLE;assert hashlib.sha256(bundle.read_bytes()).hexdigest()==digest,'Bundle digest mismatch'

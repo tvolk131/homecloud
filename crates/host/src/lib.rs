@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 use std::{collections::BTreeMap, path::PathBuf, sync::Arc};
 use tokio::{io::AsyncWriteExt, process::Command, sync::Mutex};
 
+pub mod metrics;
 pub mod storage;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

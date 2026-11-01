@@ -24,6 +24,8 @@ enum Command {
     Serve,
     #[command(hide = true)]
     CollectStorage,
+    #[command(hide = true)]
+    CheckMetrics,
     BootstrapAdmin {
         #[arg(long, default_value = "Administrator")]
         name: String,
@@ -56,6 +58,20 @@ async fn main() -> Result<()> {
         );
         Config::default()
     };
+    if matches!(args.command, Command::CheckMetrics) {
+        let metrics = config
+            .metrics
+            .as_ref()
+            .ok_or_else(|| anyhow::anyhow!("VM metrics are not configured"))?;
+        let samples = homecloud_host::metrics::MetricsClient::new(metrics)?
+            .fetch()
+            .await?;
+        println!(
+            "Authenticated Incus metrics connection verified ({} managed VM samples)",
+            samples.len()
+        );
+        return Ok(());
+    }
     if !args.state_dir.exists() {
         std::fs::create_dir_all(&args.state_dir)?;
         #[cfg(unix)]
@@ -74,7 +90,7 @@ async fn main() -> Result<()> {
     }
     let store = Store::open(args.state_dir.join("state.db"), config.limits)?;
     match args.command {
-        Command::CollectStorage => unreachable!(),
+        Command::CollectStorage | Command::CheckMetrics => unreachable!(),
         Command::BootstrapAdmin { name } => {
             let (user, token) = store.bootstrap(&name)?;
             println!(
@@ -99,6 +115,37 @@ async fn main() -> Result<()> {
                 })
             };
             let service = Service::new(store, backend)?;
+            let metrics_service = service.clone();
+            let metrics_config = if args.simulate {
+                None
+            } else {
+                config.metrics.clone()
+            };
+            if metrics_config.is_some() {
+                service.enable_vm_metrics().await;
+            }
+            let metrics = tokio::spawn(async move {
+                let Some(config) = metrics_config else { return };
+                let mut client = None;
+                loop {
+                    if client.is_none() {
+                        match homecloud_host::metrics::MetricsClient::new(&config) {
+                            Ok(ready) => client = Some(ready),
+                            Err(error) => {
+                                tracing::warn!(%error, "VM metrics client unavailable");
+                                let _ = metrics_service.vm_metrics_unavailable().await;
+                            }
+                        }
+                    }
+                    if let Some(ready) = client.as_ref()
+                        && let Err(error) = metrics_service.collect_vm_metrics_once(ready).await
+                    {
+                        tracing::warn!(%error, "VM metrics unavailable");
+                        client = None;
+                    }
+                    tokio::time::sleep(Duration::from_secs(15)).await;
+                }
+            });
             let storage_worker = service.clone();
             let storage = tokio::spawn(async move {
                 loop {
@@ -138,6 +185,7 @@ async fn main() -> Result<()> {
             reconcile.abort();
             applications.abort();
             storage.abort();
+            metrics.abort();
             endpoint.close().await;
         }
     }

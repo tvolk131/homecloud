@@ -52,3 +52,5 @@ jobs:
         run: |
           python3 -m unittest discover -s crates/host/tests -p test_managed_apps.py
           python3 -m unittest discover -s crates/host/tests -p test_deployment.py
+      - name: Test metrics credential provisioning
+        run: python3 -m unittest discover -s crates/host/tests -p test_metrics_setup.py

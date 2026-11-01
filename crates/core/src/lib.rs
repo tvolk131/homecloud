@@ -5,9 +5,11 @@ pub use shutdown::*;
 mod apps;
 mod edit;
 mod memory_health;
+mod metrics;
 mod reserves;
 mod storage;
 pub use memory_health::*;
+pub use metrics::*;
 pub use storage::*;
 mod vm;
 pub use apps::*;
@@ -303,6 +305,8 @@ pub struct HostInventory {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Snapshot {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub vm_metrics: Vec<VmMetrics>,
     #[serde(default)]
     pub host_shutdown: Option<HostShutdownOperation>,
     /// Scoped condition for every user; aggregate details are admin-only.

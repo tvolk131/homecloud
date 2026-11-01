@@ -10,8 +10,10 @@ homecloud-core.workspace = true
 serde.workspace = true
 serde_json = { workspace = true, features = ["arbitrary_precision"] }
 tokio.workspace = true
-reqwest.workspace = true
+reqwest = { workspace = true, features = ["rustls-no-provider"] }
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
 nix.workspace = true
 uuid.workspace = true
 [dev-dependencies]
 tempfile.workspace = true
+tokio-rustls = { version = "0.26", default-features = false, features = ["ring", "tls12"] }

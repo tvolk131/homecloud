@@ -68,6 +68,10 @@ A busy remembered GPU leaves the VM stopped and offers an explicit CPU-only
 start in the GUI, or `homecloud start VM_UUID --without-gpu`. That choice keeps
 the GPU preference for the next boot. Internal resize restarts retain claims.
 
+VM details separate assigned capacity from guest CPU, memory, root-filesystem
+usage and per-interface network rates. See [VM metrics](docs/metrics.md) for
+one-time existing-host setup and the metrics-only TLS security boundary.
+
 ## Development
 
 ```sh

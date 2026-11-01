@@ -116,6 +116,7 @@ pub(super) fn fixture() -> App {
         warnings: vec![],
     };
     let snapshot = Snapshot {
+        vm_metrics: vec![],
         host_shutdown: None,
         memory_health: None,
         host_reserves: None,
@@ -319,6 +320,9 @@ fn screenshot_regressions() {
     let artifacts = root.join("../../target/ui-screenshots");
     let update = std::env::var("UPDATE_SCREENSHOTS").as_deref() == Ok("1");
     let names = [
+        "vm-metrics",
+        "vm-metrics-small",
+        "vm-metrics-stale-small",
         "host-storage-topology",
         "host-storage-smart",
         "host-storage-disks-small",
@@ -477,6 +481,17 @@ fn screenshot_regressions() {
         };
         let mut size = (1180.0, 820.0);
         match name {
+            "vm-metrics" | "vm-metrics-small" | "vm-metrics-stale-small" => {
+                app = crate::vm_metrics_ui_tests::sampled_fixture();
+                size = if name.ends_with("small") {
+                    (800.0, 1100.0)
+                } else {
+                    (1180.0, 960.0)
+                };
+                if name == "vm-metrics-stale-small" {
+                    app.snapshot.as_mut().unwrap().vm_metrics[0].state = VmMetricsState::Stale;
+                }
+            }
             "host-storage-topology"
             | "host-storage-smart"
             | "host-storage-disks-small"
