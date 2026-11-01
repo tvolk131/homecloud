@@ -151,11 +151,14 @@ fn app_summary(snapshot: &Snapshot, vm: &Vm) -> &'static str {
     } else if observation.setup == "ready"
         && observation.service == "running"
         && !observation.components.is_empty()
-        && observation.components.iter().all(|c| c.ready)
         && observation
             .components
             .iter()
-            .any(|c| c.account == "signed_in")
+            .filter(|component| applications::ai_provider(component))
+            .all(|component| component.ready)
+        && observation.components.iter().any(|component| {
+            applications::ai_provider(component) && component.account == "signed_in"
+        })
     {
         "Ubuntu · ready in T3"
     } else {

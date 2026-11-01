@@ -9,6 +9,7 @@ import os
 from pathlib import Path
 import re
 import select
+import shlex
 import shutil
 import signal
 import subprocess
@@ -55,35 +56,36 @@ def stop(proc):
             proc.wait()
 
 
-def run(args, timeout=15):
+def run(args, timeout=15, with_stderr=False):
     """Run a fixed command; output is bounded and never forwarded verbatim."""
     proc = subprocess.Popen(args, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                             env=environment(), cwd=str(Path.home()), start_new_session=True)
     try:
-        out, _ = proc.communicate(timeout=timeout)
+        out, error = proc.communicate(timeout=timeout)
     except subprocess.TimeoutExpired:
         stop(proc); proc.communicate()
         raise ProtocolError('The GitHub CLI did not respond. Try again.') from None
-    return proc.returncode, out[:MAX_OUTPUT]
+    result = (proc.returncode, out[:MAX_OUTPUT])
+    return (*result, error[:MAX_OUTPUT]) if with_stderr else result
 
 
-def gh(*args, timeout=15):
+def gh(*args, timeout=15, with_stderr=False):
     binary = shutil.which('gh')
     if not binary: raise ProtocolError('Install the GitHub CLI before signing in.')
-    return run([binary, *args], timeout=timeout)
+    return run([binary, *args], timeout=timeout, with_stderr=with_stderr)
 
 
 def account_info():
     """Local-only: gh's saved active login, not a network validation of its token."""
     if not shutil.which('gh'): return {'state': 'unavailable'}
     try:
-        code, out = gh('config', 'get', '--host', HOST, 'user')
+        code, out, error = gh('config', 'get', '--host', HOST, 'user', with_stderr=True)
     except (OSError, RuntimeError):
         return {'state': 'unknown'}
     login = out.decode(errors='replace').strip()
     if code == 0 and LOGIN.fullmatch(login):
         return {'state': 'signed_in', 'username': login}
-    if code == 1 and not login:
+    if code == 1 and not login and error.strip() == b'could not find key "user"':
         return {'state': 'signed_out'}
     return {'state': 'unknown'}
 
@@ -106,6 +108,23 @@ def challenge(output, now):
 def git_value(git, key):
     code, out = run([git, 'config', '--get', key])
     return out.decode(errors='replace').strip() if code == 0 else None
+
+
+def configure_git():
+    git = shutil.which('git')
+    binary = shutil.which('gh')
+    if not git or not binary: raise ProtocolError('Install Git and GitHub CLI before signing in.')
+    for hostname in (HOST, 'gist.github.com'):
+        code, output = run([git, 'config', '--get-urlmatch', 'credential.helper', 'https://'+hostname])
+        if code not in (0, 1): raise ProtocolError('Could not inspect Git credential helpers. Review Git configuration before signing in.')
+        for helper in output.decode(errors='replace').splitlines():
+            if not helper.strip(): continue
+            try: command = shlex.split(helper[1:]) if helper.startswith('!') else []
+            except ValueError: command = []
+            if command not in ([binary, 'auth', 'git-credential'], ['gh', 'auth', 'git-credential']):
+                raise ProtocolError('Git already uses another credential helper for GitHub. Review that helper before connecting this VM.')
+    if gh('auth', 'setup-git', '--hostname', HOST, '--force', timeout=30)[0]:
+        raise ProtocolError('Could not configure Git to use the GitHub CLI. Try again.')
 
 
 def configure_identity(login):
@@ -131,14 +150,15 @@ def configure_identity(login):
     try: previous = json.loads(marker.read_text())
     except (OSError, ValueError): previous = {}
     if not isinstance(previous, dict): previous = {}
-    written = {}
-    try:
-        for key, value in desired.items():
+    written = {key: value for key, value in previous.items() if key in desired and isinstance(value, str)}
+    for key, value in desired.items():
+        try:
             current = git_value(git, key)
             if current is None or current == previous.get(key):
                 if run([git, 'config', '--global', key, value])[0] == 0: written[key] = value
-    except (OSError, RuntimeError):
-        pass
+            else: written.pop(key, None)
+        except (OSError, RuntimeError):
+            continue
     marker.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
     temporary = marker.with_name(marker.name + '.new')
     temporary.write_text(json.dumps(written))
@@ -146,14 +166,14 @@ def configure_identity(login):
 
 
 def authorize(state, path, save):
-    account = account_info()['state']
-    if account == 'signed_in': return  # Never replace an existing account.
-    if account != 'signed_out':
+    account = account_info()
+    if account['state'] not in ('signed_in', 'signed_out'):
         raise ProtocolError('Could not inspect the existing GitHub sign-in. Refresh its status before signing in.')
+    configure_git()
+    if account['state'] == 'signed_in':
+        configure_identity(account['username'])
+        return
     binary = shutil.which('gh')
-    # Point Git at gh first: a configuration failure leaves no token behind.
-    if gh('auth', 'setup-git', '--hostname', HOST, '--force', timeout=30)[0]:
-        raise ProtocolError('Could not configure Git to use the GitHub CLI. Try again.')
     # Without a terminal gh prints the device code and URL, never prompting.
     proc = subprocess.Popen([binary, 'auth', 'login', '--hostname', HOST, '--web', '--git-protocol', 'https',
                              '--skip-ssh-key', '--insecure-storage'],

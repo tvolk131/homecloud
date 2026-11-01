@@ -31,13 +31,23 @@ class ProviderTests(unittest.TestCase):
                 versions={'/existing/codex':(0,165,0),'/existing/claude':(2,1,308),paths['gh']:(2,20,0)}
                 installed=[]
                 def download(url,path,expected): installed.append(url); raise RuntimeError('stop after selecting the download')
-                with patch.object(providers.shutil,'which',side_effect=lambda name:paths[name]), patch.object(providers,'version',side_effect=lambda binary:versions[str(binary)]), patch.object(providers,'download',side_effect=download):
-                    with self.assertRaises(RuntimeError) as raised: providers.ensure_providers()
-                return installed,str(raised.exception)
+                with patch.object(providers.shutil,'which',side_effect=lambda name:paths[name]), patch.object(providers,'version',side_effect=lambda binary:versions[str(binary)]), patch.object(providers,'download',side_effect=download), patch('sys.stdout',new_callable=io.StringIO) as output:
+                    providers.ensure_providers()
+                return installed,output.getvalue()
         installed,_=run('/usr/bin/gh')
         self.assertEqual(installed,[providers.PROVIDERS['gh']['url']])
         installed,error=run('HOME/.local/bin/gh')
-        self.assertEqual(installed,[]);self.assertIn('unsupported',error)
+        self.assertEqual(installed,[]);self.assertIn('optional installation failed',error)
+
+    def test_optional_github_failure_does_not_abort_required_provider_setup(self):
+        attempted=[]
+        def install(name, policy, bindir):
+            attempted.append(name)
+            if name=='gh': raise RuntimeError('checksum mismatch')
+        with tempfile.TemporaryDirectory() as tmp, patch.object(providers.os,'getuid',return_value=1000), patch.object(providers.platform,'system',return_value='Linux'), patch.object(providers.platform,'machine',return_value='x86_64'), patch.object(providers.Path,'home',return_value=Path(tmp)), patch.object(providers,'ensure_provider',side_effect=install), patch('sys.stdout',new_callable=io.StringIO) as output:
+            providers.ensure_providers()
+        self.assertEqual(attempted,['codex','claude','gh'])
+        self.assertIn('optional installation failed',output.getvalue())
 
     @unittest.skipUnless(hasattr(tarfile,'data_filter'),'Extraction is exercised with modern Python on the Ubuntu guest')
     def test_github_cli_package_requires_the_pinned_layout(self):

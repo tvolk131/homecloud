@@ -23,6 +23,7 @@ with open(os.path.join(root, 'calls'), 'a') as log:
 def out(text):
     sys.stdout.write(text); sys.stdout.flush()
 if args[:2] == ['config', 'get']:
+    if mode == 'config_error': sys.stderr.write('failed to load config: invalid YAML\n'); sys.exit(1)
     if mode == 'garbled_config': out('not a login!\n'); sys.exit(0)
     if accounts: out(accounts[0] + '\n'); sys.exit(0)
     sys.stderr.write('could not find key "user"\n'); sys.exit(1)
@@ -61,6 +62,7 @@ sys.exit(64)
 '''
 
 
+@unittest.skipUnless(shutil.which('git'), 'Requires git for isolated configuration tests')
 class GitHubAuthTests(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory(); root = Path(self.tmp.name)
@@ -134,6 +136,32 @@ class GitHubAuthTests(unittest.TestCase):
         self.mode('success', ['someone-else'])
         self.assertEqual(self.sign_in(), ([], None))
         self.assertFalse(any(c['args'][:2] == ['auth', 'login'] for c in self.calls()))
+        self.assertTrue(any(c['args'][:2] == ['auth', 'setup-git'] for c in self.calls()))
+        self.assertEqual(self.git('config', '--global', 'user.email'), '7+someone-else@users.noreply.github.com')
+
+    def test_config_errors_never_report_signed_out_or_successful_removal(self):
+        self.mode('config_error', ['octo-fixture'])
+        self.assertEqual(auth.account_info(), {'state': 'unknown'})
+        with self.assertRaisesRegex(RuntimeError, 'Could not inspect'):
+            auth.sign_out({}, self.root/'job.json', lambda *_: None)
+        self.assertIn('Could not inspect', self.sign_in()[1])
+        self.assertEqual(json.loads((self.root/'accounts.json').read_text()), ['octo-fixture'])
+        self.assertFalse(any(c['args'][:2] in (['auth', 'login'], ['auth', 'logout']) for c in self.calls()))
+
+    def test_existing_credential_helpers_are_never_overwritten(self):
+        for hostname in ('github.com', 'gist.github.com'):
+            key = 'credential.https://'+hostname+'.helper'
+            self.git('config', '--global', key, 'store')
+            writes, error = self.sign_in()
+            self.assertEqual(writes, [])
+            self.assertIn('another credential helper', error)
+            self.assertEqual(self.git('config', '--global', key), 'store')
+            self.git('config', '--global', '--unset-all', key)
+        self.assertFalse(any(c['args'][:2] in (['auth', 'setup-git'], ['auth', 'login']) for c in self.calls()))
+
+    def test_existing_gh_credential_helper_remains_compatible(self):
+        self.git('config', '--global', 'credential.https://github.com.helper', '!'+str(self.binary)+' auth git-credential')
+        self.assertIsNone(self.sign_in()[1])
 
     def test_unexpected_page_or_format_is_rejected_without_a_challenge(self):
         for mode, message in (('wrong_url', 'Unexpected GitHub authorization page'), ('no_code', 'code was not recognized')):
@@ -192,6 +220,20 @@ class GitHubAuthTests(unittest.TestCase):
         self.mode('no_name', [])
         _, error = self.sign_in()
         self.assertEqual(self.git('config', '--global', 'user.name'), 'octo-fixture')
+
+    def test_partial_identity_write_preserves_origin_for_a_later_retry(self):
+        self.assertIsNone(self.sign_in()[1])
+        self.mode('no_name', ['new-fixture'])
+        original_run = auth.run
+        def fail_name(args, **kwargs):
+            if args[1:4] == ['config', '--global', 'user.name']: return 1, b''
+            return original_run(args, **kwargs)
+        with patch.object(auth, 'run', side_effect=fail_name): auth.configure_identity('new-fixture')
+        saved = json.loads(auth.identity_path().read_text())
+        self.assertEqual(saved['user.name'], 'Octo Fixture')
+        self.assertEqual(saved['user.email'], '99+new-fixture@users.noreply.github.com')
+        auth.configure_identity('new-fixture')
+        self.assertEqual(self.git('config', '--global', 'user.name'), 'new-fixture')
 
     def test_sign_out_removes_every_saved_account_and_is_idempotent(self):
         self.mode('success', ['octo-fixture', 'second-fixture'])

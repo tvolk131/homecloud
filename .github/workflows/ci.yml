@@ -40,3 +40,7 @@ jobs:
           cargo clippy --locked --workspace --exclude homecloud-desktop --all-targets -- -D warnings
           cc -Wall -Wextra -Werror -fsyntax-only crates/host/native/qemu_cpu_launcher.c
       - run: python3 -m py_compile crates/host/host_runtime.py scripts/install_host.py scripts/host_deploy.py scripts/bundle_host.py lab/prove_access.py
+      - name: Test guest GitHub authentication and optional tools
+        run: |
+          python3 -m unittest discover -s crates/host/tests -p test_github_auth.py
+          python3 -m unittest discover -s crates/host/tests -p test_providers.py

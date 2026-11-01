@@ -2056,6 +2056,37 @@ fn github_sign_in_does_not_count_as_an_ai_provider() {
         ui.find("Sign into at least one provider. Credentials stay inside this VM.")
             .is_ok()
     );
+    drop(ui);
+    app.page = Page::Workspaces;
+    let mut ui = simulator(&app, (1180.0, 1040.0));
+    assert!(ui.find("Ubuntu · ready in T3").is_err());
+    assert!(ui.find("Ubuntu · T3 setup needed").is_ok());
+}
+
+#[test]
+fn missing_optional_github_does_not_block_t3_and_has_its_own_install_action() {
+    let _guard = lock();
+    let mut app = github_fixture("unavailable");
+    let github = app.snapshot.as_mut().unwrap().applications[0]
+        .observation
+        .components
+        .iter_mut()
+        .find(|component| component.name == "GitHub CLI")
+        .unwrap();
+    github.ready = false;
+    github.version = None;
+    let mut ui = simulator(&app, (1180.0, 1400.0));
+    assert!(
+        ui.find("Install the tools before connecting accounts.")
+            .is_err()
+    );
+    ui.click("Install GitHub CLI").unwrap();
+    assert!(
+        matches!(ui.into_messages().collect::<Vec<_>>().as_slice(), [Msg::InstallApplication(vm)] if *vm == id(10))
+    );
+    app.page = Page::Workspaces;
+    let mut ui = simulator(&app, (1180.0, 1040.0));
+    assert!(ui.find("Ubuntu · ready in T3").is_ok());
 }
 
 fn setup_operation(

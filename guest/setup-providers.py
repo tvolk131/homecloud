@@ -89,48 +89,52 @@ def ensure_providers():
     os.umask(0o077)
     bindir = Path.home()/'.local/bin'; bindir.mkdir(parents=True, exist_ok=True)
     for name, policy in PROVIDERS.items():
-        current = shutil.which(name)
-        if current:
-            installed = version(current)
-            if installed is not None and installed >= policy['minimum']:
-                print(name+': compatible installation retained', flush=True); continue
-            # ~/.local/bin precedes system directories for T3 and login shells.
-            shadow = policy.get('shadow_system') and Path(current).parent != bindir
-            if not shadow:
-                raise RuntimeError(name+': existing installation is unsupported or broken; update it before repair')
-        with tempfile.TemporaryDirectory(prefix='homecloud-provider-') as tmp:
-            stage = Path(tmp); artifact = stage/'download'
-            print('Installing '+name+' '+policy['version'], flush=True)
-            download(policy['url'], artifact, policy['sha256'])
-            if name == 'codex':
-                root = Path.home()/'.local/share/homecloud/providers/codex'
-                root.mkdir(parents=True, exist_ok=True)
-                with tempfile.TemporaryDirectory(prefix='.stage-', dir=root) as extraction:
-                    package = Path(extraction)
-                    unpack_codex(artifact, package, policy['version'])
-                    target = root/policy['version']
-                    if target.exists(): shutil.rmtree(target)
-                    package.rename(target)
-                link(target/'bin/codex', bindir/'codex')
-                link(target/'bin/codex-code-mode-host', bindir/'codex-code-mode-host')
-            elif name == 'gh':
-                root = Path.home()/'.local/share/homecloud/providers/gh'
-                root.mkdir(parents=True, exist_ok=True)
-                with tempfile.TemporaryDirectory(prefix='.stage-', dir=root) as extraction:
-                    package = unpack_gh(artifact, Path(extraction), policy['version'])
-                    target = root/policy['version']
-                    if target.exists(): shutil.rmtree(target)
-                    package.rename(target)
-                link(target/'bin/gh', bindir/'gh')
-            else:
-                artifact.chmod(0o700)
-                # The vendor's own installer creates its standard native layout,
-                # preserving compatibility with Claude/T3's manual update tools.
-                subprocess.run([str(artifact), 'install', policy['version']], check=True, timeout=300,
-                               stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            installed = version(bindir/name)
-            if installed != tuple(map(int, policy['version'].split('.'))):
-                raise RuntimeError(name+': installed version does not match requested release')
-            print(name+': installed and verified', flush=True)
+        try: ensure_provider(name, policy, bindir)
+        except (OSError, RuntimeError, ValueError, subprocess.SubprocessError, tarfile.TarError):
+            if name != 'gh': raise
+            print('gh: optional installation failed; existing tools retained. Repair GitHub CLI separately.', flush=True)
+
+
+def ensure_provider(name, policy, bindir):
+    current = shutil.which(name)
+    if current:
+        installed = version(current)
+        if installed is not None and installed >= policy['minimum']:
+            print(name+': compatible installation retained', flush=True); return
+        shadow = policy.get('shadow_system') and Path(current).parent != bindir
+        if not shadow:
+            raise RuntimeError(name+': existing installation is unsupported or broken; update it before repair')
+    with tempfile.TemporaryDirectory(prefix='homecloud-provider-') as tmp:
+        stage = Path(tmp); artifact = stage/'download'
+        print('Installing '+name+' '+policy['version'], flush=True)
+        download(policy['url'], artifact, policy['sha256'])
+        if name == 'codex':
+            root = Path.home()/'.local/share/homecloud/providers/codex'
+            root.mkdir(parents=True, exist_ok=True)
+            with tempfile.TemporaryDirectory(prefix='.stage-', dir=root) as extraction:
+                package = Path(extraction)
+                unpack_codex(artifact, package, policy['version'])
+                target = root/policy['version']
+                if target.exists(): shutil.rmtree(target)
+                package.rename(target)
+            link(target/'bin/codex', bindir/'codex')
+            link(target/'bin/codex-code-mode-host', bindir/'codex-code-mode-host')
+        elif name == 'gh':
+            root = Path.home()/'.local/share/homecloud/providers/gh'
+            root.mkdir(parents=True, exist_ok=True)
+            with tempfile.TemporaryDirectory(prefix='.stage-', dir=root) as extraction:
+                package = unpack_gh(artifact, Path(extraction), policy['version'])
+                target = root/policy['version']
+                if target.exists(): shutil.rmtree(target)
+                package.rename(target)
+            link(target/'bin/gh', bindir/'gh')
+        else:
+            artifact.chmod(0o700)
+            subprocess.run([str(artifact), 'install', policy['version']], check=True, timeout=300,
+                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        installed = version(bindir/name)
+        if installed != tuple(map(int, policy['version'].split('.'))):
+            raise RuntimeError(name+': installed version does not match requested release')
+        print(name+': installed and verified', flush=True)
 
 if __name__ == '__main__': ensure_providers()

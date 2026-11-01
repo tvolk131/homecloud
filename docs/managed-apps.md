@@ -219,10 +219,13 @@ Raw gh output is bounded and never forwarded.
 
 The job runs, in order:
 
-1. Refuse to replace an existing account; unknown state blocks login.
-2. `gh auth setup-git --hostname github.com --force`, before any token exists, so a
-   Git configuration failure leaves nothing behind. It writes gh's credential
-   helper for github.com only.
+1. Preserve an existing account; unknown state, including config-read failures,
+   blocks login and prevents sign-out from falsely succeeding. A saved account
+   repairs Git integration without another OAuth flow.
+2. Inspect the effective Git credential helpers for github.com and gist.github.com.
+   Refuse an unrelated existing helper instead of replacing the owner's setup.
+   Then run `gh auth setup-git --hostname github.com --force` before requesting
+   a new token. It writes gh's credential helper for both hosts.
 3. `gh auth login --hostname github.com --web --git-protocol https --skip-ssh-key
    --insecure-storage` with default scopes (no `workflow`) and non-expiring
    tokens (`--expiring` would want Git 2.46; the guest has 2.43).
@@ -231,6 +234,12 @@ The job runs, in order:
    `ID+login@users.noreply.github.com` address. Values the owner set are never
    overwritten; values Homecloud wrote (recorded in
    `~/.local/state/homecloud/github-identity.json`) follow a later account.
+
+Installing or updating the optional GitHub CLI cannot fail the required T3/Codex/
+Claude install or mark an otherwise working T3 VM unready. A missing or unsupported
+gh has its own **Install GitHub CLI** action; an incompatible owner-local binary
+is preserved until the owner repairs it. A GitHub-only login never satisfies the
+requirement to sign into an AI provider.
 
 gh stores its token in `~/.config/gh/hosts.yml` (mode 0600; the guest has no
 keyring daemon). Homecloud never reads it. Token environment variables

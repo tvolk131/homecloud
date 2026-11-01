@@ -41,6 +41,7 @@ SETUP_ACTIONS = ('connect_t3', *ACCOUNT_ACTIONS)
 
 def interrupted_message(setup_action):
     if setup_action == 'sign_out_github': return 'Removing GitHub access was interrupted. Try again.'
+    if setup_action == 'sign_in_github': return 'GitHub sign-in was interrupted. Request a new sign-in link.'
     if setup_action in ACCOUNT_ACTIONS: return 'Provider sign-in was interrupted. Request a new sign-in link.'
     return 'Setup interrupted. Request a new authorization link.'
 

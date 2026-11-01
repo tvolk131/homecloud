@@ -13,6 +13,10 @@ fn loading<'a>(label: impl Into<Cow<'a, str>>) -> Element<'a, Msg> {
 
 const GITHUB: &str = "GitHub CLI";
 
+pub(super) fn ai_provider(component: &ApplicationComponent) -> bool {
+    matches!(component.name.as_str(), "Codex CLI" | "Claude Code")
+}
+
 fn title(target: ApplicationSetupAction) -> &'static str {
     match target {
         ApplicationSetupAction::ConnectT3 => "T3",
@@ -293,7 +297,11 @@ pub(super) fn view<'a>(app: &'a App, snapshot: &'a Snapshot, vm_id: Uuid) -> Ele
         || operation
             .is_some_and(|op| op.kind == ApplicationOperationKind::Install && op.phase.active());
     let installed = observation.installed_version.as_deref() == Some(&application.desired_version);
-    let missing = !installed || observation.components.iter().any(|c| !c.ready);
+    let missing = !installed
+        || observation
+            .components
+            .iter()
+            .any(|component| ai_provider(component) && !component.ready);
     let connected = observation.setup == "ready";
     let mut content = column![heading("Apps & accounts")].spacing(16);
     if !running {
@@ -375,7 +383,7 @@ pub(super) fn view<'a>(app: &'a App, snapshot: &'a Snapshot, vm_id: Uuid) -> Ele
     if !observation
         .components
         .iter()
-        .any(|c| c.name != GITHUB && c.account == "signed_in")
+        .any(|component| ai_provider(component) && component.account == "signed_in")
     {
         providers = providers.push(copy(
             "Sign into at least one provider. Credentials stay inside this VM.",
@@ -420,7 +428,13 @@ pub(super) fn view<'a>(app: &'a App, snapshot: &'a Snapshot, vm_id: Uuid) -> Ele
         let status = if !running {
             unavailable
         } else if progress.is_some() {
-            if github && signed_in {
+            if github
+                && (request_for(
+                    app.app_request.as_ref(),
+                    application.id,
+                    ApplicationSetupAction::SignOutGitHub,
+                ) || active_for(operation, ApplicationSetupAction::SignOutGitHub).is_some())
+            {
                 "Removing access"
             } else {
                 "Signing in"
@@ -484,6 +498,22 @@ pub(super) fn view<'a>(app: &'a App, snapshot: &'a Snapshot, vm_id: Uuid) -> Ele
             );
         }
         let mut provider = column![header.wrap()].spacing(8);
+        if github
+            && installed
+            && owner
+            && !component.is_some_and(|component| component.ready)
+            && progress.is_none()
+        {
+            provider = provider
+                .push(copy(
+                    "Optional. Install GitHub CLI for Git and GitHub access.",
+                ))
+                .push(
+                    button("Install GitHub CLI")
+                        .on_press(Msg::InstallApplication(vm_id))
+                        .disabled(!running || blocked),
+                );
+        }
         if signed_in && !owner {
             provider = provider.push(copy(if github {
                 "The VM owner manages this GitHub account."
