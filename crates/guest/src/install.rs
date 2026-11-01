@@ -196,7 +196,9 @@ pub fn setup(ctx: &Ctx, version: &str, providers: &[providers::Provider]) -> Res
     service_env(ctx)?;
     // Provider tools are prerequisites of this T3 release. The native
     // distributions don't need Node or npm.
-    providers::ensure(ctx, providers)?;
+    for provider in providers.iter().filter(|provider| provider.binary != "gh") {
+        providers::ensure(ctx, std::slice::from_ref(provider))?;
+    }
     // Keep provider discovery deterministic in the unattended user service.
     let mut path = OsString::from("PATH=");
     path.push(ctx.bin_dir());
@@ -216,6 +218,10 @@ pub fn setup(ctx: &Ctx, version: &str, providers: &[providers::Provider]) -> Res
     if restart {
         t3_service(ctx, "restart")?;
     }
+    let optional = ctx.with_deadline(ctx.optional_install_timeout);
+    for provider in providers.iter().filter(|provider| provider.binary == "gh") {
+        let _ = providers::ensure(&optional, std::slice::from_ref(provider));
+    }
     Ok(())
 }
 
@@ -223,6 +229,30 @@ pub fn setup(ctx: &Ctx, version: &str, providers: &[providers::Provider]) -> Res
 mod tests {
     use super::*;
     use crate::testing::Fixture;
+
+    #[test]
+    fn slow_optional_github_cannot_prevent_required_service_setup() {
+        let fx = Fixture::new();
+        fx.link_system_tool("sleep");
+        let marker = fx.root.path().join("service-started");
+        let optional_probe = fx.root.path().join("optional-service-check");
+        fx.script(&fx.ctx.t3(), &format!("#!/bin/sh\nif [ \"$1\" = --version ]; then echo 't3 v0.1.2'; else printf '%s' \"$*\" > '{}'; fi\n", marker.display()));
+        for (binary, version) in [("codex", "0.165.0"), ("claude", "2.1.308")] {
+            fx.tool(binary, &format!("#!/bin/sh\necho '{binary} {version}'\n"));
+        }
+        fx.tool(
+            "systemctl",
+            "#!/bin/sh\nif [ \"$2\" = is-active ]; then exit 3; fi\nexit 0\n",
+        );
+        fx.tool("curl", &format!("#!/bin/sh\nif [ -f '{}' ]; then printf ready > '{}'; else printf missing > '{}'; fi\nsleep 10\n", marker.display(), optional_probe.display(), optional_probe.display()));
+        let mut ctx = fx.ctx.clone();
+        ctx.optional_install_timeout = Duration::from_millis(300);
+        setup(&ctx, "0.1.2", &PROVIDERS).unwrap();
+        assert_eq!(fs::read_to_string(marker).unwrap(), "service install");
+        if let Ok(observed) = fs::read_to_string(optional_probe) {
+            assert_eq!(observed, "ready");
+        }
+    }
 
     fn check_service_activation(active: bool, running_path: Option<&str>) {
         let fx = Fixture::new();

@@ -237,6 +237,40 @@ fn configure_git(ctx: &Ctx) -> Result<()> {
         return fail("Install Git and GitHub CLI before signing in.");
     };
     let expected = format!("!{} auth git-credential", binary.display());
+    let (status, configured) = run(
+        ctx,
+        &git,
+        &["config", "--get-regexp", r"^credential\..*\.helper$"],
+        Duration::from_secs(15),
+    )?;
+    if !matches!(status, Some(0 | 1)) {
+        return fail(
+            "Could not inspect Git credential helpers. Review Git configuration before signing in.",
+        );
+    }
+    for line in configured.lines() {
+        let key = line.split_whitespace().next().unwrap_or_default();
+        let normalized = key.to_ascii_lowercase();
+        if let Some(context) = normalized.strip_prefix("credential.https://") {
+            let context = context.strip_suffix(".helper").unwrap_or(context);
+            let authority = context.split('/').next().unwrap_or_default();
+            let host = authority
+                .rsplit('@')
+                .next()
+                .unwrap_or_default()
+                .split(':')
+                .next()
+                .unwrap_or_default();
+            if (host == HOST || host.ends_with(".github.com"))
+                && key != "credential.https://github.com.helper"
+                && key != "credential.https://gist.github.com.helper"
+            {
+                return fail(
+                    "Git already uses another credential helper for GitHub. Review that helper before connecting this VM.",
+                );
+            }
+        }
+    }
     for hostname in [HOST, "gist.github.com"] {
         let (code, output) = run(
             ctx,
@@ -702,6 +736,31 @@ sys.exit(64)
             gh.git(&["config", "--global", "credential.helper"])
                 .as_deref(),
             Some("store")
+        );
+    }
+
+    #[test]
+    fn path_scoped_github_helpers_are_not_reordered() {
+        let gh = Gh::new();
+        for hostname in [HOST, "gist.github.com"] {
+            let key = format!("credential.https://{hostname}/acme.helper");
+            gh.git(&["config", "--global", &key, "store"]);
+            assert!(
+                gh.sign_in()
+                    .1
+                    .unwrap()
+                    .contains("another credential helper")
+            );
+            assert_eq!(
+                gh.git(&["config", "--global", &key]).as_deref(),
+                Some("store")
+            );
+            gh.git(&["config", "--global", "--unset-all", &key]);
+        }
+        assert!(
+            !gh.call_args()
+                .iter()
+                .any(|call| call.get(1).is_some_and(|action| action == "setup-git"))
         );
     }
 

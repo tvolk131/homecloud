@@ -8,7 +8,7 @@ use std::path::{Path, PathBuf};
 use serde_json::Value;
 use tempfile::TempDir;
 
-use crate::ctx::{Ctx, LOGIN_TIMEOUT};
+use crate::ctx::{Ctx, LOGIN_TIMEOUT, OPTIONAL_INSTALL_TIMEOUT};
 
 pub struct Fixture {
     pub root: TempDir,
@@ -41,6 +41,7 @@ impl Fixture {
             boot_id_path: root.path().join("boot"),
             login_timeout: LOGIN_TIMEOUT,
             deadline: None,
+            optional_install_timeout: OPTIONAL_INSTALL_TIMEOUT,
         };
         let fixture = Self { root, bin, ctx };
         fixture.write("boot", "fixture-boot");

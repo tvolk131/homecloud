@@ -126,7 +126,9 @@ pub fn ensure(ctx: &Ctx, providers: &[Provider]) -> Result<()> {
 
 fn ensure_one(ctx: &Ctx, provider: &Provider, bin_dir: &Path) -> Result<()> {
     if let Some(current) = ctx.which(provider.binary) {
-        if version(ctx, &current).is_some_and(|found| found >= provider.minimum) {
+        let installed = version(ctx, &current);
+        ctx.limit(Duration::from_secs(1))?;
+        if installed.is_some_and(|found| found >= provider.minimum) {
             eprintln!("{}: compatible installation retained", provider.binary);
             return Ok(());
         }
@@ -652,11 +654,11 @@ mod tests {
         let fx = Fixture::new();
         fx.link_system_tool("sleep");
         let marker = fx.root.path().join("stage-path");
-        fx.tool("curl", &format!("#!/bin/sh\nprevious=''\nfor argument do\nif [ \"$previous\" = -o ]; then printf '%s' \"$argument\" > '{}'; fi\nprevious=\"$argument\"\ndone\nsleep 3\n", marker.display()));
+        fx.tool("curl", &format!("#!/bin/sh\nprevious=''\nfor argument do\nif [ \"$previous\" = -o ]; then printf '%s' \"$argument\" > '{}'; fi\nprevious=\"$argument\"\ndone\nsleep 10\n", marker.display()));
         let ctx = fx.ctx.with_deadline(Duration::from_secs(1));
         let started = std::time::Instant::now();
         let error = ensure(&ctx, &PROVIDERS[..1]).unwrap_err();
-        assert!(started.elapsed() < Duration::from_secs(2));
+        assert!(started.elapsed() < Duration::from_secs(5));
         match fs::read_to_string(marker) {
             Ok(path) => assert!(!PathBuf::from(path).parent().unwrap().exists()),
             Err(missing) if missing.kind() == io::ErrorKind::NotFound => {

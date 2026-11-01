@@ -271,6 +271,7 @@ pub fn inspect(ctx: &Ctx, app: Uuid) -> Result<ApplicationReport> {
         // Recovery only repairs the matching target: T3 being linked says
         // nothing about whether Codex credentials were ever saved.
         if confirmed
+            && (target != ApplicationSetupAction::SignInGitHub || job.stage != "preparing")
             && job.kind == ApplicationOperationKind::Setup
             && matches!(
                 job.phase,
@@ -486,6 +487,9 @@ mod tests {
             let mut job = crate::state::test_job(&self.fx.ctx.base().join(APP.to_string()), action);
             job.state.phase = phase;
             job.state.boot_id = boot.into();
+            if action == ApplicationSetupAction::SignInGitHub {
+                job.state.stage = "awaiting_approval".into();
+            }
             job.state.action = Some(BrowserAction {
                 url: "https://example.com".into(),
                 code: "OLD-CODE".into(),
@@ -693,6 +697,26 @@ mod tests {
             };
             assert!(message.contains(expected), "{message}");
         }
+    }
+
+    #[test]
+    fn github_preparation_failure_is_not_recovered_from_an_existing_account() {
+        let scenario = scenario(LINKED, false);
+        scenario.provider("gh", "2.103.3", "signed_in");
+        let mut job = crate::state::test_job(
+            &scenario.fx.ctx.base().join(APP.to_string()),
+            ApplicationSetupAction::SignInGitHub,
+        );
+        job.state.phase = ApplicationPhase::Failed;
+        job.state.boot_id = "new".into();
+        job.state.message = Some("Git configuration was refused.".into());
+        job.save().unwrap();
+        let report = scenario.inspect();
+        assert_eq!(report.job.unwrap().phase, ApplicationPhase::Failed);
+        assert_eq!(
+            report.observation.operation_message,
+            "Git configuration was refused."
+        );
     }
 
     #[test]

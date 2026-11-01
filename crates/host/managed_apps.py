@@ -39,10 +39,18 @@ def install_runner(runtime, name):
         finally:
             try:root('rm', '-f', staged, check=False)
             except (OSError, RuntimeError, subprocess.SubprocessError):pass
-    active = root('systemctl', 'list-units', '--type=service', '--state=activating,active,deactivating',
-                  '--no-legend', '--plain', 'homecloud-app-*.service', check=False)
-    if active.returncode != 0 or active.stdout.strip():return
-    root('rm', '-f', *[GUEST_DIR + '/' + file for file in LEGACY])
+    patterns=[]
+    for file in LEGACY:
+        if patterns:patterns.append('-o')
+        patterns.extend(['-name',file])
+    try:
+        legacy=root('find',GUEST_DIR,'-maxdepth','1','(',*patterns,')','-print','-quit',check=False)
+        if legacy.returncode != 0 or not legacy.stdout.strip():return
+        active = root('systemctl', 'list-units', '--type=service', '--state=activating,active,deactivating',
+                      '--no-legend', '--plain', 'homecloud-app-*.service', check=False)
+        if active.returncode != 0 or active.stdout.strip():return
+        root('rm', '-f', *[GUEST_DIR + '/' + file for file in LEGACY])
+    except (OSError, RuntimeError, subprocess.SubprocessError):pass
 
 
 def application(runtime, vm, app, action):

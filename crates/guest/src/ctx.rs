@@ -11,6 +11,7 @@ use crate::error::{Error, Result};
 /// How long Homecloud waits for an owner to finish a provider sign-in. This is
 /// a local limit, not a promise about the provider's own code lifetime.
 pub const LOGIN_TIMEOUT: Duration = Duration::from_secs(600);
+pub const OPTIONAL_INSTALL_TIMEOUT: Duration = Duration::from_secs(120);
 
 /// The guest owner's environment. Every child process gets exactly this
 /// environment, so tests can supply fake tools without touching global state.
@@ -21,6 +22,7 @@ pub struct Ctx {
     pub boot_id_path: PathBuf,
     pub login_timeout: Duration,
     pub deadline: Option<Instant>,
+    pub optional_install_timeout: Duration,
 }
 
 impl Ctx {
@@ -35,6 +37,7 @@ impl Ctx {
             boot_id_path: PathBuf::from("/proc/sys/kernel/random/boot_id"),
             login_timeout: LOGIN_TIMEOUT,
             deadline: None,
+            optional_install_timeout: OPTIONAL_INSTALL_TIMEOUT,
         })
     }
 

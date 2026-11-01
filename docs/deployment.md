@@ -102,6 +102,8 @@ Drain application install and account-setup jobs before the window. As an
 additional safeguard, the host keeps legacy guest helper files while any
 `homecloud-app-*.service` is active or its activity cannot be inspected, and
 retries cleanup on later inspections even when the Rust binary hash is unchanged.
+Cleanup-only probe failures preserve those files without failing application
+inspection. Once legacy files are absent, unit scans and removal attempts stop.
 This does not promise that an interrupted maintenance reinstall preserves every
 running job. Application state/credentials and guest volumes must remain intact.
 
@@ -119,6 +121,13 @@ over the controller's current database. Verify the resulting static runner on an
 actual guest, installation and T3/Codex/Claude/GitHub account flows, controller
 transport, and guest workload preservation before declaring migration accepted.
 The automated musl `--help`/`--version` smoke test is not that live acceptance.
+
+The Rust installer shares a 1200-second command budget across required steps.
+It completes required provider and T3 service setup before optional gh work;
+the optional install is additionally capped at 120 seconds and cannot undo or
+fail the already-completed required setup. Temporary download/extraction state
+is cleaned on ordinary timeout/error returns, before the unit's 1800-second
+emergency limit. A hard kill or host crash still needs normal recovery handling.
 
 ## Interruption and rollback
 

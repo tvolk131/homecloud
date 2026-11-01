@@ -25,6 +25,7 @@ class GuestRunnerTests(unittest.TestCase):
         self.installed = None; self.calls = []
         self.active_jobs=False; self.push_fails=False; self.cleanup_fails=False
         self.jobs_query_fails=False; self.staging_cleanup_times_out=False
+        self.legacy_present=True
 
     def application(self, action):
         def run(*args, check=True, **kwargs):
@@ -37,9 +38,13 @@ class GuestRunnerTests(unittest.TestCase):
                 if self.installed is None: return SimpleNamespace(stdout='', returncode=1)
                 return SimpleNamespace(stdout=hashlib.sha256(self.installed).hexdigest() + '  ' + m.RUNNER, returncode=0)
             if command[:2] == ('systemctl', 'is-active'): return SimpleNamespace(stdout='', returncode=3)
-            if command[:2] == ('systemctl', 'list-units'):return SimpleNamespace(stdout='homecloud-app-fixture.service active running' if self.active_jobs else '',returncode=1 if self.jobs_query_fails else 0)
+            if command[:1] == ('find',):return SimpleNamespace(stdout=m.GUEST_DIR+'/managed-app.py' if self.legacy_present else '',returncode=0)
+            if command[:2] == ('systemctl', 'list-units'):
+                if self.jobs_query_fails=='timeout':raise subprocess.TimeoutExpired('systemctl list-units',10)
+                return SimpleNamespace(stdout='homecloud-app-fixture.service active running' if self.active_jobs else '',returncode=1 if self.jobs_query_fails else 0)
             if command[:2] == ('rm','-f') and any(part.startswith(m.RUNNER+'.new-') for part in command) and self.staging_cleanup_times_out:raise subprocess.TimeoutExpired('incus exec',10)
             if command[:2] == ('rm','-f') and m.GUEST_DIR+'/managed-app.py' in command and self.cleanup_fails:raise RuntimeError('legacy cleanup failed')
+            if command[:2] == ('rm','-f') and m.GUEST_DIR+'/managed-app.py' in command:self.legacy_present=False
             if 'inspect' in command: return SimpleNamespace(stdout=json.dumps(REPORT), returncode=0)
             return SimpleNamespace(stdout='', returncode=0)
         runtime = SimpleNamespace(owned=lambda vm: None, state=lambda vm: 'running', vm_name=lambda vm: 'fixture', run=run)
@@ -63,6 +68,7 @@ class GuestRunnerTests(unittest.TestCase):
 
         self.calls.clear(); self.application({'kind': 'inspect'})
         self.assertEqual(self.pushes(), [])
+        self.assertFalse(any(call[4:6]==('systemctl','list-units') or m.GUEST_DIR+'/managed-app.py' in call for call in self.calls))
         self.binary.write_bytes(b'\x7fELF newer runner')
         self.calls.clear(); self.application({'kind': 'inspect'})
         self.assertEqual(len(self.pushes()), 1)
@@ -85,13 +91,14 @@ class GuestRunnerTests(unittest.TestCase):
             self.assertTrue(any(call[4:]==('rm','-f',staged) for call in self.calls))
 
     def test_unknown_job_activity_preserves_legacy_helpers(self):
-        self.jobs_query_fails=True
-        self.application({'kind':'inspect'})
-        self.assertFalse(any(m.GUEST_DIR+'/managed-app.py' in call for call in self.calls))
+        for failure in [True,'timeout']:
+            self.calls.clear();self.jobs_query_fails=failure
+            self.application({'kind':'inspect'})
+            self.assertFalse(any(m.GUEST_DIR+'/managed-app.py' in call for call in self.calls))
 
     def test_matching_hash_retries_failed_legacy_cleanup_without_another_push(self):
         self.cleanup_fails=True
-        with self.assertRaisesRegex(RuntimeError,'legacy cleanup failed'):self.application({'kind':'inspect'})
+        self.application({'kind':'inspect'})
         self.calls.clear();self.cleanup_fails=False
         self.application({'kind':'inspect'})
         self.assertEqual(self.pushes(),[])
