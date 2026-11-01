@@ -1,11 +1,56 @@
 """Fixed host-side managed-application hooks; guest jobs are supervised by systemd."""
+import hashlib
 import json
-from pathlib import Path
 import subprocess
+from pathlib import Path
 import uuid
 import managed_host
 
 GUEST_DIR = '/usr/local/libexec/homecloud'
+RUNNER = GUEST_DIR + '/homecloud-guest'
+RUNNER_SOURCE = Path(__file__).with_name('homecloud-guest')
+# Earlier releases ran Python guest helpers. Keep them while an application job
+# may still need their paths, then retry cleanup on later inspections.
+LEGACY = ('managed-app.py', 'setup-t3.sh', 'setup-providers.py', 'codex_auth.py', 'claude_auth.py',
+          'github_auth.py', 'account_metadata.py')
+SETUP_ACTIONS = ('connect_t3', 'sign_in_codex', 'sign_in_claude', 'sign_in_github', 'sign_out_github')
+
+
+def install_runner(runtime, name):
+    """Upgrade the fixed runner independently of the application installation.
+
+    Inspecting an older VM must discover new account capabilities without
+    reinstalling T3 or restarting a user's active sessions. The rename keeps a
+    running job on the binary it started with.
+    """
+    digest = hashlib.sha256(RUNNER_SOURCE.read_bytes()).hexdigest()
+
+    def root(*args, check=True):
+        return runtime.run('incus', 'exec', name, '--', *args, timeout=10, check=check)
+
+    existing = root('sha256sum', RUNNER, check=False).stdout.split()
+    if not existing or existing[0] != digest:
+        staged = RUNNER + '.new-' + uuid.uuid4().hex
+        root('mkdir', '-p', '-m', '0755', GUEST_DIR)
+        try:
+            runtime.run('incus', 'file', 'push', '--uid', '0', '--gid', '0', '--mode', '0755',
+                        str(RUNNER_SOURCE), name + staged, timeout=120)
+            root('mv', '-f', '-T', staged, RUNNER)
+        finally:
+            try:root('rm', '-f', staged, check=False)
+            except (OSError, RuntimeError, subprocess.SubprocessError):pass
+    patterns=[]
+    for file in LEGACY:
+        if patterns:patterns.append('-o')
+        patterns.extend(['-name',file])
+    try:
+        legacy=root('find',GUEST_DIR,'-maxdepth','1','(',*patterns,')','-print','-quit',check=False)
+        if legacy.returncode != 0 or not legacy.stdout.strip():return
+        active = root('systemctl', 'list-units', '--type=service', '--state=activating,active,deactivating',
+                      '--no-legend', '--plain', 'homecloud-app-*.service', check=False)
+        if active.returncode != 0 or active.stdout.strip():return
+        root('rm', '-f', *[GUEST_DIR + '/' + file for file in LEGACY])
+    except (OSError, RuntimeError, subprocess.SubprocessError):pass
 
 
 def application(runtime, vm, app, action):
@@ -23,37 +68,19 @@ def application(runtime, vm, app, action):
         return runtime.run('incus', 'exec', name, '--', 'runuser', '-u', 'dev', '--', *env, *args,
                            timeout=timeout, check=check, input=input)
 
-    script = GUEST_DIR + '/managed-app.py'
-    # Upgrade the fixed runner independently of the application installation.
-    # Inspecting an older VM must discover new account capabilities without
-    # reinstalling T3 or restarting a user's active sessions.
-    sources = {file: Path(__file__).with_name(file).read_text()
-               for file in ['managed-app.py', 'setup-t3.sh', 'setup-providers.py', 'codex_auth.py', 'claude_auth.py',
-                         'github_auth.py', 'account_metadata.py']}
-    writer = """import json,os
-from pathlib import Path
-root=Path('/usr/local/libexec/homecloud'); root.mkdir(parents=True,exist_ok=True,mode=0o755)
-for name,source in json.load(__import__('sys').stdin).items():
- p=root/name
- if p.is_file() and not p.is_symlink() and p.read_text()==source: continue
- t=str(p)+'.new'; f=os.open(t,os.O_WRONLY|os.O_CREAT|os.O_TRUNC|os.O_NOFOLLOW,0o644)
- with os.fdopen(f,'w') as stream: stream.write(source)
- os.replace(t,p)
-"""
-    runtime.run('incus', 'exec', name, '--', 'python3', '-c', writer, input=json.dumps(sources), timeout=10)
-    report = json.loads(guest('python3', script, 'inspect', app_id).stdout)
+    install_runner(runtime, name)
+    report = json.loads(guest(RUNNER, 'inspect', app_id).stdout)
     operation = action.get('operation')
     if operation:
         operation_id = str(uuid.UUID(operation['id']))
         assert operation['application_id'] == app_id
         kind = operation['kind']
         target = operation.get('setup_action', 'connect_t3')
-        assert kind in ('install', 'setup') and target in ('connect_t3', 'sign_in_codex', 'sign_in_claude',
-                                                           'sign_in_github', 'sign_out_github')
+        assert kind in ('install', 'setup') and target in SETUP_ACTIONS
         if action['kind'] == 'submit_code':
             assert kind == 'setup' and target == 'sign_in_claude'
-            guest('python3', script, 'submit', app_id, operation_id, input=json.dumps({'code': action['code']}))
-            return json.loads(guest('python3', script, 'inspect', app_id).stdout)
+            guest(RUNNER, 'submit', app_id, operation_id, input=json.dumps({'code': action['code']}))
+            return json.loads(guest(RUNNER, 'inspect', app_id).stdout)
         if action['kind'] != 'inspect':
             assert (action['kind'] == 'ensure_installed') == (kind == 'install')
         unit = 'homecloud-app-'+uuid.UUID(app_id).hex+'-'+uuid.UUID(operation_id).hex+'.service'
@@ -79,7 +106,7 @@ for name,source in json.load(__import__('sys').stdin).items():
         runtime.run('incus', 'exec', name, '--', 'systemd-run', '--quiet', '--collect', '--unit='+unit,
                     '--uid=dev', '--property=UMask=0077', '--property=RuntimeMaxSec=1800',
                     '--property=TimeoutStopSec=10', '--property=KillMode=control-group',
-                    *['--setenv='+x for x in env[1:]], 'python3', script, 'job', app_id, operation_id, kind,
+                    *['--setenv='+x for x in env[1:]], RUNNER, 'job', app_id, operation_id, kind,
                     app['desired_version'], unit, target, timeout=10)
-        report = json.loads(guest('python3', script, 'inspect', app_id).stdout)
+        report = json.loads(guest(RUNNER, 'inspect', app_id).stdout)
     return report

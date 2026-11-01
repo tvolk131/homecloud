@@ -16,6 +16,9 @@ import sys
 import time
 
 ROOT=Path(__file__).resolve().parents[1]
+# Unpacked bundles keep binaries in bin/; a source checkout builds the static
+# guest runner for the musl target.
+GUEST=ROOT/'bin/homecloud-guest' if (ROOT/'bin').is_dir() else ROOT/'target/x86_64-unknown-linux-musl/release/homecloud-guest'
 def run(*args):subprocess.run(args,check=True)
 def write(path,content,mode=0o644):
     path=Path(path);path.parent.mkdir(parents=True,exist_ok=True)
@@ -24,6 +27,7 @@ def write(path,content,mode=0o644):
 def main():
     a=argparse.ArgumentParser();a.add_argument('--policy',required=True,type=Path);a.add_argument('--daemon',required=True,type=Path)
     a.add_argument('--cli',type=Path,help='Matching CLI (defaults to the daemon directory)')
+    a.add_argument('--guest',type=Path,default=GUEST,help='Static guest runner pushed into managed VMs')
     a.add_argument('--check',action='store_true',help='Validate prerequisites and reviewed policy without installing')
     a.add_argument('--maintenance',action='store_true',help='Explicitly reinstall host policy; can interrupt management and workloads')
     args=a.parse_args()
@@ -35,7 +39,10 @@ def main():
     assert args.daemon.is_file()
     args.cli=args.cli or args.daemon.parent/'homecloud'
     assert args.cli.is_file(),'Supply the matching CLI with --cli'
-    host_deploy.Services().check({'bin/homecloudd':args.daemon.read_bytes(),'bin/homecloud':args.cli.read_bytes()})
+    assert args.guest.is_file(),'Build the guest runner (see docs/deployment.md) or supply it with --guest'
+    assert host_deploy.static_elf(args.guest.read_bytes()),'Expected a static Linux x86-64 guest runner; build it for x86_64-unknown-linux-musl'
+    host_deploy.Services().check({'bin/homecloudd':args.daemon.read_bytes(),'bin/homecloud':args.cli.read_bytes(),
+                                  host_deploy.GUEST_RUNNER:args.guest.read_bytes()})
     # Complete read-only preflight before the first persistent change.
     assert args.daemon.read_bytes()[:5]==b'\x7fELF\x02','Expected a Linux 64-bit daemon'
     run(str(args.daemon.resolve()),'--help')
@@ -76,7 +83,10 @@ def main():
     write(config/'host.json',json.dumps(c,indent=2),0o600)
     host_deploy.atomic(Path(host_deploy.GUARD),(ROOT/'scripts/host_deploy.py').read_bytes(),0o755)
     helper=destination/'host_runtime.py';shutil.copyfile(ROOT/'crates/host/host_runtime.py',helper);helper.chmod(0o755)
-    for source in [ROOT/'guest/setup-t3.sh', ROOT/'guest/managed-app.py', ROOT/'guest/setup-providers.py', ROOT/'guest/codex_auth.py', ROOT/'guest/claude_auth.py', ROOT/'guest/github_auth.py', ROOT/'guest/account_metadata.py', ROOT/'crates/host/managed_apps.py', ROOT/'crates/host/managed_host.py', ROOT/'crates/host/memory_capacity.py', ROOT/'guest/managed-host.py', ROOT/'crates/host/resource_reserves.py', ROOT/'crates/host/arc_policy.py', ROOT/'crates/host/instance_runtime.py']:
+    run('install','-m','0755',str(args.guest),str(destination/'homecloud-guest'))
+    for name in ['setup-t3.sh','managed-app.py','setup-providers.py','codex_auth.py','claude_auth.py','github_auth.py','account_metadata.py']:
+        (destination/name).unlink(missing_ok=True)  # Replaced by the guest runner.
+    for source in [ROOT/'crates/host/managed_apps.py', ROOT/'crates/host/managed_host.py', ROOT/'crates/host/memory_capacity.py', ROOT/'guest/managed-host.py', ROOT/'crates/host/resource_reserves.py', ROOT/'crates/host/arc_policy.py', ROOT/'crates/host/instance_runtime.py']:
         shutil.copyfile(source,destination/source.name);(destination/source.name).chmod(0o644)
     for source in destination.glob('*.py'):host_deploy.clear_cache(source)
     spec=importlib.util.spec_from_file_location('homecloud_host',helper);module=importlib.util.module_from_spec(spec);sys.modules[spec.name]=module;spec.loader.exec_module(module)

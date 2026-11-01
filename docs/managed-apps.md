@@ -27,7 +27,12 @@ launch/query a transient systemd service inside the guest. Installation and
 interactive authorization continue when the GUI closes or the controller restarts.
 There is no network listener or permanently running Homecloud guest daemon.
 
-The guest job runs as `dev`; the installed runner is root-owned. It uses T3's own
+The guest job runs as `dev`; the installed runner is root-owned. The runner is one
+static Rust binary, `homecloud-guest` (`crates/guest`), at
+`/usr/local/libexec/homecloud/homecloud-guest`. It does not depend on the guest's
+Python or C library, so the host can push the same file to any supported image.
+Its commands are `inspect`, `submit` and `job`, and it refuses to run as root.
+It uses T3's own
 installer, background service, and T3 Connect CLI. The bundle also installs native
 Codex CLI 0.165.0 and Claude Code 2.1.308, within T3's bundled compatibility ranges,
 plus GitHub CLI 2.103.3. The Codex release archive is installed with its code-mode
@@ -329,8 +334,8 @@ caption. Setup progress, sign-in instructions and connectivity warnings remain
 visible. Missing email does not indicate incomplete setup. Homecloud does not
 guess identity from a browser session or parse tokens.
 
-Fixed helper upgrades install account_metadata.py on host and guest without
-reinstalling T3 or restarting its service. Inspection neither logs in, replaces
+Guest runner upgrades replace `homecloud-guest` in the VM without reinstalling T3
+or restarting its service. Inspection neither logs in, replaces
 accounts nor issues inference requests. Account changes remain owner-driven.
 
 References: [Codex app-server](https://developers.openai.com/codex/app-server/),

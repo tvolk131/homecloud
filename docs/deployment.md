@@ -17,11 +17,15 @@ hardware detector or a general installation profile. Required tools include
 Incus/QEMU, ZFS, nftables, a working static C toolchain, PCI tools, sudo and
 `br_netfilter`; disk cloud-init transport also needs `mkisofs`.
 
-Build the daemon and CLI on the target Linux environment. From a reviewed source
-checkout, run the read-only policy/prerequisite check first:
+Build the daemon and CLI on the target Linux environment, and the guest runner as a
+static musl executable. Guest images may ship an older C library than the host, so
+the installer refuses a dynamically linked runner. From a reviewed source checkout,
+run the read-only policy/prerequisite check first:
 
 ```sh
+rustup target add x86_64-unknown-linux-musl
 cargo build --locked -p homecloud-daemon -p homecloud-cli
+cargo build --locked --release --target x86_64-unknown-linux-musl -p homecloud-guest
 sudo python3 scripts/install_host.py --check \
   --policy /root/reviewed-host.json --daemon target/debug/homecloudd
 sudo python3 scripts/install_host.py \
@@ -29,7 +33,8 @@ sudo python3 scripts/install_host.py \
 ```
 
 The matching CLI defaults to `homecloud` beside the daemon; `--cli PATH` can select
-it explicitly. Check mode validates binaries, versions, CPU siblings, RAM bounds,
+it explicitly. The guest runner defaults to the musl release build above (or `bin/`
+in an unpacked bundle); `--guest PATH` selects another. Check mode validates binaries, versions, CPU siblings, RAM bounds,
 pool health, the cached image, nft syntax and static launcher compilation before
 changing host policy or services. Installation writes a software receipt and
 root pre-start guards for the controller and host-layout service.
@@ -46,6 +51,7 @@ physical hardware remains a separate acceptance task.
 On the reviewed Linux build machine:
 
 ```sh
+cargo build --locked --release --target x86_64-unknown-linux-musl -p homecloud-guest
 python3 scripts/bundle_host.py --bin-dir target/debug \
   --output /tmp/homecloud-host.tar.gz
 sha256sum /tmp/homecloud-host.tar.gz
@@ -67,12 +73,61 @@ sudo python3 /usr/local/libexec/homecloud-deploy.py upgrade \
 ```
 
 Preflight checks the complete archive without extracting untrusted paths, rejects
-links/duplicates/unknown files, verifies content and Python syntax, runs candidate
-binary help commands, checks the installed receipt and service guards, and checks
-versions, pool health and staging space. It refuses native launcher, firewall or
+links/duplicates/unknown files, verifies content and Python syntax, requires a
+static guest runner, runs candidate binary help commands, checks the installed
+receipt and service guards, and checks versions, pool health and staging space. It refuses native launcher, firewall or
 deployment-engine changes; those require a reviewed maintenance installation.
 User grants, host reserve journals, hardware policy and network policy are not
 rewritten by a software update.
+
+## Migrating from Python guest helpers
+
+The first static Rust guest-runner release changes the protected deployment
+boundary and bundle layout. An installed Python-era updater rejects the new
+`bin/homecloud-guest` member. A normal `upgrade` cannot perform this migration;
+do not bypass its guard or mix old and new helpers to force acceptance.
+
+Before deployment, obtain explicit approval for a maintenance window, retain the
+exact previous reviewed source/binaries and protected configuration as recovery
+evidence, and prepare a current reviewed hardware policy. Use the full reviewed
+release containing every feature already deployed, not an older intermediate PR
+layer. Preserve current grants, disk budgets, credentials and metrics configuration;
+old configuration/database backups are evidence, not permission to reset them.
+Run the installer's read-only `--check` with that policy and matching binaries,
+then use the documented local-root `install_host.py --maintenance` flow. It can
+restart Incus and management services and reapply host policy; a software-only
+controller restart is not an equivalent migration.
+
+Drain application install and account-setup jobs before the window. As an
+additional safeguard, the host keeps legacy guest helper files while any
+`homecloud-app-*.service` is active or its activity cannot be inspected, and
+retries cleanup on later inspections even when the Rust binary hash is unchanged.
+Cleanup-only probe failures preserve those files without failing application
+inspection. Once legacy files are absent, unit scans and removal attempts stop.
+This does not promise that an interrupted maintenance reinstall preserves every
+running job. Application state/credentials and guest volumes must remain intact.
+
+Already-installed nested managed Homecloud hosts have the same old-updater
+restriction. Their automatic update path cannot grant itself this protected
+migration: each requires an explicit reviewed local-root maintenance operation
+inside that VM, or deliberate recreation of a disposable fixture. A freshly
+installed nested host uses the new installer and layout directly.
+
+This maintenance step establishes a new protected-boundary baseline; normal
+`homecloud-deploy.py rollback` does not restore the Python-era release across it.
+Plan recovery as another explicitly reviewed maintenance operation using the
+retained release and current authoritative state. Never restore an old `state.db`
+over the controller's current database. Verify the resulting static runner on an
+actual guest, installation and T3/Codex/Claude/GitHub account flows, controller
+transport, and guest workload preservation before declaring migration accepted.
+The automated musl `--help`/`--version` smoke test is not that live acceptance.
+
+The Rust installer shares a 1200-second command budget across required steps.
+It completes required provider and T3 service setup before optional gh work;
+the optional install is additionally capped at 120 seconds and cannot undo or
+fail the already-completed required setup. Temporary download/extraction state
+is cleaned on ordinary timeout/error returns, before the unit's 1800-second
+emergency limit. A hard kill or host crash still needs normal recovery handling.
 
 ## Interruption and rollback
 
