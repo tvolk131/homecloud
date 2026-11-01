@@ -489,6 +489,16 @@ pub(super) fn view<'a>(app: &'a App, snapshot: &'a Snapshot, vm_id: Uuid) -> Ele
                 .disabled(blocked),
             );
         } else if github && controls_available && signed_in {
+            if failed.is_some_and(|operation| {
+                operation.setup_action == ApplicationSetupAction::SignInGitHub
+            }) && observation.operation_stage == "preparing"
+            {
+                header = header.push(
+                    button("Retry GitHub setup")
+                        .on_press(Msg::SetupApplication(application.id, target))
+                        .disabled(blocked),
+                );
+            }
             header = header.push(
                 quiet(
                     "Remove access…",
@@ -504,6 +514,16 @@ pub(super) fn view<'a>(app: &'a App, snapshot: &'a Snapshot, vm_id: Uuid) -> Ele
             && !component.is_some_and(|component| component.ready)
             && progress.is_none()
         {
+            let unsupported = component.is_some_and(|component| component.version.is_some());
+            if operation.is_some_and(|operation| {
+                operation.kind == ApplicationOperationKind::Install
+                    && operation.phase == ApplicationPhase::Succeeded
+            }) {
+                provider = provider.push(copy("T3 setup completed, but GitHub CLI is still unavailable. Check the guest application log before retrying."));
+            }
+            if unsupported {
+                provider = provider.push(copy("This VM has an unsupported GitHub CLI. Update or remove it inside the VM before retrying."));
+            }
             provider = provider
                 .push(copy(
                     "Optional. Install GitHub CLI for Git and GitHub access.",
@@ -511,7 +531,7 @@ pub(super) fn view<'a>(app: &'a App, snapshot: &'a Snapshot, vm_id: Uuid) -> Ele
                 .push(
                     button("Install GitHub CLI")
                         .on_press(Msg::InstallApplication(vm_id))
-                        .disabled(!running || blocked),
+                        .disabled(!running || blocked || unsupported),
                 );
         }
         if signed_in && !owner {
@@ -531,7 +551,8 @@ pub(super) fn view<'a>(app: &'a App, snapshot: &'a Snapshot, vm_id: Uuid) -> Ele
             provider = provider.push(progress);
         } else if let Some(op) = failed
             // Only while the failure is still current: a later success supersedes it.
-            && op.setup_action.expected_account() != component.map(|c| c.account.as_str())
+            && (op.setup_action.expected_account() != component.map(|c| c.account.as_str())
+                || (op.setup_action == ApplicationSetupAction::SignInGitHub && observation.operation_stage == "preparing"))
             && observation.operation_id == Some(op.id)
         {
             provider = provider.push(copy(&observation.operation_message));

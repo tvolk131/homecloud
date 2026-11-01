@@ -224,6 +224,9 @@ The job runs, in order:
    repairs Git integration without another OAuth flow.
 2. Inspect the effective Git credential helpers for github.com and gist.github.com.
    Refuse an unrelated existing helper instead of replacing the owner's setup.
+   Multi-valued helper chains and path-scoped GitHub helper settings also require
+   review; an already-configured per-host reset to gh preserves global helpers
+   used for other hosts.
    Then run `gh auth setup-git --hostname github.com --force` before requesting
    a new token. It writes gh's credential helper for both hosts.
 3. `gh auth login --hostname github.com --web --git-protocol https --skip-ssh-key
@@ -240,6 +243,11 @@ Claude install or mark an otherwise working T3 VM unready. A missing or unsuppor
 gh has its own **Install GitHub CLI** action; an incompatible owner-local binary
 is preserved until the owner repairs it. A GitHub-only login never satisfies the
 requirement to sign into an AI provider.
+
+A saved account does not prove Git integration succeeded. A failed preparation
+step remains visible, with **Retry GitHub setup**, rather than being recovered
+as success merely because credentials already existed. Recovery of an interrupted
+GitHub sign-in requires that it progressed beyond preparation.
 
 gh stores its token in `~/.config/gh/hosts.yml` (mode 0600; the guest has no
 keyring daemon). Homecloud never reads it. Token environment variables

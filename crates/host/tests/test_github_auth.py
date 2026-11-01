@@ -173,6 +173,15 @@ class GitHubAuthTests(unittest.TestCase):
             self.git('config', '--global', '--unset-all', key)
         self.assertFalse(any(call['args'][:2] == ['auth', 'setup-git'] for call in self.calls()))
 
+    def test_path_scoped_helpers_are_preserved_without_reordering_them(self):
+        for hostname in ('github.com', 'gist.github.com'):
+            key = 'credential.https://'+hostname+'/acme.helper'
+            self.git('config', '--global', key, 'store')
+            self.assertIn('another credential helper', self.sign_in()[1])
+            self.assertEqual(self.git('config', '--global', key), 'store')
+            self.git('config', '--global', '--unset-all', key)
+        self.assertFalse(any(call['args'][:2] == ['auth', 'setup-git'] for call in self.calls()))
+
     def test_existing_url_reset_preserves_other_hosts_global_helper(self):
         self.git('config', '--global', 'credential.helper', 'store')
         for hostname in ('github.com', 'gist.github.com'):

@@ -68,12 +68,13 @@ class ApplicationTests(unittest.TestCase):
         self.assertTrue(all(not c['ready'] and c['version'] is None for c in report['observation']['components']))
 
 class CodexRecoveryTests(unittest.TestCase):
-    def inspect_codex(self, phase, account, active=True, boot='new', target='sign_in_codex'):
+    def inspect_codex(self, phase, account, active=True, boot='new', target='sign_in_codex', stage='awaiting_approval', message=None):
         with tempfile.TemporaryDirectory() as tmp:
             base=Path(tmp); boot_file=base/'boot'; boot_file.write_text('new')
             binary=base/'t3'; binary.touch()
             state={'id':OP,'kind':'setup','setup_action':target,'unit':'fixture.service',
-                   'phase':phase,'boot_id':boot,'action':{'url':'https://auth.openai.com/codex/device','code':'DEMO-1234','expires_at':99999999999}}
+                   'phase':phase,'boot_id':boot,'stage':stage,'action':{'url':'https://auth.openai.com/codex/device','code':'DEMO-1234','expires_at':99999999999}}
+            if message is not None:state['message']=message
             guest.save(base/APP/'job.json',state)
             name={'sign_in_codex':'Codex CLI','sign_in_claude':'Claude Code'}.get(target,'GitHub CLI')
             components=[{'name':name,'version':'0.165.0','ready':True,'account':account}]
@@ -122,6 +123,11 @@ class CodexRecoveryTests(unittest.TestCase):
     def test_unknown_setup_action_is_rejected_by_the_job_entrypoint(self):
         with patch.object(guest.sys,'argv',['managed-app.py','job',APP,OP,'setup','0.1.2','unit','sign_in_anything']):
             with self.assertRaises(AssertionError): guest.main()
+
+    def test_github_preparation_failure_is_not_hidden_by_an_existing_account(self):
+        report=self.inspect_codex('failed','signed_in',active=False,target='sign_in_github',stage='preparing',message='Git configuration was refused.')
+        self.assertEqual(report['job']['phase'],'failed')
+        self.assertEqual(report['observation']['operation_message'],'Git configuration was refused.')
 
 
 class AccountCacheTests(unittest.TestCase):

@@ -14,6 +14,7 @@ import shutil
 import signal
 import subprocess
 import time
+from urllib.parse import urlsplit
 from account_metadata import display_text
 
 HOST = 'github.com'
@@ -114,6 +115,15 @@ def configure_git():
     git = shutil.which('git')
     binary = shutil.which('gh')
     if not git or not binary: raise ProtocolError('Install Git and GitHub CLI before signing in.')
+    status, configured = run([git, 'config', '--get-regexp', r'^credential\..*\.helper$'])
+    if status not in (0, 1): raise ProtocolError('Could not inspect Git credential helpers. Review Git configuration before signing in.')
+    roots = {'credential.https://'+hostname+'.helper' for hostname in (HOST, 'gist.github.com')}
+    for line in configured.decode(errors='replace').splitlines():
+        key = line.split(None, 1)[0]
+        try: url = urlsplit(key[len('credential.'):-len('.helper')])
+        except ValueError: raise ProtocolError('Could not inspect Git credential helpers. Review Git configuration before signing in.') from None
+        if url.scheme == 'https' and url.hostname and (url.hostname == HOST or url.hostname.endswith('.'+HOST)) and key not in roots:
+            raise ProtocolError('Git already uses another credential helper for GitHub. Review that helper before connecting this VM.')
     for hostname in (HOST, 'gist.github.com'):
         code, output = run([git, 'config', '--get-urlmatch', 'credential.helper', 'https://'+hostname])
         if code not in (0, 1): raise ProtocolError('Could not inspect Git credential helpers. Review Git configuration before signing in.')

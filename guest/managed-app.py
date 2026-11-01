@@ -189,7 +189,8 @@ def inspect(app_id):
                      if provider_setup else setup == 'ready')
         # Recovery only repairs the matching setup target. T3 being paired says
         # nothing about whether Codex credentials were ever saved.
-        if confirmed and state['kind'] == 'setup' and state['phase'] in ('interrupted', 'failed'):
+        prepared = target != 'sign_in_github' or state.get('stage', 'preparing') != 'preparing'
+        if confirmed and prepared and state['kind'] == 'setup' and state['phase'] in ('interrupted', 'failed'):
             state['phase'] = 'succeeded'; state.pop('action', None); save(directory / 'job.json', state)
         if state['phase'] == 'waiting_for_user':
             candidate = state.get('action')

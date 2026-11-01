@@ -2089,6 +2089,54 @@ fn missing_optional_github_does_not_block_t3_and_has_its_own_install_action() {
     assert!(ui.find("Ubuntu · ready in T3").is_ok());
 }
 
+#[test]
+fn github_preparation_failure_remains_visible_for_a_saved_account() {
+    let _guard = lock();
+    let mut app = github_fixture("signed_in");
+    let operation = setup_operation(
+        ApplicationSetupAction::SignInGitHub,
+        ApplicationPhase::Failed,
+    );
+    let snapshot = app.snapshot.as_mut().unwrap();
+    snapshot.application_operations.push(operation);
+    let observation = &mut snapshot.applications[0].observation;
+    observation.operation_id = Some(id(201));
+    observation.operation_stage = "preparing".into();
+    observation.operation_message = "Git configuration was refused.".into();
+    let mut ui = simulator(&app, (1180.0, 1500.0));
+    assert!(ui.find("Git configuration was refused.").is_ok());
+    ui.click("Retry GitHub setup").unwrap();
+    assert!(
+        matches!(ui.into_messages().collect::<Vec<_>>().as_slice(), [Msg::SetupApplication(application, ApplicationSetupAction::SignInGitHub)] if *application == id(200))
+    );
+}
+
+#[test]
+fn optional_github_install_failure_has_guidance_without_blocking_t3() {
+    let _guard = lock();
+    let mut app = github_fixture("unavailable");
+    let mut operation = setup_operation(
+        ApplicationSetupAction::ConnectT3,
+        ApplicationPhase::Succeeded,
+    );
+    operation.kind = ApplicationOperationKind::Install;
+    let snapshot = app.snapshot.as_mut().unwrap();
+    snapshot.application_operations.push(operation);
+    let component = snapshot.applications[0]
+        .observation
+        .components
+        .iter_mut()
+        .find(|component| component.name == "GitHub CLI")
+        .unwrap();
+    component.ready = false;
+    component.version = Some("2.20.0".into());
+    let mut ui = simulator(&app, (1180.0, 1600.0));
+    assert!(ui.find("T3 setup completed, but GitHub CLI is still unavailable. Check the guest application log before retrying.").is_ok());
+    assert!(ui.find("This VM has an unsupported GitHub CLI. Update or remove it inside the VM before retrying.").is_ok());
+    ui.click("Install GitHub CLI").unwrap();
+    assert!(ui.into_messages().next().is_none());
+}
+
 fn setup_operation(
     target: ApplicationSetupAction,
     phase: ApplicationPhase,
