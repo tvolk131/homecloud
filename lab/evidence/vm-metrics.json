@@ -2,21 +2,22 @@
   "observed_at_utc": "2026-10-31T20:35:46.903424Z",
   "source": {
     "base_commit": "f95c9d6d3a0f8a067b60e971b2b77f59f715cdc9",
+    "reviewed_stack_base_commit": "fff8a4d0ab3d9a62d8f94b7281fa95befefc9259",
     "working_tree_changes": "VM resource metrics implementation, tests, native screenshots, and documentation",
     "private_state_and_credentials_excluded": true
   },
   "automated_validation": {
     "macos_non_gui_rust": {
-      "passed": 297,
+      "passed": 309,
       "ignored": 1,
       "ignored_reason": "Existing opt-in native Keychain test"
     },
     "macos_desktop": {
-      "passed": 123,
+      "passed": 126,
       "screenshot_regressions": "passed",
       "screenshot_backend": "tiny-skia"
     },
-    "python_host_tests_passed": 132,
+    "python_host_tests_passed": 136,
     "linux_metrics_tests_passed": 33,
     "linux_metrics_tests_revision": "Initial live-deployment candidate, before independent review corrections",
     "review_metrics_regressions_macos_passed": 37,
@@ -173,9 +174,26 @@
     "unknown_future_metrics_states_do_not_break_snapshot_decoding": true,
     "metrics_provisioning_tests_added_to_ci": true,
     "re_review": "No blocking findings; additional malformed-tail injection regression and missing-identity diagnostic corrected afterward",
-    "final_local_validation": "297 non-GUI Rust tests, 123 native desktop tests, 132 Python host tests, workspace Clippy, formatting, and signed app packaging passed",
+    "final_local_validation": "309 non-GUI Rust tests, 126 native desktop tests, 136 Python host tests, workspace Clippy, formatting, and signed app packaging passed after the reviewed parent PR fixes",
     "shared_host_retested": false,
     "reason": "resolvr-box was released to another testing thread and remains reserved; the recorded live proof precedes these source corrections"
+  },
+  "parent_pr_review_followup": {
+    "pr7_fix_commit": "faa5a7efbce050e0575d8b8408aab1ec5fb3f514",
+    "pr8_fix_commit": "fff8a4d0ab3d9a62d8f94b7281fa95befefc9259",
+    "pr7_readiness_blocker_fixed": true,
+    "auth_install_and_identity_fixes_preserved_in_python_and_rust": true,
+    "multi_valued_and_path_scoped_helpers_preserved": true,
+    "git_preparation_failure_not_masked_by_existing_account": true,
+    "required_service_setup_precedes_bounded_optional_install": true,
+    "cleanup_only_failures_do_not_break_inspection": true,
+    "focused_re_review": "No blockers; its non-blocking findings were corrected with regressions before publishing",
+    "legacy_jobs_and_matching_hash_cleanup_regressions": "passed",
+    "install_budget_and_terminal_inheritance_regressions": "passed",
+    "python_job_state_and_cli_binding_regressions": "passed",
+    "maintenance_and_nested_host_migration_requirements_documented": true,
+    "live_rust_runner_migration_performed": false,
+    "host_access_during_parent_reviews": false
   },
   "limitations": [
     "Shared Incus exposition does not provide cryptographic per-VM provenance; on versions with unescaped labels, a malicious replacement guest agent could forge complete metric lines. Telemetry is never an admission, authorization, or billing input",

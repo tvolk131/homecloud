@@ -1700,3 +1700,33 @@ signed Mac app packaging pass. These corrections were validated locally only:
 resolvr-box was released to another testing thread, so the live evidence above
 describes the earlier deployment, not an exact-artifact rehearsal of the reviewed
 source. No further host query, test, or deployment was performed.
+
+### Parent PR review follow-up
+
+Fresh independent reviews of the GitHub CLI and static guest-runner parents found
+a GitHub readiness blocker and several auth/install/migration edge cases. The
+Python fixes are preserved in the Rust replacement: optional gh never gates T3
+readiness or required tool installation, config-read errors cannot report a
+successful sign-out, unrelated Git credential helpers are preserved, and partial
+identity writes retain ownership metadata. The host retains legacy helpers while
+application jobs are active or unobservable, retries cleanup on a matching binary
+hash, and attempts staging cleanup after failed pushes. Rust installs share a
+1200-second command budget and PTY handles are close-on-exec. New regressions cover
+Python-written state and command-line unit/version binding. CI now executes the
+host handoff/deployment contracts and the musl binary's help/version smoke checks.
+
+The final restacked candidate passes 309 non-GUI Rust tests, 126 desktop tests
+including screenshots, and 136 Python host tests, plus workspace Clippy,
+formatting, and signed Mac packaging. The first Rust-runner deployment remains a
+separately approved maintenance migration, including already-installed nested
+hosts; normal updater rollback cannot cross that protected-boundary change. See
+the explicit plan in `deployment.md`. No host access or deployment was performed
+during these reviews, and live runner/auth-flow and Mac GUI acceptance remain
+operator steps rather than automated-test claims.
+
+A focused re-review found no blockers. Its further findings were corrected:
+multi-valued/path-scoped Git helpers are protected, preparation failures remain
+visible even when an account already exists, required T3 service setup precedes
+the separately bounded optional gh install, and cleanup-only failures no longer
+break inspection or repeat unit scans once legacy files are gone. These cases
+have regression coverage; no further live acceptance is implied.
