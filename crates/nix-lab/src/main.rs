@@ -148,6 +148,25 @@ fn logged_script(body: &str, log: &str) -> String {
         quote(log)
     )
 }
+async fn protected_inventory<Query, Reply>(mut query: Query) -> Result<Value>
+where
+    Query: FnMut(String) -> Reply,
+    Reply: std::future::Future<Output = Result<String>>,
+{
+    let inventory: Value = serde_json::from_str(&query("incus list --format=json".into()).await?)?;
+    let mut protected = Vec::new();
+    for instance in inventory.as_array().context("Incus instance inventory")? {
+        let name = instance["name"].as_str().context("Incus instance name")?;
+        let script = format!(
+            "incus query {}",
+            quote(format!("/1.0/instances/{name}/state"))
+        );
+        let state: Value = serde_json::from_str(&query(script).await?)?;
+        let pid = state["pid"].as_i64().context("Incus instance process ID")?;
+        protected.push(json!({"name":name,"pid":pid}));
+    }
+    Ok(json!(protected))
+}
 fn private_write(path: &Path, bytes: &[u8]) -> Result<()> {
     let tmp = path.with_extension(format!("{}.tmp", Uuid::new_v4()));
     let mut f = fs::OpenOptions::new()
@@ -320,14 +339,10 @@ impl Runner {
             ensure!(snapshot["me"]["role"] == "admin", "Administrator required");
             let run = Uuid::new_v4();
             let prefix = format!("hc-proof-nix-{}", &run.simple().to_string()[..10]);
-            let protected: Value = serde_json::from_str(
-                &self
-                    .remote(
-                        r#"incus list --format=json | jq -r '.[].name' | while IFS= read -r name; do incus query "/1.0/instances/$name/state" | jq -c --arg name "$name" '{name:$name,pid:(.pid // 0)}'; done | jq -s ."#,
-                        30,
-                    )
-                    .await?,
-            )?;
+            let runner = &*self;
+            let protected =
+                protected_inventory(|script| async move { runner.remote(&script, 30).await })
+                    .await?;
             let grant = snapshot["me"]["grant"].clone();
             let used = &snapshot["me"]["committed"];
             let mut applied = grant.clone();
@@ -595,6 +610,67 @@ async fn main() -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[tokio::test]
+    async fn protected_inventory_rejects_failed_or_incomplete_queries() {
+        assert!(
+            protected_inventory(|_| std::future::ready(Err(anyhow::anyhow!("list failed"))))
+                .await
+                .is_err()
+        );
+        let mut queries = 0;
+        let result = protected_inventory(|_| {
+            queries += 1;
+            std::future::ready(match queries {
+                1 => Ok(r#"[{"name":"first"},{"name":"second"}]"#.into()),
+                2 => Ok(r#"{"pid":123}"#.into()),
+                _ => Err(anyhow::anyhow!("state query failed")),
+            })
+        })
+        .await;
+        assert!(result.is_err());
+        assert_eq!(queries, 3);
+        for invalid in ["not JSON", "null", "{}", r#"{"pid":"unknown"}"#] {
+            let result = protected_inventory(|script| {
+                std::future::ready(Ok(if script == "incus list --format=json" {
+                    r#"[{"name":"fixture"}]"#.into()
+                } else {
+                    invalid.into()
+                }))
+            })
+            .await;
+            assert!(
+                result.is_err(),
+                "accepted incomplete instance state: {invalid}"
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn protected_inventory_records_every_confirmed_process() {
+        let protected = protected_inventory(|script| {
+            std::future::ready(Ok(match script.as_str() {
+                "incus list --format=json" => r#"[{"name":"running"},{"name":"stopped"}]"#,
+                "incus query '/1.0/instances/running/state'" => r#"{"pid":123}"#,
+                "incus query '/1.0/instances/stopped/state'" => r#"{"pid":0}"#,
+                _ => panic!("unexpected query: {script}"),
+            }
+            .into()))
+        })
+        .await
+        .unwrap();
+        assert_eq!(
+            protected,
+            json!([{"name":"running","pid":123},{"name":"stopped","pid":0}])
+        );
+        assert_eq!(
+            protected_inventory(|_| std::future::ready(Ok("[]".into())))
+                .await
+                .unwrap(),
+            json!([])
+        );
+    }
+
     #[test]
     fn shell_quote_preserves_literal_metacharacters() {
         let input = "a' $(touch /tmp/no) `id`\n b";

@@ -195,6 +195,9 @@ exceptions, accounts, installer files and the tagged dataset. The active marker
 is removed last. `cleanup` then deletes the exact manifest VM IDs through the
 Homecloud API and restores the captured grant only if it has not drifted.
 Preparation and restoration fence both the resource grant and GPU authorization.
+Preparation requires a successful inventory and state query for every protected
+VM before saving the baseline. Cleanup also checks live application records,
+including applications installed after fixture creation, before deleting a VM.
 Cleanup persists each deletion intent before submitting it and reconciles the
 controller's recorded deletion operations on retry. It verifies the identity of
 every surviving fixture, requires host absence after confirmed deletion, and

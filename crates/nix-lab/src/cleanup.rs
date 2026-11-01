@@ -9,6 +9,14 @@ enum DeletionStatus {
 
 fn deletion_status(state: &State, fixture: &Fixture, snapshot: &Value) -> Result<DeletionStatus> {
     let id = fixture.id.context("Fixture ID missing")?.to_string();
+    ensure!(
+        !snapshot["applications"]
+            .as_array()
+            .context("Snapshot applications")?
+            .iter()
+            .any(|application| application["vm_id"] == id),
+        "Fixture application records changed; preserve the VM for inspection"
+    );
     let vm = snapshot["vms"]
         .as_array()
         .context("Snapshot VMs")?
@@ -180,7 +188,8 @@ mod tests {
         json!({
             "me":{"id":state.owner,"role":"admin","grant":state.applied_grant,"gpu_allowed":state.gpu_allowed},
             "vms":[{"id":state.fixtures[0].id,"owner":state.owner,"desired":"running","spec":{"name":"owned-client","applications":[]}}],
-            "operations":[]
+            "operations":[],
+            "applications":[]
         })
     }
 
@@ -252,6 +261,28 @@ mod tests {
         }
         current["operations"] = json!([deletion(&state, "applying")]);
         current["vms"][0]["owner"] = json!(Uuid::new_v4());
+        assert!(deletion_status(&state, &state.fixtures[0], &current).is_err());
+    }
+
+    #[test]
+    fn cleanup_refuses_applications_added_after_vm_creation() {
+        let state = state();
+        let mut current = snapshot(&state);
+        current["applications"] =
+            json!([{"id":Uuid::new_v4(),"vm_id":Uuid::new_v4(),"kind":"t3_code"}]);
+        assert_eq!(
+            deletion_status(&state, &state.fixtures[0], &current).unwrap(),
+            DeletionStatus::Request
+        );
+        current["applications"][0]["vm_id"] = json!(state.fixtures[0].id);
+        assert!(
+            current["vms"][0]["spec"]["applications"]
+                .as_array()
+                .unwrap()
+                .is_empty()
+        );
+        assert!(deletion_status(&state, &state.fixtures[0], &current).is_err());
+        current.as_object_mut().unwrap().remove("applications");
         assert!(deletion_status(&state, &state.fixtures[0], &current).is_err());
     }
 
