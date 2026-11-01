@@ -376,12 +376,6 @@ def target_gpu(vm, mutation):
     return targets[0] if targets else None
 
 
-def matching_gpu_devices(vm,instance):
-    try:devices=checked_gpu_devices(vm,instance)
-    except AssertionError:return False
-    return {dev['pci'].lower() for dev in devices.values()}==set(vm_gpus(vm))
-
-
 def apply(c, vm, vms, users, mutation):
     uid(vm['id']);uid(vm['owner']);spec=vm['spec']
     assert 1<=spec['memory_gib']<=1024 and 1<=spec['cores']<=256 and 10<=spec['disk_gib']<=65536
@@ -611,77 +605,6 @@ def restore_gpu(address):
     saved.unlink()
 
 
-def inventory(c):
-    cpu=Path('/proc/cpuinfo').read_text();mem=Path('/proc/meminfo').read_text()
-    groups=set()
-    for p in Path('/sys/devices/system/cpu').glob('cpu[0-9]*/topology/thread_siblings_list'):groups.add(p.read_text().strip())
-    dmar=Path('/sys/firmware/acpi/tables/DMAR').exists();ivrs=Path('/sys/firmware/acpi/tables/IVRS').exists()
-    count=len(list(Path('/sys/kernel/iommu_groups').iterdir()))
-    ready=count>0
-    board=Path('/sys/class/dmi/id/board_name').read_text().strip()
-    iommu={'state':'ready' if ready else 'needs_firmware_configuration','evidence':[f'DMAR={dmar}; IVRS={ivrs}; IOMMU groups={count}',f'Motherboard: {board}'],'next_steps':[] if ready else ['Enable Intel VT-d or AMD IOMMU in firmware, then reboot and recheck.','If already enabled, inspect kernel IOMMU configuration. Missing groups alone do not prove unsupported hardware.']}
-    warnings=[];cards=[]
-    try:instances=api('GET','/1.0/instances?recursion=1')
-    except Exception as error:
-        instances=[];warnings.append('Incus inventory unavailable: '+str(error))
-    for p in Path('/sys/bus/pci/devices').iterdir():
-        if not (p/'class').read_text().strip().startswith(('0x0300','0x0302')):continue
-        group=int((p/'iommu_group').resolve().name) if (p/'iommu_group').exists() else None
-        display=(p/'boot_vga').exists() and (p/'boot_vga').read_text().strip()=='1'
-        offered=p.name in c.get('allowed_gpus',[])
-        state='ready' if ready and offered else ('reserved_by_operator' if not offered else 'needs_firmware_configuration')
-        if display and not c.get('allow_host_display_handoff',False):state='host_display_requires_policy'
-        members=[]
-        if group is not None:
-            members=list(((p/'iommu_group').resolve()/'devices').iterdir())
-            if any(not member.name.startswith(p.name[:-1]) and not (member/'class').read_text().strip().startswith('0x0604') for member in members):state='unsafe_iommu_group'
-        else:state='needs_firmware_configuration'
-        owner=next((v for v in instances if any(dev.get('type')=='gpu' and dev.get('pci')==p.name for dev in v['expanded_devices'].values())),None)
-        assigned=None;telemetry='Unavailable: GPU is on the host or not responding to a supported guest query.'
-        if owner:
-            state='assigned'
-            try:assigned=uid(owner['config'].get('user.homecloud.id',''))
-            except (ValueError,AttributeError):pass
-            telemetry='Unavailable while the assigned VM is stopped or its guest driver is unavailable.'
-            if sum(dev.get('type')=='gpu' for dev in owner['expanded_devices'].values())>1:
-                telemetry='Per-device guest telemetry is unavailable for multi-GPU VMs.'
-            elif owner['status']=='Running':
-                try:
-                    probe=run('incus','exec',owner['name'],'--','nvidia-smi','--query-gpu=utilization.gpu,memory.used,memory.total,temperature.gpu','--format=csv,noheader,nounits',check=False,timeout=4)
-                    if probe.returncode==0:
-                        values=probe.stdout.strip().split(',')
-                        if len(values)==4:telemetry=f'Guest GPU responding: {values[0].strip()}% utilization; {values[1].strip()}/{values[2].strip()} MiB VRAM; {values[3].strip()} C. Guest-reported, not an independent hardware health guarantee.'
-                except subprocess.TimeoutExpired:pass
-        cards.append({'pci':p.name,'model':run('lspci','-s',p.name,check=False).stdout.strip(),'driver':(p/'driver').resolve().name if (p/'driver').exists() else None,'iommu_group':group,'host_display':display,'assigned_vm':assigned,'telemetry':telemetry,'readiness':{'state':state,'evidence':[f'IOMMU group {group}',f'Members: {", ".join(m.name for m in members)}',f'Host display: {display}'],'next_steps':[] if state in ('ready','assigned') else ['Review firmware, group membership, and operator assignment policy.']}})
-    try:
-        available=zget(c['pool'],'available');pool_health=run('zpool','list','-H','-o','health',c['pool']).stdout.strip()
-    except Exception as error:
-        available=0;pool_health='unavailable';warnings.append('ZFS inventory unavailable: '+str(error))
-    if available<c['minimum_pool_available_bytes']:warnings.append('Pool accounting headroom below operating floor; growth is blocked')
-    return {'shutdown_boot_id':shutdown_boot(),'hostname':os.uname().nodename,'cpu_model':next((l.split(':',1)[1].strip() for l in cpu.splitlines() if l.startswith('model name')),'unknown'),'physical_cores':len(groups),'memory_bytes':int(next(l.split()[1] for l in mem.splitlines() if l.startswith('MemTotal:')))*1024,'pool':c['pool'],'pool_available_bytes':available,'minimum_pool_available_bytes':c['minimum_pool_available_bytes'],'pool_health':pool_health,'iommu':iommu,'gpus':cards,'warnings':warnings}
-
-
-def observe(vms):
-    try:actual={v['name']:v for v in api('GET','/1.0/instances?recursion=1')}
-    except Exception as error:
-        return [{'id':vm['id'],'state':'unavailable','error':'Incus observation unavailable; allocations remain held: '+str(error),'progress':None} for vm in vms if vm['observed']!='deleted']
-    result=[]
-    for vm in vms:
-        if vm['observed']=='deleted':continue
-        record=actual.get(vm_name(vm));error=None;observed='missing'
-        if record:
-            observed=record['status'].lower();conf=record['config'];devices=record['devices']
-            if conf.get('user.homecloud.id')!=vm['id'] or conf.get('user.homecloud.owner')!=vm['owner']:
-                error='Ownership drift: operator review required'
-            elif (not vm['cpu_ids'] and conf.get('boot.autostart')!='false') or (vm['cpu_ids'] and conf.get('limits.cpu')!=cpulist(vm['cpu_ids'])) or conf.get('limits.memory')!=f'{vm["spec"]["memory_gib"]}GiB' or devices.get('root',{}).get('size')!=f'{vm["spec"]["disk_gib"]}GiB' or not matching_gpu_devices(vm,record):
-                error='Configuration drift: operator review required'
-            elif observed!=vm['desired']:
-                error='Lifecycle differs from requested state; inspect before restarting'
-        else:error='Recorded VM is missing from Incus; resources remain held for inspection'
-        result.append({'id':vm['id'],'state':observed,'error':error,'progress':instance_runtime.progress(sys.modules[__name__],vm)})
-    return result
-
-
 def main():
     assert os.geteuid()==0,'Run through the installed privileged adapter'
     c=load_config();STATE.mkdir(parents=True,exist_ok=True)
@@ -700,9 +623,7 @@ def main():
     if kind=='diagnostics':return {'kind':'diagnostics','data':instance_runtime.diagnostics(sys.modules[__name__],request['vm'])}
     if kind=='application':return {'kind':'application','data':managed_apps.application(sys.modules[__name__],request['vm'],request['application'],request['command'])}
     if kind=='reserve_status':return {'kind':'reserve_policy','data':resource_reserves.report(c['_reserve_base'],c['_reserve_record'])}
-    if kind=='inventory':return {'kind':'inventory','data':inventory(c)}
     if kind=='storage':return {'kind':'storage','data':json.loads(run('/usr/local/bin/homecloudd','collect-storage',timeout=120).stdout)}
-    if kind=='observe':return {'kind':'observations','data':observe(request['vms'])}
     if kind=='verify_ssh':
         vm=request['vm'];d=owned(vm);assert state(vm)=='running','VM is not running'
         eth=d['devices'].get('eth0',{});slot=vm['network_slot']

@@ -13,5 +13,10 @@ tokio.workspace = true
 reqwest.workspace = true
 nix.workspace = true
 uuid.workspace = true
+
+[[bin]]
+name = "homecloud-host-observer"
+path = "src/bin/observer.rs"
+
 [dev-dependencies]
 tempfile.workspace = true

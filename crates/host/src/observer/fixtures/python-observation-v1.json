@@ -1,0 +1,287 @@
+{
+  "source": "Captured from the Python host adapter at c11ef69 before the native observation cutover.",
+  "inventory": [
+    {
+      "cpu_model": "Fixture CPU",
+      "gpus": [
+        {
+          "assigned_vm": null,
+          "driver": null,
+          "host_display": false,
+          "iommu_group": 12,
+          "model": "Fixture GPU",
+          "pci": "0000:01:00.0",
+          "readiness": {
+            "evidence": [
+              "IOMMU group 12",
+              "Members: 0000:01:00.0",
+              "Host display: False"
+            ],
+            "next_steps": [],
+            "state": "ready"
+          },
+          "telemetry": "Unavailable: GPU is on the host or not responding to a supported guest query."
+        }
+      ],
+      "hostname": "fixture-host",
+      "iommu": {
+        "evidence": [
+          "DMAR=True; IVRS=False; IOMMU groups=1",
+          "Motherboard: Fixture Board"
+        ],
+        "next_steps": [],
+        "state": "ready"
+      },
+      "memory_bytes": 8589934592,
+      "minimum_pool_available_bytes": 2147483648,
+      "physical_cores": 2,
+      "pool": "test",
+      "pool_available_bytes": 10737418240,
+      "pool_health": "ONLINE",
+      "warnings": []
+    },
+    {
+      "cpu_model": "Fixture CPU",
+      "gpus": [
+        {
+          "assigned_vm": null,
+          "driver": null,
+          "host_display": true,
+          "iommu_group": 12,
+          "model": "Fixture GPU",
+          "pci": "0000:01:00.0",
+          "readiness": {
+            "evidence": [
+              "IOMMU group 12",
+              "Members: 0000:01:00.0",
+              "Host display: True"
+            ],
+            "next_steps": [
+              "Review firmware, group membership, and operator assignment policy."
+            ],
+            "state": "host_display_requires_policy"
+          },
+          "telemetry": "Unavailable: GPU is on the host or not responding to a supported guest query."
+        }
+      ],
+      "hostname": "fixture-host",
+      "iommu": {
+        "evidence": [
+          "DMAR=True; IVRS=False; IOMMU groups=1",
+          "Motherboard: Fixture Board"
+        ],
+        "next_steps": [],
+        "state": "ready"
+      },
+      "memory_bytes": 8589934592,
+      "minimum_pool_available_bytes": 2147483648,
+      "physical_cores": 2,
+      "pool": "test",
+      "pool_available_bytes": 10737418240,
+      "pool_health": "ONLINE",
+      "warnings": []
+    },
+    {
+      "cpu_model": "Fixture CPU",
+      "gpus": [
+        {
+          "assigned_vm": "00000000-0000-4000-8000-000000000001",
+          "driver": null,
+          "host_display": false,
+          "iommu_group": 12,
+          "model": "Fixture GPU",
+          "pci": "0000:01:00.0",
+          "readiness": {
+            "evidence": [
+              "IOMMU group 12",
+              "Members: 0000:01:00.0",
+              "Host display: False"
+            ],
+            "next_steps": [],
+            "state": "assigned"
+          },
+          "telemetry": "Guest GPU responding: 10% utilization; 1024/8192 MiB VRAM; 42 C. Guest-reported, not an independent hardware health guarantee."
+        }
+      ],
+      "hostname": "fixture-host",
+      "iommu": {
+        "evidence": [
+          "DMAR=True; IVRS=False; IOMMU groups=1",
+          "Motherboard: Fixture Board"
+        ],
+        "next_steps": [],
+        "state": "ready"
+      },
+      "memory_bytes": 8589934592,
+      "minimum_pool_available_bytes": 2147483648,
+      "physical_cores": 2,
+      "pool": "test",
+      "pool_available_bytes": 10737418240,
+      "pool_health": "ONLINE",
+      "warnings": []
+    },
+    {
+      "cpu_model": "Fixture CPU",
+      "gpus": [
+        {
+          "assigned_vm": "00000000-0000-4000-8000-000000000001",
+          "driver": null,
+          "host_display": true,
+          "iommu_group": 12,
+          "model": "Fixture GPU",
+          "pci": "0000:01:00.0",
+          "readiness": {
+            "evidence": [
+              "IOMMU group 12",
+              "Members: 0000:01:00.0",
+              "Host display: True"
+            ],
+            "next_steps": [],
+            "state": "assigned"
+          },
+          "telemetry": "Guest GPU responding: 10% utilization; 1024/8192 MiB VRAM; 42 C. Guest-reported, not an independent hardware health guarantee."
+        }
+      ],
+      "hostname": "fixture-host",
+      "iommu": {
+        "evidence": [
+          "DMAR=True; IVRS=False; IOMMU groups=1",
+          "Motherboard: Fixture Board"
+        ],
+        "next_steps": [],
+        "state": "ready"
+      },
+      "memory_bytes": 8589934592,
+      "minimum_pool_available_bytes": 2147483648,
+      "physical_cores": 2,
+      "pool": "test",
+      "pool_available_bytes": 10737418240,
+      "pool_health": "ONLINE",
+      "warnings": []
+    }
+  ],
+  "observe": [
+    [
+      {
+        "error": null,
+        "id": "00000000-0000-4000-8000-000000000001",
+        "progress": {
+          "since": 123,
+          "stage": "guest_agent"
+        },
+        "state": "running"
+      }
+    ],
+    [
+      {
+        "error": "Recorded VM is missing from Incus; resources remain held for inspection",
+        "id": "00000000-0000-4000-8000-000000000001",
+        "progress": {
+          "since": 123,
+          "stage": "guest_agent"
+        },
+        "state": "missing"
+      }
+    ],
+    [
+      {
+        "error": "Ownership drift: operator review required",
+        "id": "00000000-0000-4000-8000-000000000001",
+        "progress": {
+          "since": 123,
+          "stage": "guest_agent"
+        },
+        "state": "running"
+      }
+    ],
+    [
+      {
+        "error": "Configuration drift: operator review required",
+        "id": "00000000-0000-4000-8000-000000000001",
+        "progress": {
+          "since": 123,
+          "stage": "guest_agent"
+        },
+        "state": "running"
+      }
+    ],
+    [
+      {
+        "error": "Configuration drift: operator review required",
+        "id": "00000000-0000-4000-8000-000000000001",
+        "progress": {
+          "since": 123,
+          "stage": "guest_agent"
+        },
+        "state": "running"
+      }
+    ],
+    [
+      {
+        "error": "Lifecycle differs from requested state; inspect before restarting",
+        "id": "00000000-0000-4000-8000-000000000001",
+        "progress": {
+          "since": 123,
+          "stage": "guest_agent"
+        },
+        "state": "stopped"
+      }
+    ],
+    [
+      {
+        "error": "Configuration drift: operator review required",
+        "id": "00000000-0000-4000-8000-000000000001",
+        "progress": {
+          "since": 123,
+          "stage": "guest_agent"
+        },
+        "state": "running"
+      }
+    ],
+    [
+      {
+        "error": "Configuration drift: operator review required",
+        "id": "00000000-0000-4000-8000-000000000001",
+        "progress": {
+          "since": 123,
+          "stage": "guest_agent"
+        },
+        "state": "running"
+      }
+    ],
+    [
+      {
+        "error": "Configuration drift: operator review required",
+        "id": "00000000-0000-4000-8000-000000000001",
+        "progress": {
+          "since": 123,
+          "stage": "guest_agent"
+        },
+        "state": "running"
+      }
+    ],
+    [
+      {
+        "error": null,
+        "id": "00000000-0000-4000-8000-000000000001",
+        "progress": {
+          "since": 123,
+          "stage": "guest_agent"
+        },
+        "state": "stopped"
+      }
+    ],
+    [
+      {
+        "error": "Configuration drift: operator review required",
+        "id": "00000000-0000-4000-8000-000000000001",
+        "progress": {
+          "since": 123,
+          "stage": "guest_agent"
+        },
+        "state": "stopped"
+      }
+    ],
+    []
+  ]
+}

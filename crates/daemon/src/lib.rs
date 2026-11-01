@@ -2,6 +2,8 @@
 mod action_tests;
 mod apps;
 #[cfg(test)]
+mod config_tests;
+#[cfg(test)]
 mod memory_tests;
 #[cfg(test)]
 mod reserve_tests;
@@ -15,7 +17,10 @@ mod storage_tests;
 use anyhow::{Result, ensure};
 use homecloud_client::{DeviceProof, read_frame, write_frame};
 use homecloud_core::*;
-use homecloud_host::{Backend, HostRequest, HostResponse};
+use homecloud_host::{
+    Backend, HOST_OBSERVER_PATH, HostCommand, HostRequest, HostResponse, ObservingBackend,
+    ProcessBackend,
+};
 use homecloud_store::{Limits, Store};
 use iroh::{
     Endpoint, SecretKey,
@@ -36,12 +41,43 @@ use tokio::{
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
     pub limits: Limits,
+    #[serde(default = "default_host_script")]
     pub host_script: PathBuf,
+    /// Replaces the legacy Python command when explicitly configured locally.
+    #[serde(default)]
+    pub host_command: Option<HostCommand>,
     #[serde(default = "default_true")]
     pub sudo: bool,
 }
 fn default_true() -> bool {
     true
+}
+fn default_host_script() -> PathBuf {
+    "/usr/local/libexec/homecloud/host_runtime.py".into()
+}
+impl Config {
+    fn primary_command(&self) -> HostCommand {
+        self.host_command.clone().unwrap_or_else(|| HostCommand {
+            program: "/usr/bin/python3".into(),
+            args: vec![self.host_script.to_string_lossy().into_owned()],
+        })
+    }
+
+    pub fn host_backend(&self) -> Arc<dyn Backend> {
+        Arc::new(ObservingBackend {
+            primary: Arc::new(ProcessBackend {
+                command: self.primary_command(),
+                sudo: self.sudo,
+            }),
+            observer: Arc::new(ProcessBackend {
+                command: HostCommand {
+                    program: HOST_OBSERVER_PATH.into(),
+                    args: vec![],
+                },
+                sudo: self.sudo,
+            }),
+        })
+    }
 }
 impl Default for Config {
     fn default() -> Self {
@@ -55,7 +91,8 @@ impl Default for Config {
                 core_groups: vec![vec![2, 8], vec![3, 9]],
                 disk_overhead_gib_per_vm: 2,
             },
-            host_script: "/usr/local/libexec/homecloud/host_runtime.py".into(),
+            host_script: default_host_script(),
+            host_command: None,
             sudo: true,
         }
     }

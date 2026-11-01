@@ -24,6 +24,7 @@ def write(path,content,mode=0o644):
 def main():
     a=argparse.ArgumentParser();a.add_argument('--policy',required=True,type=Path);a.add_argument('--daemon',required=True,type=Path)
     a.add_argument('--cli',type=Path,help='Matching CLI (defaults to the daemon directory)')
+    a.add_argument('--observer',type=Path,help='Matching Rust observer (defaults to the daemon directory)')
     a.add_argument('--check',action='store_true',help='Validate prerequisites and reviewed policy without installing')
     a.add_argument('--maintenance',action='store_true',help='Explicitly reinstall host policy; can interrupt management and workloads')
     args=a.parse_args()
@@ -35,7 +36,11 @@ def main():
     assert args.daemon.is_file()
     args.cli=args.cli or args.daemon.parent/'homecloud'
     assert args.cli.is_file(),'Supply the matching CLI with --cli'
-    host_deploy.Services().check({'bin/homecloudd':args.daemon.read_bytes(),'bin/homecloud':args.cli.read_bytes()})
+    args.observer=args.observer or args.daemon.parent/'homecloud-host-observer'
+    assert args.observer.is_file(),'Supply the matching Rust observer with --observer'
+    assert args.observer.read_bytes()[:5]==b'\x7fELF\x02','Expected a Linux 64-bit observer'
+    host_deploy.Services().check({'bin/homecloudd':args.daemon.read_bytes(),'bin/homecloud':args.cli.read_bytes(),
+                                 'bin/homecloud-host-observer':args.observer.read_bytes()})
     # Complete read-only preflight before the first persistent change.
     assert args.daemon.read_bytes()[:5]==b'\x7fELF\x02','Expected a Linux 64-bit daemon'
     run(str(args.daemon.resolve()),'--help')
@@ -92,10 +97,12 @@ def main():
     audit=Path('/var/log/homecloud-cpu-launch.jsonl');audit.touch(exist_ok=True);audit.chmod(0o600)
     run('install','-m','0755',str(args.daemon),'/usr/local/bin/homecloudd')
     run('install','-m','0755',str(args.cli),'/usr/local/bin/homecloud')
+    run('install','-o','root','-g','root','-m','0755',str(args.observer),host_deploy.HELPER+'homecloud-host-observer')
     daemon={'limits':{'capacity':c['capacity'],'core_groups':c['cpu_groups'],'disk_overhead_gib_per_vm':c.get('disk_overhead_gib_per_vm',2)},'host_script':str(helper),'sudo':True}
     write(config/'control.json',json.dumps(daemon,indent=2),0o640)
     os.chown(config/'control.json',0,account.pw_gid)
-    sudoers='homecloud ALL=(root) NOPASSWD: /usr/bin/python3 /usr/local/libexec/homecloud/host_runtime.py\n'
+    sudoers=('homecloud ALL=(root) NOPASSWD: /usr/bin/python3 /usr/local/libexec/homecloud/host_runtime.py\n'
+             'homecloud ALL=(root) NOPASSWD: /usr/local/libexec/homecloud/homecloud-host-observer ""\n')
     temporary=config/'sudoers.check';write(temporary,sudoers,0o440);run('visudo','-cf',str(temporary))
     run('install','-m','0440',str(temporary),'/etc/sudoers.d/homecloud');temporary.unlink()
     house=','.join(str(x) for x in effective['housekeeping']);affinity=' '.join(str(x) for x in effective['housekeeping'])

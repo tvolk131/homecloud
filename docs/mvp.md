@@ -162,8 +162,11 @@ reversed. Physical backing reconciles independently of logical admission changes
 The network-facing daemon runs as `homecloud`, without Incus group membership.
 A root-owned fixed-command adapter is invoked by a narrowly matching sudo rule.
 Clients cannot supply arbitrary host commands, paths, image URLs or network destinations.
-This adapter is Python for the first implementation; domain policy, identity,
+The remaining privileged operations use Python; domain policy, identity,
 persistence, transport, clients and reconciliation are Rust. The CPU launcher is C.
+The [Rust host observer](host-adapter.md) handles all inventory and VM observation;
+their Python implementations have been removed. Installation and software
+rollback include its binary alongside the daemon and CLI.
 
 ## Current roadmap
 
