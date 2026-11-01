@@ -37,16 +37,36 @@ pub fn new_session(command: &mut Command) {
 
 /// Runs a command with stdout captured (at most `limit` bytes kept) and
 /// stderr discarded. `Ok(None)` means it was killed at the deadline.
-pub fn capture(
-    mut command: Command,
+pub fn capture(command: Command, timeout: Duration, limit: usize) -> io::Result<Option<Captured>> {
+    capture_output(command, timeout, limit, false)
+}
+
+pub fn capture_combined(
+    command: Command,
     timeout: Duration,
     limit: usize,
 ) -> io::Result<Option<Captured>> {
-    command.stdout(Stdio::piped()).stderr(Stdio::null());
+    capture_output(command, timeout, limit, true)
+}
+
+fn capture_output(
+    mut command: Command,
+    timeout: Duration,
+    limit: usize,
+    combined: bool,
+) -> io::Result<Option<Captured>> {
+    let (mut stdout, writer) = io::pipe()?;
+    command.stdout(writer.try_clone()?);
+    if combined {
+        command.stderr(writer);
+    } else {
+        command.stderr(Stdio::null());
+        drop(writer);
+    }
     new_session(&mut command);
     let deadline = Instant::now() + timeout;
     let mut child = Guard::new(command.spawn()?, Duration::ZERO);
-    let mut stdout = child.0.stdout.take().expect("stdout is piped");
+    drop(command);
     let mut output = Vec::new();
     let mut buffer = [0u8; 8192];
     loop {
@@ -71,6 +91,18 @@ pub fn capture(
         code: status.code(),
         stdout: output,
     }))
+}
+
+pub fn terminal(size: Option<&nix::pty::Winsize>) -> io::Result<nix::pty::OpenptyResult> {
+    let terminal = nix::pty::openpty(size, None).map_err(io::Error::from)?;
+    for descriptor in [&terminal.master, &terminal.slave] {
+        nix::fcntl::fcntl(
+            descriptor,
+            nix::fcntl::FcntlArg::F_SETFD(nix::fcntl::FdFlag::FD_CLOEXEC),
+        )
+        .map_err(io::Error::from)?;
+    }
+    Ok(terminal)
 }
 
 /// Runs a command with its own stdio. `Ok(None)` means it was killed at the deadline.
@@ -156,5 +188,22 @@ impl Guard {
 impl Drop for Guard {
     fn drop(&mut self) {
         self.stop();
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn terminal_descriptors_are_closed_on_exec() {
+        let terminal = terminal(None).unwrap();
+        for descriptor in [&terminal.master, &terminal.slave] {
+            let flags = nix::fcntl::fcntl(descriptor, nix::fcntl::FcntlArg::F_GETFD).unwrap();
+            assert!(
+                nix::fcntl::FdFlag::from_bits_truncate(flags)
+                    .contains(nix::fcntl::FdFlag::FD_CLOEXEC)
+            );
+        }
     }
 }

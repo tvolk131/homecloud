@@ -19,13 +19,14 @@ const SERVICE_PATH: &str = "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/s
 
 /// The install job: system prerequisite, T3 itself, provider tools, service.
 pub fn install(ctx: &Ctx, version: &str) -> Result<()> {
+    let ctx = &ctx.with_deadline(Duration::from_secs(1200));
     if !cfg!(all(target_os = "linux", target_arch = "x86_64")) {
         return fail("T3 Code setup requires a Linux x86-64 guest.");
     }
     if !Path::new(LIBATOMIC).exists() {
         let mut command = ctx.tool("sudo");
         command.args(["-n", "apt-get", "install", "-y", "libatomic1"]);
-        if !process::status(command, Duration::from_secs(300))?
+        if !process::status(command, ctx.limit(Duration::from_secs(300))?)?
             .is_some_and(|status| status.success())
         {
             return fail(
@@ -50,7 +51,10 @@ fn installed(ctx: &Ctx, version: &str) -> bool {
     }
     let mut command = ctx.command(ctx.t3());
     command.arg("--version");
-    process::capture(command, Duration::from_secs(30), 4096)
+    let Ok(timeout) = ctx.limit(Duration::from_secs(30)) else {
+        return false;
+    };
+    process::capture(command, timeout, 4096)
         .ok()
         .flatten()
         .is_some_and(|output| {
@@ -81,14 +85,18 @@ fn run_installer(ctx: &Ctx, version: &str) -> Result<()> {
     ])
     .arg(&installer)
     .arg("https://t3.codes/install.sh");
-    if !process::status(curl, Duration::from_secs(330))?.is_some_and(|status| status.success()) {
+    if !process::status(curl, ctx.limit(Duration::from_secs(330))?)?
+        .is_some_and(|status| status.success())
+    {
         return fail(
             "Could not download the T3 Code installer. Check the VM's internet access and try again.",
         );
     }
     let mut shell = ctx.tool("sh");
     shell.arg(&installer).env("T3CODE_VERSION", version);
-    if !process::status(shell, Duration::from_secs(900))?.is_some_and(|status| status.success()) {
+    if !process::status(shell, ctx.limit(Duration::from_secs(900))?)?
+        .is_some_and(|status| status.success())
+    {
         return fail("The T3 Code installer failed. Try again.");
     }
     Ok(())
@@ -122,7 +130,11 @@ fn service_env(ctx: &Ctx) -> Result<()> {
 fn systemctl(ctx: &Ctx, args: &[&str]) -> Result<Option<process::Captured>> {
     let mut command = ctx.tool("systemctl");
     command.arg("--user").args(args);
-    Ok(process::capture(command, Duration::from_secs(60), 65536)?)
+    Ok(process::capture(
+        command,
+        ctx.limit(Duration::from_secs(60))?,
+        65536,
+    )?)
 }
 
 /// The PATH of the running T3 service, from its process environment.
@@ -165,7 +177,7 @@ fn needs_restart(ctx: &Ctx, installed_t3: bool) -> bool {
 fn t3_service(ctx: &Ctx, action: &str) -> Result<()> {
     let mut command = ctx.command(ctx.t3());
     command.args(["service", action]);
-    if !process::capture(command, Duration::from_secs(120), 65536)?
+    if !process::capture(command, ctx.limit(Duration::from_secs(120))?, 65536)?
         .is_some_and(|output| output.success())
     {
         return fail("Could not install the T3 Code service. Try again.");
@@ -174,6 +186,7 @@ fn t3_service(ctx: &Ctx, action: &str) -> Result<()> {
 }
 
 pub fn setup(ctx: &Ctx, version: &str, providers: &[providers::Provider]) -> Result<()> {
+    let ctx = &ctx.with_deadline(Duration::from_secs(1200));
     fs::create_dir_all(ctx.home.join(".t3"))?;
     fs::create_dir_all(ctx.bin_dir())?;
     let installed_t3 = !installed(ctx, version);

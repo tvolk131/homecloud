@@ -1,6 +1,7 @@
 """Fixed host-side managed-application hooks; guest jobs are supervised by systemd."""
 import hashlib
 import json
+import subprocess
 from pathlib import Path
 import uuid
 import managed_host
@@ -8,8 +9,8 @@ import managed_host
 GUEST_DIR = '/usr/local/libexec/homecloud'
 RUNNER = GUEST_DIR + '/homecloud-guest'
 RUNNER_SOURCE = Path(__file__).with_name('homecloud-guest')
-# Earlier releases ran Python guest helpers. They are removed once the binary
-# is in place so nothing can run stale code.
+# Earlier releases ran Python guest helpers. Keep them while an application job
+# may still need their paths, then retry cleanup on later inspections.
 LEGACY = ('managed-app.py', 'setup-t3.sh', 'setup-providers.py', 'codex_auth.py', 'claude_auth.py',
           'github_auth.py', 'account_metadata.py')
 SETUP_ACTIONS = ('connect_t3', 'sign_in_codex', 'sign_in_claude', 'sign_in_github', 'sign_out_github')
@@ -28,13 +29,19 @@ def install_runner(runtime, name):
         return runtime.run('incus', 'exec', name, '--', *args, timeout=10, check=check)
 
     existing = root('sha256sum', RUNNER, check=False).stdout.split()
-    if existing and existing[0] == digest:
-        return
-    staged = RUNNER + '.new-' + uuid.uuid4().hex
-    root('mkdir', '-p', '-m', '0755', GUEST_DIR)
-    runtime.run('incus', 'file', 'push', '--uid', '0', '--gid', '0', '--mode', '0755',
-                str(RUNNER_SOURCE), name + staged, timeout=120)
-    root('mv', '-f', '-T', staged, RUNNER)
+    if not existing or existing[0] != digest:
+        staged = RUNNER + '.new-' + uuid.uuid4().hex
+        root('mkdir', '-p', '-m', '0755', GUEST_DIR)
+        try:
+            runtime.run('incus', 'file', 'push', '--uid', '0', '--gid', '0', '--mode', '0755',
+                        str(RUNNER_SOURCE), name + staged, timeout=120)
+            root('mv', '-f', '-T', staged, RUNNER)
+        finally:
+            try:root('rm', '-f', staged, check=False)
+            except (OSError, RuntimeError, subprocess.SubprocessError):pass
+    active = root('systemctl', 'list-units', '--type=service', '--state=activating,active,deactivating',
+                  '--no-legend', '--plain', 'homecloud-app-*.service', check=False)
+    if active.returncode != 0 or active.stdout.strip():return
     root('rm', '-f', *[GUEST_DIR + '/' + file for file in LEGACY])
 
 

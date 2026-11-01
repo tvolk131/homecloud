@@ -98,7 +98,8 @@ impl Provider {
 pub fn version(ctx: &Ctx, binary: &Path) -> Option<[u64; 3]> {
     let mut command = ctx.command(binary);
     command.arg("--version");
-    let output = process::capture(command, Duration::from_secs(30), 65536).ok()??;
+    let output =
+        process::capture(command, ctx.limit(Duration::from_secs(30)).ok()?, 65536).ok()??;
     if !output.success() {
         return None;
     }
@@ -110,7 +111,15 @@ pub fn ensure(ctx: &Ctx, providers: &[Provider]) -> Result<()> {
     let bin_dir = ctx.bin_dir();
     fs::create_dir_all(&bin_dir)?;
     for provider in providers {
-        ensure_one(ctx, provider, &bin_dir)?;
+        if let Err(error) = ensure_one(ctx, provider, &bin_dir) {
+            if provider.binary != "gh" {
+                return Err(error);
+            }
+            eprintln!(
+                "gh: optional installation failed; existing tools retained. Repair GitHub CLI separately."
+            );
+        }
+        ctx.limit(Duration::from_secs(1))?;
     }
     Ok(())
 }
@@ -146,6 +155,7 @@ fn ensure_one(ctx: &Ctx, provider: &Provider, bin_dir: &Path) -> Result<()> {
                 .prefix(".stage-")
                 .tempdir_in(&root)?;
             unpack_codex(&artifact, extraction.path(), provider.version)?;
+            ctx.limit(Duration::from_secs(1))?;
             let target = replace_dir(extraction.path(), &root.join(provider.version))?;
             link(&target.join("bin/codex"), &bin_dir.join("codex"))?;
             link(
@@ -159,6 +169,7 @@ fn ensure_one(ctx: &Ctx, provider: &Provider, bin_dir: &Path) -> Result<()> {
                 .prefix(".stage-")
                 .tempdir_in(&root)?;
             let package = unpack_gh(&artifact, extraction.path(), provider.version)?;
+            ctx.limit(Duration::from_secs(1))?;
             let target = replace_dir(&package, &root.join(provider.version))?;
             link(&target.join("bin/gh"), &bin_dir.join("gh"))?;
         }
@@ -171,7 +182,7 @@ fn ensure_one(ctx: &Ctx, provider: &Provider, bin_dir: &Path) -> Result<()> {
                 .args(["install", provider.version])
                 .stdout(Stdio::null())
                 .stderr(Stdio::null());
-            if !process::status(command, Duration::from_secs(300))?
+            if !process::status(command, ctx.limit(Duration::from_secs(300))?)?
                 .is_some_and(|status| status.success())
             {
                 return fail("Claude Code installation failed. Try again.");
@@ -210,9 +221,10 @@ fn download(ctx: &Ctx, provider: &Provider, path: &Path) -> Result<()> {
         .args(["-A", "homecloud-guest-installer", "-o"])
         .arg(path)
         .arg(provider.url);
-    let downloaded =
-        process::status(command, Duration::from_secs(960))?.is_some_and(|status| status.success());
+    let downloaded = process::status(command, ctx.limit(Duration::from_secs(960))?)?
+        .is_some_and(|status| status.success());
     if !downloaded {
+        ctx.limit(Duration::from_secs(1))?;
         return fail(format!(
             "Could not download {}. Check the VM's internet access and try again.",
             provider.name
@@ -625,20 +637,38 @@ mod tests {
         let system = fx.root.path().join("system");
         version_tool(&system, "gh", "2.20.0");
         let fx = fx.with_path_after(&system);
-        let error = ensure(&fx.ctx, gh).unwrap_err();
-        assert!(
-            error
-                .user_message()
-                .contains("Could not download GitHub CLI")
-        );
+        ensure(&fx.ctx, gh).unwrap();
         assert_eq!(downloads(&fx), [PROVIDERS[2].url]);
 
         let fx = Fixture::new();
         failing_curl(&fx);
         version_tool(&fx.ctx.bin_dir(), "gh", "2.20.0");
-        let error = ensure(&fx.ctx, gh).unwrap_err();
-        assert!(error.user_message().contains("unsupported"));
+        ensure(&fx.ctx, gh).unwrap();
         assert!(downloads(&fx).is_empty());
+    }
+
+    #[test]
+    fn installation_budget_limits_download_and_cleans_its_stage() {
+        let fx = Fixture::new();
+        fx.link_system_tool("sleep");
+        let marker = fx.root.path().join("stage-path");
+        fx.tool("curl", &format!("#!/bin/sh\nprevious=''\nfor argument do\nif [ \"$previous\" = -o ]; then printf '%s' \"$argument\" > '{}'; fi\nprevious=\"$argument\"\ndone\nsleep 3\n", marker.display()));
+        let ctx = fx.ctx.with_deadline(Duration::from_secs(1));
+        let started = std::time::Instant::now();
+        let error = ensure(&ctx, &PROVIDERS[..1]).unwrap_err();
+        assert!(started.elapsed() < Duration::from_secs(2));
+        match fs::read_to_string(marker) {
+            Ok(path) => assert!(!PathBuf::from(path).parent().unwrap().exists()),
+            Err(missing) if missing.kind() == io::ErrorKind::NotFound => {
+                assert!(error.user_message().contains("timed out"))
+            }
+            Err(error) => panic!("{error}"),
+        }
+        assert!(
+            ctx.with_deadline(Duration::from_secs(60))
+                .limit(Duration::from_secs(1))
+                .is_err()
+        );
     }
 
     #[test]

@@ -40,6 +40,7 @@ impl Fixture {
             env,
             boot_id_path: root.path().join("boot"),
             login_timeout: LOGIN_TIMEOUT,
+            deadline: None,
         };
         let fixture = Self { root, bin, ctx };
         fixture.write("boot", "fixture-boot");

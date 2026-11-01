@@ -4,7 +4,7 @@ use std::fs;
 use std::os::unix::fs::PermissionsExt;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use crate::error::{Error, Result};
 
@@ -20,6 +20,7 @@ pub struct Ctx {
     pub env: BTreeMap<OsString, OsString>,
     pub boot_id_path: PathBuf,
     pub login_timeout: Duration,
+    pub deadline: Option<Instant>,
 }
 
 impl Ctx {
@@ -33,7 +34,31 @@ impl Ctx {
             env: std::env::vars_os().collect(),
             boot_id_path: PathBuf::from("/proc/sys/kernel/random/boot_id"),
             login_timeout: LOGIN_TIMEOUT,
+            deadline: None,
         })
+    }
+
+    pub fn with_deadline(&self, timeout: Duration) -> Self {
+        let mut ctx = self.clone();
+        let requested = Instant::now() + timeout;
+        ctx.deadline = Some(
+            self.deadline
+                .map_or(requested, |existing| existing.min(requested)),
+        );
+        ctx
+    }
+
+    pub fn limit(&self, maximum: Duration) -> Result<Duration> {
+        match self.deadline {
+            None => Ok(maximum),
+            Some(deadline) => deadline
+                .checked_duration_since(Instant::now())
+                .filter(|remaining| !remaining.is_zero())
+                .map(|remaining| remaining.min(maximum))
+                .ok_or_else(|| {
+                    Error::Authored("Application installation timed out. Try again.".into())
+                }),
+        }
     }
 
     /// Private per-application job state.

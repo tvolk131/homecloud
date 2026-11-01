@@ -80,6 +80,46 @@ deployment-engine changes; those require a reviewed maintenance installation.
 User grants, host reserve journals, hardware policy and network policy are not
 rewritten by a software update.
 
+## Migrating from Python guest helpers
+
+The first static Rust guest-runner release changes the protected deployment
+boundary and bundle layout. An installed Python-era updater rejects the new
+`bin/homecloud-guest` member. A normal `upgrade` cannot perform this migration;
+do not bypass its guard or mix old and new helpers to force acceptance.
+
+Before deployment, obtain explicit approval for a maintenance window, retain the
+exact previous reviewed source/binaries and protected configuration as recovery
+evidence, and prepare a current reviewed hardware policy. Use the full reviewed
+release containing every feature already deployed, not an older intermediate PR
+layer. Preserve current grants, disk budgets, credentials and metrics configuration;
+old configuration/database backups are evidence, not permission to reset them.
+Run the installer's read-only `--check` with that policy and matching binaries,
+then use the documented local-root `install_host.py --maintenance` flow. It can
+restart Incus and management services and reapply host policy; a software-only
+controller restart is not an equivalent migration.
+
+Drain application install and account-setup jobs before the window. As an
+additional safeguard, the host keeps legacy guest helper files while any
+`homecloud-app-*.service` is active or its activity cannot be inspected, and
+retries cleanup on later inspections even when the Rust binary hash is unchanged.
+This does not promise that an interrupted maintenance reinstall preserves every
+running job. Application state/credentials and guest volumes must remain intact.
+
+Already-installed nested managed Homecloud hosts have the same old-updater
+restriction. Their automatic update path cannot grant itself this protected
+migration: each requires an explicit reviewed local-root maintenance operation
+inside that VM, or deliberate recreation of a disposable fixture. A freshly
+installed nested host uses the new installer and layout directly.
+
+This maintenance step establishes a new protected-boundary baseline; normal
+`homecloud-deploy.py rollback` does not restore the Python-era release across it.
+Plan recovery as another explicitly reviewed maintenance operation using the
+retained release and current authoritative state. Never restore an old `state.db`
+over the controller's current database. Verify the resulting static runner on an
+actual guest, installation and T3/Codex/Claude/GitHub account flows, controller
+transport, and guest workload preservation before declaring migration accepted.
+The automated musl `--help`/`--version` smoke test is not that live acceptance.
+
 ## Interruption and rollback
 
 The updater takes a durable deployment lock, stops the controller, and acquires

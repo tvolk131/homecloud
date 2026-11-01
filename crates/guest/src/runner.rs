@@ -29,6 +29,9 @@ const ACCOUNT_CACHE_SECONDS: f64 = 10.0;
 
 pub fn interrupted_message(action: ApplicationSetupAction) -> &'static str {
     match action {
+        ApplicationSetupAction::SignInGitHub => {
+            "GitHub sign-in was interrupted. Request a new sign-in link."
+        }
         ApplicationSetupAction::SignOutGitHub => {
             "Removing GitHub access was interrupted. Try again."
         }
@@ -463,7 +466,7 @@ mod tests {
                     if account == "signed_in" {
                         "echo octo-fixture; exit 0"
                     } else {
-                        "exit 1"
+                        "printf 'could not find key \"user\"\\n' >&2; exit 1"
                     }
                 ),
                 "claude" => format!(
@@ -727,16 +730,28 @@ mod tests {
         s.provider("gh", "2.103.3", "signed_in");
         s.provider("claude", "2.1.308", "signed_in");
         let directory = s.fx.ctx.base().join(APP.to_string());
+        for binary in ["gh", "claude"] {
+            let provider = PROVIDERS
+                .iter()
+                .find(|provider| provider.binary == binary)
+                .unwrap();
+            provider_version(
+                &s.fx.ctx,
+                &directory,
+                provider,
+                &s.fx.ctx.bin_dir().join(binary),
+            );
+        }
         let now = crate::now_f64();
         for name in ["gh", "claude"] {
             let cache = AccountCache {
                 account: AccountState::SignedOut,
                 metadata: AccountState::SignedOut.into(),
-                observed_at: now - 5.0,
+                observed_at: if name == "claude" { now - 1.0 } else { now },
             };
             save_json(&directory.join(format!("{name}-account.json")), &cache).unwrap();
         }
-        let completed = BTreeMap::from([("claude", now - 1.0)]);
+        let completed = BTreeMap::from([("claude", now)]);
         let components = provider_components(&s.fx.ctx, &directory, &completed);
         assert_eq!(
             components[1].0.account, "signed_in",

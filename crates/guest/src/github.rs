@@ -89,16 +89,17 @@ fn valid_login(login: &str) -> bool {
 
 /// Local only: gh's saved active login, not a network check of its token.
 pub fn account_info(ctx: &Ctx) -> AccountInfo {
-    if ctx.which("gh").is_none() {
+    let Some(binary) = ctx.which("gh") else {
         return AccountState::Unavailable.into();
-    }
-    let Ok((code, out)) = gh(
-        ctx,
-        &["config", "get", "--host", HOST, "user"],
-        Duration::from_secs(15),
-    ) else {
+    };
+    let mut inspect = command(ctx, &binary);
+    inspect.args(["config", "get", "--host", HOST, "user"]);
+    let Ok(Some(output)) = process::capture_combined(inspect, Duration::from_secs(15), MAX_OUTPUT)
+    else {
         return AccountState::Unknown.into();
     };
+    let code = output.code;
+    let out = output.text();
     let login = out.trim();
     if code == Some(0) && valid_login(login) {
         return AccountInfo {
@@ -106,7 +107,7 @@ pub fn account_info(ctx: &Ctx) -> AccountInfo {
             ..AccountState::SignedIn.into()
         };
     }
-    if code == Some(1) && login.is_empty() {
+    if code == Some(1) && login == "could not find key \"user\"" {
         return AccountState::SignedOut.into();
     }
     AccountState::Unknown.into()
@@ -200,15 +201,19 @@ fn configure_identity(ctx: &Ctx, login: &str) -> Result<()> {
     ];
     let marker = identity_path(ctx);
     let previous: BTreeMap<String, Value> = read_json(&marker).unwrap_or_default();
-    let mut written = BTreeMap::new();
+    let mut written: BTreeMap<String, String> = previous
+        .iter()
+        .filter_map(|(key, value)| value.as_str().map(|value| (key.clone(), value.to_owned())))
+        .collect();
     for (key, value) in desired {
         let Ok(current) = git_value(ctx, &git, key) else {
-            break;
+            continue;
         };
         let ours = current
             .as_deref()
             .is_none_or(|current| previous.get(key).and_then(Value::as_str) == Some(current));
         if !ours {
+            written.remove(key);
             continue;
         }
         match run(
@@ -218,37 +223,77 @@ fn configure_identity(ctx: &Ctx, login: &str) -> Result<()> {
             Duration::from_secs(15),
         ) {
             Ok((Some(0), _)) => {
-                written.insert(key, value);
+                written.insert(key.to_owned(), value);
             }
             Ok(_) => {}
-            Err(_) => break,
+            Err(_) => {}
         }
     }
     save_json(&marker, &written)
 }
 
+fn configure_git(ctx: &Ctx) -> Result<()> {
+    let (Some(git), Some(binary)) = (ctx.which("git"), ctx.which("gh")) else {
+        return fail("Install Git and GitHub CLI before signing in.");
+    };
+    let expected = format!("!{} auth git-credential", binary.display());
+    for hostname in [HOST, "gist.github.com"] {
+        let (code, output) = run(
+            ctx,
+            &git,
+            &[
+                "config",
+                "--get-urlmatch",
+                "credential.helper",
+                &format!("https://{hostname}"),
+            ],
+            Duration::from_secs(15),
+        )?;
+        if !matches!(code, Some(0 | 1)) {
+            return fail(
+                "Could not inspect Git credential helpers. Review Git configuration before signing in.",
+            );
+        }
+        if output.lines().any(|helper| {
+            !helper.trim().is_empty() && helper != expected && helper != "!gh auth git-credential"
+        }) {
+            return fail(
+                "Git already uses another credential helper for GitHub. Review that helper before connecting this VM.",
+            );
+        }
+    }
+    if gh(
+        ctx,
+        &["auth", "setup-git", "--hostname", HOST, "--force"],
+        Duration::from_secs(30),
+    )?
+    .0 != Some(0)
+    {
+        return fail("Could not configure Git to use the GitHub CLI. Try again.");
+    }
+    Ok(())
+}
+
 pub fn authorize(ctx: &Ctx, job: &mut Job) -> Result<()> {
-    match account_info(ctx).state {
-        AccountState::SignedIn => return Ok(()), // Never replace an existing account.
-        AccountState::SignedOut => {}
+    let account = account_info(ctx);
+    match account.state {
+        AccountState::SignedIn | AccountState::SignedOut => {}
         _ => {
             return fail(
                 "Could not inspect the existing GitHub sign-in. Refresh its status before signing in.",
             );
         }
     }
+    configure_git(ctx)?;
+    if account.state == AccountState::SignedIn {
+        if let Some(login) = account.username {
+            configure_identity(ctx, &login)?;
+        }
+        return Ok(());
+    }
     let Some(binary) = ctx.which("gh") else {
         return fail("Install the GitHub CLI before signing in.");
     };
-    // Point Git at gh first: a configuration failure leaves no token behind.
-    let (code, _) = gh(
-        ctx,
-        &["auth", "setup-git", "--hostname", HOST, "--force"],
-        Duration::from_secs(30),
-    )?;
-    if code != Some(0) {
-        return fail("Could not configure Git to use the GitHub CLI. Try again.");
-    }
     // Without a terminal gh prints the device code and URL, never prompting.
     let (mut reader, writer) = io::pipe()?;
     let mut login = command(ctx, &binary);
@@ -367,6 +412,7 @@ with open(os.path.join(root, 'calls'), 'a') as log:
 def out(text):
     sys.stdout.write(text); sys.stdout.flush()
 if args[:2] == ['config', 'get']:
+    if mode == 'config_error': sys.stderr.write('failed to load config: invalid YAML\n'); sys.exit(1)
     if mode == 'garbled_config': out('not a login!\n'); sys.exit(0)
     if accounts: out(accounts[0] + '\n'); sys.exit(0)
     sys.stderr.write('could not find key "user"\n'); sys.exit(1)
@@ -527,6 +573,96 @@ sys.exit(64)
         let (job, error) = gh.sign_in();
         assert_eq!((job.history.len(), error), (0, None));
         assert!(!gh.call_args().iter().any(|c| c[..2] == ["auth", "login"]));
+        assert!(
+            gh.call_args()
+                .iter()
+                .any(|call| call[..2] == ["auth", "setup-git"])
+        );
+        assert_eq!(
+            gh.git(&["config", "--global", "user.email"]).as_deref(),
+            Some("7+someone-else@users.noreply.github.com")
+        );
+    }
+
+    #[test]
+    fn unreadable_config_never_looks_signed_out_or_completes_removal() {
+        let gh = Gh::new();
+        gh.mode("config_error", Some(&["octo-fixture"]));
+        assert_eq!(account_info(&gh.fx.ctx).state, AccountState::Unknown);
+        assert!(
+            sign_out(&gh.fx.ctx)
+                .unwrap_err()
+                .user_message()
+                .contains("Could not inspect")
+        );
+        assert!(gh.sign_in().1.unwrap().contains("Could not inspect"));
+        assert!(
+            !gh.call_args()
+                .iter()
+                .any(|call| matches!(call.get(1).map(String::as_str), Some("login" | "logout")))
+        );
+    }
+
+    #[test]
+    fn unrelated_git_helpers_are_preserved_for_both_github_hosts() {
+        let gh = Gh::new();
+        for hostname in [HOST, "gist.github.com"] {
+            let key = format!("credential.https://{hostname}.helper");
+            gh.git(&["config", "--global", &key, "store"]);
+            assert!(
+                gh.sign_in()
+                    .1
+                    .unwrap()
+                    .contains("another credential helper")
+            );
+            assert_eq!(
+                gh.git(&["config", "--global", &key]).as_deref(),
+                Some("store")
+            );
+            gh.git(&["config", "--global", "--unset-all", &key]);
+        }
+        assert!(
+            !gh.call_args()
+                .iter()
+                .any(|call| matches!(call.get(1).map(String::as_str), Some("setup-git" | "login")))
+        );
+    }
+
+    #[test]
+    fn existing_gh_helper_is_compatible_and_identity_markers_survive_failed_writes() {
+        let gh = Gh::new();
+        let helper = format!(
+            "!{} auth git-credential",
+            gh.fx.ctx.which("gh").unwrap().display()
+        );
+        gh.git(&[
+            "config",
+            "--global",
+            "credential.https://github.com.helper",
+            &helper,
+        ]);
+        assert_eq!(gh.sign_in().1, None);
+        let previous: BTreeMap<String, String> = read_json(&identity_path(&gh.fx.ctx)).unwrap();
+        gh.mode("no_name", Some(&["new-fixture"]));
+        let git = gh.fx.ctx.which("git").unwrap().canonicalize().unwrap();
+        std::fs::remove_file(gh.fx.bin.join("git")).unwrap();
+        gh.fx.tool("git", &format!("#!/bin/sh\nif [ \"$1 $2 $3\" = 'config --global user.name' ]; then exit 1; fi\nexec '{}' \"$@\"\n", git.display()));
+        configure_identity(&gh.fx.ctx, "new-fixture").unwrap();
+        let saved: BTreeMap<String, String> = read_json(&identity_path(&gh.fx.ctx)).unwrap();
+        assert_eq!(saved["user.name"], previous["user.name"]);
+        assert_eq!(
+            saved["user.email"],
+            "99+new-fixture@users.noreply.github.com"
+        );
+        gh.fx.tool(
+            "git",
+            &format!("#!/bin/sh\nexec '{}' \"$@\"\n", git.display()),
+        );
+        configure_identity(&gh.fx.ctx, "new-fixture").unwrap();
+        assert_eq!(
+            gh.git(&["config", "--global", "user.name"]).as_deref(),
+            Some("new-fixture")
+        );
     }
 
     #[test]

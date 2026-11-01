@@ -11,7 +11,6 @@ use std::thread;
 use std::time::{Duration, Instant};
 
 use homecloud_core::BrowserAction;
-use nix::pty::openpty;
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
 
@@ -139,7 +138,7 @@ pub fn parse_challenge(output: &str, now: u64) -> Option<BrowserAction> {
 
 /// Runs `t3 connect link --headless` on a terminal until the owner approves.
 pub fn link(ctx: &Ctx, job: &mut Job) -> Result<()> {
-    let pty = openpty(None, None)?;
+    let pty = process::terminal(None)?;
     let mut master = File::from(pty.master);
     let mut command = ctx.command(ctx.t3());
     command

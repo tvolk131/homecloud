@@ -27,6 +27,16 @@ fn uuid(text: &str) -> Result<Uuid> {
     Ok(Uuid::parse_str(text)?)
 }
 
+fn valid_job(version: &str, unit: &str, app: Uuid, operation: Uuid) -> bool {
+    version == ApplicationKind::T3.version()
+        && unit
+            == format!(
+                "homecloud-app-{}-{}.service",
+                app.simple(),
+                operation.simple()
+            )
+}
+
 fn run(args: &[String]) -> Result<()> {
     let ctx = Ctx::from_process()?;
     match args {
@@ -52,17 +62,7 @@ fn run(args: &[String]) -> Result<()> {
                 serde_json::from_value(Value::String(kind.clone()))?;
             let action: ApplicationSetupAction =
                 serde_json::from_value(Value::String(action.clone()))?;
-            if version != ApplicationKind::T3.version() {
-                return usage();
-            }
-            // The host names the unit; it must be this operation's own unit.
-            if *unit
-                != format!(
-                    "homecloud-app-{}-{}.service",
-                    app.simple(),
-                    operation.simple()
-                )
-            {
+            if !valid_job(version, unit, app, operation) {
                 return usage();
             }
             runner::job(&ctx, app, operation, kind, version, unit, action)
@@ -95,5 +95,40 @@ fn main() -> ExitCode {
             eprintln!("{error}");
             ExitCode::FAILURE
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn job_version_and_unit_are_bound_to_the_operation() {
+        let app = Uuid::from_u128(1);
+        let operation = Uuid::from_u128(2);
+        let unit = format!(
+            "homecloud-app-{}-{}.service",
+            app.simple(),
+            operation.simple()
+        );
+        assert!(valid_job(
+            ApplicationKind::T3.version(),
+            &unit,
+            app,
+            operation
+        ));
+        assert!(!valid_job("unsupported", &unit, app, operation));
+        assert!(!valid_job(
+            ApplicationKind::T3.version(),
+            "foreign.service",
+            app,
+            operation
+        ));
+        assert!(!valid_job(
+            ApplicationKind::T3.version(),
+            &unit,
+            app,
+            Uuid::from_u128(3)
+        ));
     }
 }

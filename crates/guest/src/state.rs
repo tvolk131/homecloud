@@ -112,3 +112,31 @@ pub fn test_job(dir: &Path, action: ApplicationSetupAction) -> Job {
         },
     )
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn python_written_jobs_keep_their_challenge_and_optional_defaults() {
+        let state: JobState = serde_json::from_value(serde_json::json!({
+            "id":"00000000-0000-4000-8000-000000000002", "kind":"setup",
+            "phase":"waiting_for_user", "unit":"fixture.service", "boot_id":"old-python-boot",
+            "setup_action":"sign_in_claude", "completed_at":null,
+            "action":{"url":"https://claude.ai/oauth/authorize", "code":"", "expires_at":9999999999u64,
+                "setup_action":"sign_in_claude", "input_required":true}
+        }))
+        .unwrap();
+        assert!(state.active());
+        assert_eq!(state.stage, "preparing");
+        assert_eq!(state.setup_action, ApplicationSetupAction::SignInClaude);
+        assert!(state.action.unwrap().input_required);
+        let completed: JobState = serde_json::from_value(serde_json::json!({
+            "id":"00000000-0000-4000-8000-000000000002", "kind":"install", "phase":"succeeded",
+            "unit":"fixture.service", "boot_id":"old-python-boot", "completed_at":1234
+        }))
+        .unwrap();
+        assert_eq!(completed.completed_at, Some(1234.0));
+        assert_eq!(completed.setup_action, ApplicationSetupAction::ConnectT3);
+    }
+}

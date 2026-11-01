@@ -15,7 +15,7 @@ use std::time::{Duration, Instant};
 
 use homecloud_core::{ApplicationPhase, ApplicationSetupAction, BrowserAction};
 use nix::libc;
-use nix::pty::{Winsize, openpty};
+use nix::pty::Winsize;
 use nix::sys::stat::Mode;
 use nix::sys::termios::{LocalFlags, SetArg, tcgetattr, tcsetattr};
 use serde_json::Value;
@@ -294,7 +294,7 @@ pub fn authorize(ctx: &Ctx, job: &mut Job) -> Result<()> {
         ws_xpixel: 0,
         ws_ypixel: 0,
     };
-    let pty = openpty(Some(&size), None)?;
+    let pty = process::terminal(Some(&size))?;
     let mut attrs = tcgetattr(&pty.slave)?;
     attrs.local_flags.remove(LocalFlags::ECHO);
     tcsetattr(&pty.slave, SetArg::TCSANOW, &attrs)?;
