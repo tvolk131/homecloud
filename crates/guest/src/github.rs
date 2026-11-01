@@ -254,8 +254,35 @@ fn configure_git(ctx: &Ctx) -> Result<()> {
                 "Could not inspect Git credential helpers. Review Git configuration before signing in.",
             );
         }
-        if output.lines().any(|helper| {
-            !helper.trim().is_empty() && helper != expected && helper != "!gh auth git-credential"
+        let mut helpers = Vec::new();
+        for key in [
+            "credential.helper".to_owned(),
+            format!("credential.https://{hostname}.helper"),
+        ] {
+            let (status, configured) = run(
+                ctx,
+                &git,
+                &["config", "--get-all", &key],
+                Duration::from_secs(15),
+            )?;
+            if !matches!(status, Some(0 | 1)) {
+                return fail(
+                    "Could not inspect Git credential helpers. Review Git configuration before signing in.",
+                );
+            }
+            for helper in configured.lines() {
+                if helper.trim().is_empty() {
+                    helpers.clear();
+                } else {
+                    helpers.push(helper.to_owned());
+                }
+            }
+        }
+        helpers.extend(output.lines().map(str::to_owned));
+        if helpers.iter().any(|helper| {
+            !helper.trim().is_empty()
+                && helper.as_str() != expected
+                && helper != "!gh auth git-credential"
         }) {
             return fail(
                 "Git already uses another credential helper for GitHub. Review that helper before connecting this VM.",
@@ -625,6 +652,56 @@ sys.exit(64)
             !gh.call_args()
                 .iter()
                 .any(|call| matches!(call.get(1).map(String::as_str), Some("setup-git" | "login")))
+        );
+    }
+
+    #[test]
+    fn hidden_multi_valued_helpers_are_not_discarded() {
+        let gh = Gh::new();
+        let helper = format!(
+            "!{} auth git-credential",
+            gh.fx.ctx.which("gh").unwrap().display()
+        );
+        for key in ["credential.helper", "credential.https://github.com.helper"] {
+            gh.git(&["config", "--global", "--add", key, "store"]);
+            gh.git(&["config", "--global", "--add", key, &helper]);
+            assert!(
+                gh.sign_in()
+                    .1
+                    .unwrap()
+                    .contains("another credential helper")
+            );
+            assert_eq!(
+                gh.git(&["config", "--global", "--get-all", key]),
+                Some(format!("store\n{helper}"))
+            );
+            gh.git(&["config", "--global", "--unset-all", key]);
+        }
+        assert!(
+            !gh.call_args()
+                .iter()
+                .any(|call| call.get(1).is_some_and(|action| action == "setup-git"))
+        );
+    }
+
+    #[test]
+    fn url_resets_keep_global_helpers_for_other_hosts() {
+        let gh = Gh::new();
+        let helper = format!(
+            "!{} auth git-credential",
+            gh.fx.ctx.which("gh").unwrap().display()
+        );
+        gh.git(&["config", "--global", "credential.helper", "store"]);
+        for hostname in [HOST, "gist.github.com"] {
+            let key = format!("credential.https://{hostname}.helper");
+            gh.git(&["config", "--global", "--add", &key, ""]);
+            gh.git(&["config", "--global", "--add", &key, &helper]);
+        }
+        assert_eq!(gh.sign_in().1, None);
+        assert_eq!(
+            gh.git(&["config", "--global", "credential.helper"])
+                .as_deref(),
+            Some("store")
         );
     }
 
