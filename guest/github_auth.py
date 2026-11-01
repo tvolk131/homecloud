@@ -117,7 +117,15 @@ def configure_git():
     for hostname in (HOST, 'gist.github.com'):
         code, output = run([git, 'config', '--get-urlmatch', 'credential.helper', 'https://'+hostname])
         if code not in (0, 1): raise ProtocolError('Could not inspect Git credential helpers. Review Git configuration before signing in.')
-        for helper in output.decode(errors='replace').splitlines():
+        helpers = []
+        for key in ('credential.helper', 'credential.https://'+hostname+'.helper'):
+            status, configured = run([git, 'config', '--get-all', key])
+            if status not in (0, 1): raise ProtocolError('Could not inspect Git credential helpers. Review Git configuration before signing in.')
+            for helper in configured.decode(errors='replace').splitlines():
+                if helper.strip(): helpers.append(helper)
+                else: helpers.clear()
+        helpers.extend(output.decode(errors='replace').splitlines())
+        for helper in helpers:
             if not helper.strip(): continue
             try: command = shlex.split(helper[1:]) if helper.startswith('!') else []
             except ValueError: command = []

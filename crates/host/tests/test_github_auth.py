@@ -163,6 +163,25 @@ class GitHubAuthTests(unittest.TestCase):
         self.git('config', '--global', 'credential.https://github.com.helper', '!'+str(self.binary)+' auth git-credential')
         self.assertIsNone(self.sign_in()[1])
 
+    def test_hidden_multi_valued_helpers_are_not_discarded(self):
+        helper = '!'+str(self.binary)+' auth git-credential'
+        for key in ('credential.helper', 'credential.https://github.com.helper'):
+            self.git('config', '--global', '--add', key, 'store')
+            self.git('config', '--global', '--add', key, helper)
+            self.assertIn('another credential helper', self.sign_in()[1])
+            self.assertEqual(self.git('config', '--global', '--get-all', key), 'store\n'+helper)
+            self.git('config', '--global', '--unset-all', key)
+        self.assertFalse(any(call['args'][:2] == ['auth', 'setup-git'] for call in self.calls()))
+
+    def test_existing_url_reset_preserves_other_hosts_global_helper(self):
+        self.git('config', '--global', 'credential.helper', 'store')
+        for hostname in ('github.com', 'gist.github.com'):
+            key = 'credential.https://'+hostname+'.helper'
+            self.git('config', '--global', '--add', key, '')
+            self.git('config', '--global', '--add', key, '!'+str(self.binary)+' auth git-credential')
+        self.assertIsNone(self.sign_in()[1])
+        self.assertEqual(self.git('config', '--global', 'credential.helper'), 'store')
+
     def test_unexpected_page_or_format_is_rejected_without_a_challenge(self):
         for mode, message in (('wrong_url', 'Unexpected GitHub authorization page'), ('no_code', 'code was not recognized')):
             self.mode(mode)
