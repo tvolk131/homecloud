@@ -54,6 +54,9 @@ pub struct ApplicationAccount {
     pub name: String,
     pub email: Option<String>,
     pub account_id: Option<String>,
+    /// Account handle where the service has one, such as a GitHub login.
+    #[serde(default)]
+    pub username: Option<String>,
     pub plan: Option<String>,
     pub authentication: Option<String>,
     pub observed_at: u64,
@@ -92,13 +95,29 @@ pub enum ApplicationSetupAction {
     ConnectT3,
     SignInCodex,
     SignInClaude,
+    /// Guest Git/gh access; separate from any provider-connected GitHub plugin.
+    #[serde(rename = "sign_in_github")]
+    SignInGitHub,
+    /// Removes saved GitHub CLI accounts from the guest. GitHub keeps the token valid.
+    #[serde(rename = "sign_out_github")]
+    SignOutGitHub,
 }
 impl ApplicationSetupAction {
+    /// The guest component whose own account this action changes.
     pub fn provider_name(self) -> Option<&'static str> {
         match self {
             Self::ConnectT3 => None,
             Self::SignInCodex => Some("Codex CLI"),
             Self::SignInClaude => Some("Claude Code"),
+            Self::SignInGitHub | Self::SignOutGitHub => Some("GitHub CLI"),
+        }
+    }
+    /// Account state the component reports once this action has succeeded.
+    pub fn expected_account(self) -> Option<&'static str> {
+        match self {
+            Self::ConnectT3 => None,
+            Self::SignOutGitHub => Some("signed_out"),
+            Self::SignInCodex | Self::SignInClaude | Self::SignInGitHub => Some("signed_in"),
         }
     }
 }

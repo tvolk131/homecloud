@@ -2146,6 +2146,121 @@ fn named_provider_setup_is_owner_only_atomic_and_recovers_only_its_own_success()
 }
 
 #[test]
+fn github_access_is_owner_only_needs_the_cli_and_removal_recovers_only_when_signed_out() {
+    let (_dir, s, _user, _vm, app) = app_fixture();
+    let install = s.application_operations().unwrap().remove(0);
+    let report = |id, phase, components: Vec<ApplicationComponent>| ApplicationReport {
+        observation: ApplicationObservation {
+            installed_version: Some("0.1.2".into()),
+            service: "running".into(),
+            setup: "ready".into(),
+            components,
+            ..Default::default()
+        },
+        job: Some(ApplicationJob { id, phase }),
+    };
+    let github = |account: &str| {
+        vec![ApplicationComponent {
+            name: "GitHub CLI".into(),
+            version: Some("2.103.3".into()),
+            ready: true,
+            account: account.into(),
+        }]
+    };
+    // An older guest runner reports no GitHub CLI; neither action may start.
+    s.record_application_report(
+        app.id,
+        report(install.id, ApplicationPhase::Succeeded, vec![]),
+    )
+    .unwrap();
+    for action in [
+        ApplicationSetupAction::SignInGitHub,
+        ApplicationSetupAction::SignOutGitHub,
+    ] {
+        assert!(
+            s.start_application_setup("admin-device", app.id, Uuid::new_v4(), action)
+                .is_err()
+        );
+    }
+    s.record_application_report(
+        app.id,
+        report(install.id, ApplicationPhase::Succeeded, github("signed_in")),
+    )
+    .unwrap();
+    let (token, _, _) = s
+        .invite(
+            "admin-device",
+            "Another admin",
+            Role::Admin,
+            Resources::default(),
+            false,
+            1,
+        )
+        .unwrap();
+    s.enroll(&token, "another-admin").unwrap();
+    for action in [
+        ApplicationSetupAction::SignInGitHub,
+        ApplicationSetupAction::SignOutGitHub,
+    ] {
+        assert!(
+            s.start_application_setup("another-admin", app.id, Uuid::new_v4(), action)
+                .is_err()
+        );
+    }
+    let op = s
+        .start_application_setup(
+            "admin-device",
+            app.id,
+            Uuid::new_v4(),
+            ApplicationSetupAction::SignOutGitHub,
+        )
+        .unwrap();
+    // One unfinished account operation per application, whatever its target.
+    assert!(
+        s.start_application_setup(
+            "admin-device",
+            app.id,
+            Uuid::new_v4(),
+            ApplicationSetupAction::SignInGitHub
+        )
+        .is_err()
+    );
+    let conn = s.connect().unwrap();
+    let record: String = conn
+        .query_row(
+            "SELECT record FROM application_operations WHERE id=?",
+            [op.id.to_string()],
+            |r| r.get(0),
+        )
+        .unwrap();
+    assert!(record.contains("\"sign_out_github\""));
+    s.record_application_report(
+        app.id,
+        report(op.id, ApplicationPhase::Interrupted, github("signed_in")),
+    )
+    .unwrap();
+    // A late success report only counts once the account is actually gone.
+    s.record_application_report(
+        app.id,
+        report(op.id, ApplicationPhase::Succeeded, github("signed_in")),
+    )
+    .unwrap();
+    assert_eq!(
+        s.application_operations().unwrap().last().unwrap().phase,
+        ApplicationPhase::Interrupted
+    );
+    s.record_application_report(
+        app.id,
+        report(op.id, ApplicationPhase::Succeeded, github("signed_out")),
+    )
+    .unwrap();
+    assert_eq!(
+        s.application_operations().unwrap().last().unwrap().phase,
+        ApplicationPhase::Succeeded
+    );
+}
+
+#[test]
 fn claude_code_submission_requires_current_owner_and_exact_waiting_operation() {
     let (_dir, s, _owner, _vm, app) = app_fixture();
     let install = s.application_operations().unwrap().remove(0);

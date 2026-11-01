@@ -458,6 +458,12 @@ fn screenshot_regressions() {
         "t3-claude-waiting-small",
         "t3-claude-verifying",
         "t3-details",
+        "t3-github-signed-out",
+        "t3-github-waiting",
+        "t3-github-waiting-small",
+        "t3-github-signed-in",
+        "t3-github-remove-confirmation",
+        "t3-github-removing",
         "t3-waiting-small",
         "delete",
         "pairing",
@@ -1074,16 +1080,7 @@ Setup did not complete.
                 }
             }
             "workspace-ready" | "workspace-ready-small" | "workspace-long-name" => {
-                app = codex_fixture("signed_in");
-                app.snapshot.as_mut().unwrap().applications[0]
-                    .observation
-                    .components
-                    .push(ApplicationComponent {
-                        name: "Claude Code".into(),
-                        version: Some("2.1.308".into()),
-                        ready: true,
-                        account: "signed_in".into(),
-                    });
+                app = github_fixture("signed_in");
                 if name.ends_with("small") || name == "workspace-long-name" {
                     size = (800.0, 600.0);
                 }
@@ -1259,6 +1256,51 @@ Setup did not complete.
                         "Codex sign-in was interrupted. Request a new sign-in link.".into();
                 }
             }
+            "t3-github-signed-out"
+            | "t3-github-waiting"
+            | "t3-github-waiting-small"
+            | "t3-github-signed-in"
+            | "t3-github-remove-confirmation"
+            | "t3-github-removing" => {
+                let signed_in = matches!(
+                    name,
+                    "t3-github-signed-in" | "t3-github-remove-confirmation" | "t3-github-removing"
+                );
+                app = github_fixture(if signed_in { "signed_in" } else { "signed_out" });
+                size = if name.ends_with("small") {
+                    (800.0, 600.0)
+                } else {
+                    (1180.0, 1040.0)
+                };
+                if name.starts_with("t3-github-waiting") {
+                    let s = app.snapshot.as_mut().unwrap();
+                    s.application_operations.push(setup_operation(
+                        ApplicationSetupAction::SignInGitHub,
+                        ApplicationPhase::WaitingForUser,
+                    ));
+                    let observation = &mut s.applications[0].observation;
+                    observation.operation_id = Some(id(201));
+                    observation.operation_stage = "awaiting_approval".into();
+                    observation.action = Some(BrowserAction {
+                        url: "https://github.com/login/device".into(),
+                        code: "AB12-CD34".into(),
+                        expires_at: u64::MAX,
+                        setup_action: ApplicationSetupAction::SignInGitHub,
+                        input_required: false,
+                    });
+                } else if name == "t3-github-remove-confirmation" {
+                    app.panel = Some(Panel::RemoveGitHub(id(200)));
+                } else if name == "t3-github-removing" {
+                    app.snapshot
+                        .as_mut()
+                        .unwrap()
+                        .application_operations
+                        .push(setup_operation(
+                            ApplicationSetupAction::SignOutGitHub,
+                            ApplicationPhase::Running,
+                        ));
+                }
+            }
             "t3-providers-missing" | "t3-providers-installed" => {
                 app.page = Page::Workspace(id(10));
                 let installed = name.ends_with("installed");
@@ -1292,6 +1334,17 @@ Setup did not complete.
                                 ApplicationComponent {
                                     name: "Claude Code".into(),
                                     version: installed.then(|| "2.1.308".into()),
+                                    ready: installed,
+                                    account: if installed {
+                                        "signed_out"
+                                    } else {
+                                        "unavailable"
+                                    }
+                                    .into(),
+                                },
+                                ApplicationComponent {
+                                    name: "GitHub CLI".into(),
+                                    version: installed.then(|| "2.103.3".into()),
                                     ready: installed,
                                     account: if installed {
                                         "signed_out"
@@ -1914,6 +1967,174 @@ fn codex_signin_targets_a_named_owner_action_and_does_not_offer_account_replacem
     app.snapshot.as_mut().unwrap().me.id = id(2);
     let mut ui = simulator(&app, (1180.0, 820.0));
     assert!(ui.find("Sign into Codex").is_err());
+}
+
+/// Codex and Claude signed in, plus the optional GitHub CLI in the given state.
+fn github_fixture(account: &str) -> App {
+    let mut app = codex_fixture("signed_in");
+    let observation = &mut app.snapshot.as_mut().unwrap().applications[0].observation;
+    observation.components.extend([
+        ApplicationComponent {
+            name: "Claude Code".into(),
+            version: Some("2.1.308".into()),
+            ready: true,
+            account: "signed_in".into(),
+        },
+        ApplicationComponent {
+            name: "GitHub CLI".into(),
+            version: Some("2.103.3".into()),
+            ready: true,
+            account: account.into(),
+        },
+    ]);
+    if account == "signed_in" {
+        observation.accounts.push(ApplicationAccount {
+            name: "GitHub CLI".into(),
+            username: Some("octo-fixture".into()),
+            ..Default::default()
+        });
+    }
+    app
+}
+
+#[test]
+fn github_access_is_optional_owner_driven_and_removal_needs_confirmation() {
+    let _guard = lock();
+    let size = (1180.0, 1040.0);
+    // An older guest runner reports no GitHub CLI: no row, and nothing to start.
+    let app = codex_fixture("signed_in");
+    let mut ui = simulator(&app, size);
+    assert!(ui.find("GitHub").is_err());
+    drop(ui);
+    let app = github_fixture("signed_out");
+    let mut ui = simulator(&app, size);
+    ui.click("Sign into GitHub").unwrap();
+    assert!(
+        matches!(ui.into_messages().collect::<Vec<_>>().as_slice(), [Msg::SetupApplication(a, ApplicationSetupAction::SignInGitHub)] if *a == id(200))
+    );
+    let mut app = github_fixture("signed_out");
+    app.snapshot.as_mut().unwrap().me.id = id(2);
+    let mut ui = simulator(&app, size);
+    assert!(ui.find("Sign into GitHub").is_err());
+    drop(ui);
+    let mut app = github_fixture("signed_in");
+    let mut ui = simulator(&app, size);
+    assert!(ui.find("Sign into GitHub").is_err());
+    assert!(ui.find("@octo-fixture · Git and gh in this VM").is_ok());
+    ui.click("Remove access…").unwrap();
+    let msg = ui.into_messages().next().unwrap();
+    assert!(matches!(msg, Msg::Open(Panel::RemoveGitHub(a)) if a == id(200)));
+    let _ = app.update(msg);
+    let mut ui = simulator(&app, size);
+    ui.click("Cancel").unwrap();
+    let _ = app.update(ui.into_messages().next().unwrap());
+    assert!(app.app_request.is_none());
+    let _ = app.update(Msg::Open(Panel::RemoveGitHub(id(200))));
+    let mut ui = simulator(&app, size);
+    ui.click("Remove access").unwrap();
+    let _ = app.update(ui.into_messages().next().unwrap());
+    assert!(app.panel.is_none());
+    assert!(
+        matches!(&app.app_request, Some(r) if r.id == id(200) && r.target == Some(ApplicationSetupAction::SignOutGitHub))
+    );
+}
+
+#[test]
+fn github_sign_in_does_not_count_as_an_ai_provider() {
+    let _guard = lock();
+    let mut app = github_fixture("signed_in");
+    for c in &mut app.snapshot.as_mut().unwrap().applications[0]
+        .observation
+        .components
+    {
+        if c.name != "GitHub CLI" {
+            c.account = "signed_out".into();
+        }
+    }
+    let mut ui = simulator(&app, (1180.0, 1040.0));
+    assert!(
+        ui.find("Sign into at least one provider. Credentials stay inside this VM.")
+            .is_ok()
+    );
+    drop(ui);
+    app.page = Page::Workspaces;
+    let mut ui = simulator(&app, (1180.0, 1040.0));
+    assert!(ui.find("Ubuntu · ready in T3").is_err());
+    assert!(ui.find("Ubuntu · T3 setup needed").is_ok());
+}
+
+#[test]
+fn missing_optional_github_does_not_block_t3_and_has_its_own_install_action() {
+    let _guard = lock();
+    let mut app = github_fixture("unavailable");
+    let github = app.snapshot.as_mut().unwrap().applications[0]
+        .observation
+        .components
+        .iter_mut()
+        .find(|component| component.name == "GitHub CLI")
+        .unwrap();
+    github.ready = false;
+    github.version = None;
+    let mut ui = simulator(&app, (1180.0, 1400.0));
+    assert!(
+        ui.find("Install the tools before connecting accounts.")
+            .is_err()
+    );
+    ui.click("Install GitHub CLI").unwrap();
+    assert!(
+        matches!(ui.into_messages().collect::<Vec<_>>().as_slice(), [Msg::InstallApplication(vm)] if *vm == id(10))
+    );
+    app.page = Page::Workspaces;
+    let mut ui = simulator(&app, (1180.0, 1040.0));
+    assert!(ui.find("Ubuntu · ready in T3").is_ok());
+}
+
+#[test]
+fn github_preparation_failure_remains_visible_for_a_saved_account() {
+    let _guard = lock();
+    let mut app = github_fixture("signed_in");
+    let operation = setup_operation(
+        ApplicationSetupAction::SignInGitHub,
+        ApplicationPhase::Failed,
+    );
+    let snapshot = app.snapshot.as_mut().unwrap();
+    snapshot.application_operations.push(operation);
+    let observation = &mut snapshot.applications[0].observation;
+    observation.operation_id = Some(id(201));
+    observation.operation_stage = "preparing".into();
+    observation.operation_message = "Git configuration was refused.".into();
+    let mut ui = simulator(&app, (1180.0, 1500.0));
+    assert!(ui.find("Git configuration was refused.").is_ok());
+    ui.click("Retry GitHub setup").unwrap();
+    assert!(
+        matches!(ui.into_messages().collect::<Vec<_>>().as_slice(), [Msg::SetupApplication(application, ApplicationSetupAction::SignInGitHub)] if *application == id(200))
+    );
+}
+
+#[test]
+fn optional_github_install_failure_has_guidance_without_blocking_t3() {
+    let _guard = lock();
+    let mut app = github_fixture("unavailable");
+    let mut operation = setup_operation(
+        ApplicationSetupAction::ConnectT3,
+        ApplicationPhase::Succeeded,
+    );
+    operation.kind = ApplicationOperationKind::Install;
+    let snapshot = app.snapshot.as_mut().unwrap();
+    snapshot.application_operations.push(operation);
+    let component = snapshot.applications[0]
+        .observation
+        .components
+        .iter_mut()
+        .find(|component| component.name == "GitHub CLI")
+        .unwrap();
+    component.ready = false;
+    component.version = Some("2.20.0".into());
+    let mut ui = simulator(&app, (1180.0, 1600.0));
+    assert!(ui.find("T3 setup completed, but GitHub CLI is still unavailable. Check the guest application log before retrying.").is_ok());
+    assert!(ui.find("This VM has an unsupported GitHub CLI. Update or remove it inside the VM before retrying.").is_ok());
+    ui.click("Install GitHub CLI").unwrap();
+    assert!(ui.into_messages().next().is_none());
 }
 
 fn setup_operation(

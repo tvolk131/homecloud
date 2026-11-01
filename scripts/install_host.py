@@ -76,7 +76,7 @@ def main():
     write(config/'host.json',json.dumps(c,indent=2),0o600)
     host_deploy.atomic(Path(host_deploy.GUARD),(ROOT/'scripts/host_deploy.py').read_bytes(),0o755)
     helper=destination/'host_runtime.py';shutil.copyfile(ROOT/'crates/host/host_runtime.py',helper);helper.chmod(0o755)
-    for source in [ROOT/'guest/setup-t3.sh', ROOT/'guest/managed-app.py', ROOT/'guest/setup-providers.py', ROOT/'guest/codex_auth.py', ROOT/'guest/claude_auth.py', ROOT/'guest/account_metadata.py', ROOT/'crates/host/managed_apps.py', ROOT/'crates/host/managed_host.py', ROOT/'crates/host/memory_capacity.py', ROOT/'guest/managed-host.py', ROOT/'crates/host/resource_reserves.py', ROOT/'crates/host/arc_policy.py', ROOT/'crates/host/instance_runtime.py']:
+    for source in [ROOT/'guest/setup-t3.sh', ROOT/'guest/managed-app.py', ROOT/'guest/setup-providers.py', ROOT/'guest/codex_auth.py', ROOT/'guest/claude_auth.py', ROOT/'guest/github_auth.py', ROOT/'guest/account_metadata.py', ROOT/'crates/host/managed_apps.py', ROOT/'crates/host/managed_host.py', ROOT/'crates/host/memory_capacity.py', ROOT/'guest/managed-host.py', ROOT/'crates/host/resource_reserves.py', ROOT/'crates/host/arc_policy.py', ROOT/'crates/host/instance_runtime.py']:
         shutil.copyfile(source,destination/source.name);(destination/source.name).chmod(0o644)
     for source in destination.glob('*.py'):host_deploy.clear_cache(source)
     spec=importlib.util.spec_from_file_location('homecloud_host',helper);module=importlib.util.module_from_spec(spec);sys.modules[spec.name]=module;spec.loader.exec_module(module)

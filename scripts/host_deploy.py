@@ -31,7 +31,7 @@ HELPER = '/usr/local/libexec/homecloud/'
 HOST_FILES = ('host_runtime.py','managed_apps.py','managed_host.py','memory_capacity.py',
               'resource_reserves.py','arc_policy.py','instance_runtime.py')
 GUEST_FILES = ('setup-t3.sh','managed-app.py','setup-providers.py','codex_auth.py',
-               'claude_auth.py','account_metadata.py','managed-host.py')
+               'claude_auth.py','github_auth.py','account_metadata.py','managed-host.py')
 PAYLOAD = {'bin/homecloudd':'/usr/local/bin/homecloudd','bin/homecloud':'/usr/local/bin/homecloud',
            **{'crates/host/'+n:HELPER+n for n in HOST_FILES},
            **{'guest/'+n:HELPER+n for n in GUEST_FILES}}

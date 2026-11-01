@@ -68,7 +68,7 @@ controls. Secondary **Overview** and **Settings** tabs organize content within
 this VM, following [Material tabs guidance](https://github.com/material-components/material-components-android/blob/master/docs/components/Tabs.md).
 
 Overview shows configured resources and a compact T3 application card: connection,
-Codex and Claude accounts. Only unfinished setup expands into browser/code steps.
+Codex and Claude accounts, and GitHub access for Git and gh in the VM. Only unfinished setup expands into browser/code steps.
 Immediate preparation, waiting and verification states remain visible; successful
 sign-in produces an explicit completion notice before returning to compact account
 rows. Settings contains resource resizing, GPU preference, technical disclosures
@@ -255,7 +255,7 @@ recovery and deletion live under Advanced. Toggling Advanced retains pending
 sign-in and masked, unsubmitted return-code input; leaving the page clears input.
 
 Compact dots replace account/status chips. Green T3 means a saved account link;
-green Codex/Claude means their CLI reports a saved sign-in. Amber is an operation
+green Codex/Claude/GitHub means their CLI reports a saved sign-in. Amber is an operation
 in progress; hollow gray denotes unavailable or unauthenticated state, with
 visible explanatory text. Hover hints explain green status. The aggregate Ready
 to use badge was removed: authentication does not prove remaining allowance or a
@@ -271,8 +271,8 @@ device-neutral. Other administrators can inspect operational state but do not
 receive account display metadata in snapshots.
 
 
-Apps & accounts uses a general card heading with consistent T3 Code, Codex and
-Claude rows. Spacing separates the rows; there is no divider between the T3 and
+Apps & accounts uses a general card heading with consistent T3 Code, Codex,
+Claude and GitHub rows. GitHub follows the AI providers and is not counted as one. Spacing separates the rows; there is no divider between the T3 and
 provider accounts. The T3 row's dot/tooltip communicates its saved link status;
 setup progress and connectivity warnings retain visible explanatory text.
 
@@ -333,6 +333,13 @@ still uses Save & restart… and its reviewed confirmation.
 Signed-in Codex and Claude rows show the provider name, status dot and subdued
 email/plan on one line when they fit. Long metadata wraps below at narrow widths.
 Provider credentials and usage are unchanged; metadata remains owner-only.
+
+A signed-in GitHub row shows `@login · Git and gh in this VM` and, for the owner,
+an inline **Remove access…** that opens a confirmation dialog. The dialog states
+that repositories and commits in the VM are kept and that the token stays valid
+on GitHub until revoked there. While removal runs the dot turns amber with a
+loading line. The expanded sign-in flow is the only place that notes the GitHub
+connection used by Codex's plugin is separate.
 
 
 ## Contextual VM floating actions

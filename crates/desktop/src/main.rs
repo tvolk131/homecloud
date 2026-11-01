@@ -75,6 +75,8 @@ enum Panel {
     ForceStop(Uuid),
     Revoke(String),
     GpuUnavailable(GpuUnavailable),
+    /// Confirm removing saved GitHub CLI accounts from a T3 application's VM.
+    RemoveGitHub(Uuid),
 }
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum Field {
@@ -1216,6 +1218,12 @@ impl App {
                                     ApplicationSetupAction::SignInClaude => {
                                         "Claude sign-in complete. You can use it in T3 Code."
                                     }
+                                    ApplicationSetupAction::SignInGitHub => {
+                                        "GitHub sign-in complete. Git and gh in this VM now use your account."
+                                    }
+                                    ApplicationSetupAction::SignOutGitHub => {
+                                        "GitHub access removed from this VM."
+                                    }
                                 }
                                 .into();
                             }
@@ -1616,6 +1624,9 @@ impl App {
             Msg::SetupApplication(application_id, setup_action) => {
                 if self.app_request.is_some() || self.shutdown_blocks_work() {
                     return Task::none();
+                }
+                if matches!(self.panel, Some(Panel::RemoveGitHub(_))) {
+                    self.close_panel();
                 }
                 self.app_request = Some(ApplicationRequest {
                     id: application_id,

@@ -29,7 +29,7 @@ class ApplicationTests(unittest.TestCase):
                      'action': {'url': 'https://example.com', 'code': 'OLD-CODE', 'expires_at': 99999999999}}
             guest.save(base/APP/'job.json', state)
             status = {'authenticated': authenticated, 'desired': linked, 'linked': linked, 'revoked': revoked}
-            with patch.object(guest, 'BASE', base), patch.object(guest, 'BOOT', boot_file), patch.object(guest, 'T3', binary), patch.object(guest, 'command', return_value='t3 v0.1.2'), patch.object(guest, 't3_status', return_value=status), patch.object(guest.codex_auth, 'account_info', return_value={'state':'signed_out'}), patch.object(guest.claude_auth, 'account_info', return_value={'state':'signed_out'}), patch.object(guest.subprocess, 'run', return_value=subprocess.CompletedProcess([], 0 if active else 3)):
+            with patch.object(guest, 'BASE', base), patch.object(guest, 'BOOT', boot_file), patch.object(guest, 'T3', binary), patch.object(guest, 'command', return_value='t3 v0.1.2'), patch.object(guest, 't3_status', return_value=status), patch.object(guest.codex_auth, 'account_info', return_value={'state':'signed_out'}), patch.object(guest.claude_auth, 'account_info', return_value={'state':'signed_out'}), patch.object(guest.github_auth, 'account_info', return_value={'state':'signed_out'}), patch.object(guest.subprocess, 'run', return_value=subprocess.CompletedProcess([], 0 if active else 3)):
                 return guest.inspect(APP)
 
     def test_gui_or_controller_restart_preserves_live_challenge(self):
@@ -64,18 +64,20 @@ class ApplicationTests(unittest.TestCase):
         with patch.object(guest.shutil, 'which', return_value=None):
             report = self.inspect_after_restart(authenticated=True, linked=True)
         self.assertEqual(report['observation']['setup'], 'ready')
-        self.assertEqual([c['name'] for c in report['observation']['components']], ['Codex CLI', 'Claude Code'])
+        self.assertEqual([c['name'] for c in report['observation']['components']], ['Codex CLI', 'Claude Code', 'GitHub CLI'])
         self.assertTrue(all(not c['ready'] and c['version'] is None for c in report['observation']['components']))
 
 class CodexRecoveryTests(unittest.TestCase):
-    def inspect_codex(self, phase, account, active=True, boot='new', target='sign_in_codex'):
+    def inspect_codex(self, phase, account, active=True, boot='new', target='sign_in_codex', stage='awaiting_approval', message=None):
         with tempfile.TemporaryDirectory() as tmp:
             base=Path(tmp); boot_file=base/'boot'; boot_file.write_text('new')
             binary=base/'t3'; binary.touch()
             state={'id':OP,'kind':'setup','setup_action':target,'unit':'fixture.service',
-                   'phase':phase,'boot_id':boot,'action':{'url':'https://auth.openai.com/codex/device','code':'DEMO-1234','expires_at':99999999999}}
+                   'phase':phase,'boot_id':boot,'stage':stage,'action':{'url':'https://auth.openai.com/codex/device','code':'DEMO-1234','expires_at':99999999999}}
+            if message is not None:state['message']=message
             guest.save(base/APP/'job.json',state)
-            components=[{'name':'Codex CLI' if target=='sign_in_codex' else 'Claude Code','version':'0.165.0','ready':True,'account':account}]
+            name={'sign_in_codex':'Codex CLI','sign_in_claude':'Claude Code'}.get(target,'GitHub CLI')
+            components=[{'name':name,'version':'0.165.0','ready':True,'account':account}]
             with patch.object(guest,'BASE',base), patch.object(guest,'BOOT',boot_file), patch.object(guest,'T3',binary), patch.object(guest,'command',return_value='t3 v0.1.2'), patch.object(guest,'t3_status',return_value={'authenticated':True,'desired':True,'linked':True}), patch.object(guest,'provider_components',return_value=components), patch.object(guest.subprocess,'run',return_value=subprocess.CompletedProcess([],0 if active else 3)):
                 return guest.inspect(APP)
 
@@ -104,6 +106,29 @@ class CodexRecoveryTests(unittest.TestCase):
             self.assertEqual(report['job']['phase'],'succeeded' if kwargs['account']=='signed_in' else 'interrupted')
             self.assertIsNone(report['observation']['action'])
 
+    def test_github_sign_in_and_removal_recover_only_from_their_own_outcome(self):
+        for target, account, phase in (('sign_in_github', 'signed_in', 'succeeded'), ('sign_in_github', 'signed_out', 'interrupted'),
+                                       ('sign_out_github', 'signed_out', 'succeeded'), ('sign_out_github', 'signed_in', 'interrupted')):
+            report=self.inspect_codex('running',account,active=False,target=target)
+            self.assertEqual(report['observation']['setup'],'ready')
+            self.assertEqual(report['job']['phase'],phase,(target,account))
+            message=report['observation']['operation_message']
+            if phase=='interrupted':
+                self.assertIn('Removing GitHub access' if target=='sign_out_github' else 'sign-in was interrupted',message)
+            elif target=='sign_out_github':
+                self.assertIn('revoked in GitHub settings',message)
+            else:
+                self.assertIn('Git and gh now use this account',message)
+
+    def test_unknown_setup_action_is_rejected_by_the_job_entrypoint(self):
+        with patch.object(guest.sys,'argv',['managed-app.py','job',APP,OP,'setup','0.1.2','unit','sign_in_anything']):
+            with self.assertRaises(AssertionError): guest.main()
+
+    def test_github_preparation_failure_is_not_hidden_by_an_existing_account(self):
+        report=self.inspect_codex('failed','signed_in',active=False,target='sign_in_github',stage='preparing',message='Git configuration was refused.')
+        self.assertEqual(report['job']['phase'],'failed')
+        self.assertEqual(report['observation']['operation_message'],'Git configuration was refused.')
+
 
 class AccountCacheTests(unittest.TestCase):
     def test_completed_login_cannot_reuse_an_earlier_signed_out_observation(self):
@@ -114,6 +139,6 @@ class AccountCacheTests(unittest.TestCase):
                 paths[name]=str(directory/name);Path(paths[name]).touch()
                 guest.save(directory/(name+'-account.json'),{'account':'signed_out','metadata':{'state':'signed_out'},'observed_at':now-5})
             def version(args,**kwargs):return '0.165.0' if Path(args[0]).name=='codex' else '2.1.308'
-            with patch.object(guest.shutil,'which',side_effect=lambda name:paths[name]), patch.object(guest,'command',side_effect=version), patch.object(guest.codex_auth,'account_info',return_value={'state':'signed_in'}) as codex, patch.object(guest.claude_auth,'account_info',return_value={'state':'signed_in'}) as claude:
+            with patch.object(guest.shutil,'which',side_effect=lambda name:paths.get(name)), patch.object(guest,'command',side_effect=version), patch.object(guest.codex_auth,'account_info',return_value={'state':'signed_in'}) as codex, patch.object(guest.claude_auth,'account_info',return_value={'state':'signed_in'}) as claude:
                 components=guest.provider_components(directory,{'claude':now-1})
                 self.assertEqual(components[1]['account'],'signed_in');claude.assert_called_once();codex.assert_not_called()

@@ -21,8 +21,43 @@ class ProviderTests(unittest.TestCase):
             self.assertFalse(output.exists())
 
     def test_existing_compatible_installations_are_retained_without_login_or_download(self):
-        with tempfile.TemporaryDirectory() as tmp, patch.object(providers.os,'getuid',return_value=1000), patch.object(providers.platform,'system',return_value='Linux'), patch.object(providers.platform,'machine',return_value='x86_64'), patch.object(providers.Path,'home',return_value=Path(tmp)), patch.object(providers.shutil,'which',side_effect=lambda name:'/existing/'+name), patch.object(providers,'version',side_effect=[(0,165,0),(2,1,308)]), patch.object(providers,'download') as download:
+        with tempfile.TemporaryDirectory() as tmp, patch.object(providers.os,'getuid',return_value=1000), patch.object(providers.platform,'system',return_value='Linux'), patch.object(providers.platform,'machine',return_value='x86_64'), patch.object(providers.Path,'home',return_value=Path(tmp)), patch.object(providers.shutil,'which',side_effect=lambda name:'/existing/'+name), patch.object(providers,'version',side_effect=[(0,165,0),(2,1,308),(2,45,0)]), patch.object(providers,'download') as download:
             providers.ensure_providers();download.assert_not_called()
+
+    def test_outdated_system_github_cli_is_shadowed_but_a_local_one_is_not_replaced(self):
+        def run(gh_path):
+            with tempfile.TemporaryDirectory() as tmp, patch.object(providers.os,'getuid',return_value=1000), patch.object(providers.platform,'system',return_value='Linux'), patch.object(providers.platform,'machine',return_value='x86_64'), patch.object(providers.Path,'home',return_value=Path(tmp)):
+                paths={'codex':'/existing/codex','claude':'/existing/claude','gh':gh_path.replace('HOME',tmp)}
+                versions={'/existing/codex':(0,165,0),'/existing/claude':(2,1,308),paths['gh']:(2,20,0)}
+                installed=[]
+                def download(url,path,expected): installed.append(url); raise RuntimeError('stop after selecting the download')
+                with patch.object(providers.shutil,'which',side_effect=lambda name:paths[name]), patch.object(providers,'version',side_effect=lambda binary:versions[str(binary)]), patch.object(providers,'download',side_effect=download), patch('sys.stdout',new_callable=io.StringIO) as output:
+                    providers.ensure_providers()
+                return installed,output.getvalue()
+        installed,_=run('/usr/bin/gh')
+        self.assertEqual(installed,[providers.PROVIDERS['gh']['url']])
+        installed,error=run('HOME/.local/bin/gh')
+        self.assertEqual(installed,[]);self.assertIn('optional installation failed',error)
+
+    def test_optional_github_failure_does_not_abort_required_provider_setup(self):
+        attempted=[]
+        def install(name, policy, bindir):
+            attempted.append(name)
+            if name=='gh': raise RuntimeError('checksum mismatch')
+        with tempfile.TemporaryDirectory() as tmp, patch.object(providers.os,'getuid',return_value=1000), patch.object(providers.platform,'system',return_value='Linux'), patch.object(providers.platform,'machine',return_value='x86_64'), patch.object(providers.Path,'home',return_value=Path(tmp)), patch.object(providers,'ensure_provider',side_effect=install), patch('sys.stdout',new_callable=io.StringIO) as output:
+            providers.ensure_providers()
+        self.assertEqual(attempted,['codex','claude','gh'])
+        self.assertIn('optional installation failed',output.getvalue())
+
+    @unittest.skipUnless(hasattr(tarfile,'data_filter'),'Extraction is exercised with modern Python on the Ubuntu guest')
+    def test_github_cli_package_requires_the_pinned_layout(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);archive=root/'gh.tgz';dest=root/'unpacked';dest.mkdir()
+            with tarfile.open(archive,'w:gz') as tar:
+                for name,data in [('gh_2.103.3_linux_amd64/bin/gh',b'cli'),('gh_2.103.3_linux_amd64/LICENSE',b'mit')]:
+                    member=tarfile.TarInfo(name);member.size=len(data);member.mode=0o755;tar.addfile(member,io.BytesIO(data))
+            self.assertEqual(providers.unpack_gh(archive,dest,'2.103.3').name,'gh_2.103.3_linux_amd64')
+            with self.assertRaisesRegex(RuntimeError,'Incomplete'):providers.unpack_gh(archive,root/'other','2.100.0')
 
     def test_broken_existing_installation_is_not_silently_replaced(self):
         with tempfile.TemporaryDirectory() as tmp, patch.object(providers.os,'getuid',return_value=1000), patch.object(providers.platform,'system',return_value='Linux'), patch.object(providers.platform,'machine',return_value='x86_64'), patch.object(providers.Path,'home',return_value=Path(tmp)), patch.object(providers.shutil,'which',return_value='/existing/codex'), patch.object(providers,'version',return_value=(0,100,0)), patch.object(providers,'download') as download:
@@ -50,7 +85,7 @@ class ProviderTests(unittest.TestCase):
             with self.assertRaises(tarfile.FilterError):providers.unpack_codex(archive,dest,'0.165.0')
             self.assertFalse((root/'escaped').exists())
 
-    def check_service_activation(self, active):
+    def check_service_activation(self, active, running_path=None):
         import os
         import subprocess
         with tempfile.TemporaryDirectory() as tmp:
@@ -61,14 +96,21 @@ class ProviderTests(unittest.TestCase):
                 fake/'id': '#!/bin/sh\necho 1000\n',
                 fake/'python3': '#!/bin/sh\necho provider-setup >> "$TEST_CALLS"\n',
                 fake/'curl': '#!/bin/sh\nexit 99\n',
-                fake/'systemctl': '#!/bin/sh\nif [ "$2" = is-active ]; then exit "$TEST_ACTIVE"; fi\necho "$*" >> "$TEST_CALLS"\n',
+                fake/'systemctl': '#!/bin/sh\nif [ "$2" = is-active ]; then exit "$TEST_ACTIVE"; fi\nif [ "$2" = show ]; then echo "$TEST_PID"; exit 0; fi\necho "$*" >> "$TEST_CALLS"\n',
             }
             for path,text in scripts.items():path.write_text(text);path.chmod(0o755)
             credentials=home/'.t3/userdata/owner-sentinel';credentials.parent.mkdir(parents=True);credentials.write_text('preserve owner state')
             envfile=home/'.t3/service.env';envfile.write_text('T3CODE_HOST=127.0.0.1\nT3CODE_PORT=3773\n')
-            env=dict(os.environ,HOME=str(home),PATH=str(fake)+os.pathsep+os.environ['PATH'],TEST_CALLS=str(calls),TEST_ACTIVE='0' if active else '3')
+            env=dict(os.environ,HOME=str(home),PATH=str(fake)+os.pathsep+os.environ['PATH'],TEST_CALLS=str(calls),TEST_ACTIVE='0' if active else '3',TEST_PID='0')
+            service=None
+            if running_path is not None:
+                # Stand-in for the running T3 process; only its environment is inspected.
+                service=subprocess.Popen(['sleep','30'],env=dict(os.environ,PATH=running_path.replace('HOME',str(home))))
+                env['TEST_PID']=str(service.pid)
             script=Path(__file__).parents[3]/'guest/setup-t3.sh'
-            result=subprocess.run(['/bin/sh',str(script),'0.1.2'],env=env,text=True,capture_output=True)
+            try: result=subprocess.run(['/bin/sh',str(script),'0.1.2'],env=env,text=True,capture_output=True)
+            finally:
+                if service: service.kill(); service.wait()
             self.assertEqual(result.returncode,0,result.stderr)
             self.assertEqual(credentials.read_text(),'preserve owner state')
             self.assertEqual(envfile.read_text(),'T3CODE_HOST=127.0.0.1\nT3CODE_PORT=3773\n')
@@ -76,10 +118,15 @@ class ProviderTests(unittest.TestCase):
             events=calls.read_text().splitlines()
             self.assertIn('provider-setup',events)
             self.assertEqual(events.count('service install'),1)
-            self.assertEqual(events.count('service restart'),1 if active else 0)
+            self.assertEqual(events.count('service restart'),1 if active and running_path is None else 0)
+            self.assertNotIn('environ',result.stderr)
 
     def test_repair_restarts_existing_service_to_activate_provider_path(self):
         self.check_service_activation(True)
 
     def test_initial_service_install_starts_once_and_preserves_owner_state(self):
         self.check_service_activation(False)
+
+    @unittest.skipUnless(Path('/proc/self/environ').exists(), 'Reads the running service environment through Linux /proc')
+    def test_adding_a_tool_does_not_restart_a_service_that_already_has_the_tool_path(self):
+        self.check_service_activation(True, running_path='HOME/.local/bin:/usr/bin:/bin')

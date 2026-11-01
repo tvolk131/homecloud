@@ -25,8 +25,8 @@ all applications or disable Keychain protection to suppress a prompt.
 
 Linux clients currently retain private mode-0600 file credentials. A macOS
 credential-reference profile cannot be used as a Linux device; enroll that device
-separately. Host endpoint-key storage and guest AI-provider credentials are
-unchanged by this client migration.
+separately. Host endpoint-key storage and guest AI-provider and GitHub CLI
+credentials are unchanged by this client migration.
 
 For device loss, revoke the device and enroll a replacement. Lost-admin recovery
 still requires local privileged host authority; see [operations](operations.md).
