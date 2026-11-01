@@ -176,3 +176,17 @@ custom test volume only after the worker is fully gone.
 Never run the guest fault fixture directly on the permanent host. Native Keychain
 smoke tests are explicitly ignored in CI and create/delete only a disposable item.
 See [deployment](../docs/deployment.md) and [credentials](../docs/credentials.md).
+
+## Shared Nix store proof
+
+The Rust `homecloud-nix-lab` runner creates two clients and an isolated worker
+through the authenticated Homecloud API, then uses pinned management SSH for a
+host-owned store and read-only virtiofs exports. It preserves a private manifest,
+fences unrelated VM process identities, and restores its grant only without
+drift. See [the prototype report](../docs/nix-shared-store-prototype.md) for the
+exact sequence, expected limitations, host requirements, evidence and teardown.
+It is an experimental lab fixture, not an enabled managed VM type.
+
+The follow-up [Fedimint hardening report](../docs/nix-shared-store-hardening.md)
+describes the pinned real-project workload, concurrent-build and runtime-retention
+probes, physical allocation checks, and the remaining shipping gates.

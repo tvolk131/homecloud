@@ -1,0 +1,85 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-31",
+  "host": "resolvr-box",
+  "kind": "functional shared Nix store prototype; no performance benchmark",
+  "run_id": "5f2341cd-4b3b-488e-9c7d-f690fc79751c",
+  "implementation": "Rust lab runner with stock OS and Nix commands",
+  "nix_version": "2.35.4",
+  "nix_patched": false,
+  "nixpkgs": {
+    "revision": "6f06d204d8f2d8761d9da78778745974a3216381",
+    "nar_hash": "sha256-loLMnbbS4KhmG2ln9EY6f0YMNCA273Yx02oWYQ9IMeE="
+  },
+  "fixtures": {
+    "clients": 2,
+    "workers": 1,
+    "memory_gib_each": 2,
+    "cores_each": 1,
+    "disk_gib": [
+      12,
+      12,
+      20
+    ],
+    "client_kernel_before": "6.8.0-147-generic",
+    "client_kernel_after": "7.0.0-42-generic",
+    "backing_dataset_acltype": "posix"
+  },
+  "checks": {
+    "stock_client_versions": "pass",
+    "both_clients_untrusted": "pass",
+    "worker_sandbox_nonce": "pass",
+    "identical_output_path": "pass",
+    "same_host_and_client_executable_inode": 10302,
+    "negative_lookup_then_live_publication": "pass",
+    "live_publication_mount_id_before_and_after": 58,
+    "live_publication_host_and_client_executable_inode": 10725,
+    "guest_root_write_denial_both_clients": "pass",
+    "explicit_shared_result_link": "pass",
+    "development_shell_with_shared_profile": "pass; ignored guest-private cache-path permission error",
+    "profile_add_and_list_with_shared_state": "pass",
+    "gc_refuses_rooted_output_without_temporary_host_root": "pass",
+    "targeted_gc_reclaims_unrooted_output_from_both_clients": "pass",
+    "existing_executable_during_endpoint_outage": "pass",
+    "store_request_fails_during_endpoint_outage": "pass; expected connection refused",
+    "client_reboot_changes_boot_id_and_recovers": "pass",
+    "read_only_after_client_reboot": "pass",
+    "guest_override_request_still_uses_worker": "pass",
+    "direct_untrusted_daemon_rejects_restricted_setting_overrides": "pass",
+    "direct_untrusted_local_build_has_no_build_users": "pass",
+    "default_guest_private_result_path": "expected failure; host cannot create /home/dev/hcnix-proof"
+  },
+  "output": "/nix/store/p9mg85pbfs1y9xsjxgdlaqz205lw57as-hcnix-shared-5f2341cd4b3b488e9c7df690fc79751c",
+  "host_dataset_allocated_bytes_after_first_build": 105218048,
+  "worker_keeps_a_separate_build_store": true,
+  "not_tested": [
+    "physical host reboot",
+    "power-loss publication recovery",
+    "full GC racing with unrooted running guest processes",
+    "concurrent publication stress",
+    "multi-tenant adversarial security review",
+    "production GUI metrics",
+    "disk savings or throughput benchmark",
+    "shared page cache or RAM deduplication"
+  ],
+  "restoration": {
+    "verified": true,
+    "fixture_vms_deleted": true,
+    "original_grant_restored": true,
+    "managed_disk_budget_gib": 128,
+    "development_vm": {
+      "state": "running",
+      "memory_gib": 16,
+      "cores": 3,
+      "disk_gib": 64,
+      "start_operation_succeeded": true
+    },
+    "other_running_vm_qemu_pid_unchanged": 3930767,
+    "original_stopped_vm_remains_stopped": true,
+    "prototype_services_mounts_dataset_reservation_accounts_firewall_and_keys_removed": true,
+    "original_bash_config_restored": true,
+    "controller_healthy": true,
+    "remaining_host_artifacts": "inactive root-private audit receipts, backups and archived fetch-cache metadata only",
+    "telemetry_thread_explicitly_released": true
+  }
+}
