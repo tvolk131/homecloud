@@ -6,6 +6,20 @@ request keys and a versioned, fsynced manifest. Failed proofs retain resources f
 inspection; a timeout is never permission to free a claim or force power off.
 Run only one grant-changing proof at a time.
 
+The isolated Proxmox substrate experiment has a separate resumable supervisor,
+`proxmox_spike.py`. Read [its scope, safety rules, and findings](../docs/proxmox-spike.md)
+before running it: it temporarily stops the physical Homecloud controller while
+using an independently bounded, tagged worker. It is not a Proxmox installer for
+the physical host or a new production backend.
+
+The cockpit has separate disposable [inventory](../docs/proxmox-cockpit-live-validation.md)
+and [VM power](../docs/proxmox-power-live-validation.md) validation runners,
+`proxmox_cockpit_live.py` and `proxmox_power_live.py`. Read their safety,
+private-manifest, cleanup, and scope rules before running them. These proofs
+use nested PVE, never migrate the physical host, and clean their owned resources
+in failure paths as well as after success. VM power requests are limited to the
+owned inner fixture; original guest state and physical-host baselines are checked.
+
 ## Management SSH access
 
 Keep the independent, pinned management connection outside every checkout at

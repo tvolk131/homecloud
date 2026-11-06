@@ -21,6 +21,15 @@ jobs:
         with:
           key: ${{ matrix.os }}
       - run: cargo test --locked --workspace --exclude homecloud-desktop
+      - name: Check optional Proxmox adapter
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y libssl-dev pkg-config
+          cargo test --locked -p homecloud-virtualization -p homecloud-daemon --features homecloud-daemon/proxmox
+          cargo clippy --locked -p homecloud-virtualization -p homecloud-daemon --features homecloud-daemon/proxmox --all-targets -- -D warnings
+      - name: Check Proxmox lab safeguards
+        run: python3 -m unittest discover -s lab -p 'test_proxmox*.py'
       - if: runner.os == 'macOS'
         run: cargo clippy --locked --workspace --all-targets -- -D warnings
       - name: Compare native UI screenshots

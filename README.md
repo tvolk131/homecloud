@@ -8,6 +8,17 @@ dedicated cores, GPU passthrough, and OpenSSH over Iroh.
 [operations](docs/operations.md), and [validation](docs/validation.md) before adding coworkers.
 Backups are deliberately deferred; this host is disposable. See the [current roadmap](docs/roadmap.md) for stabilization and acceptance work.
 
+An isolated, owner-only [Proxmox cockpit foundation](docs/proxmox-cockpit.md)
+now supports inventory and task-tracked QEMU power controls over Iroh with a
+deterministic fake and an optional official-client Linux adapter. The Mac GUI
+detects this server mode and shows nodes, guests/templates, storage capacity,
+and power operations in an owner-only cockpit.
+See [power permissions and recovery](docs/proxmox-power.md). The adapter passed
+disposable real-PVE [inventory](docs/proxmox-cockpit-live-validation.md) and
+[power-operation](docs/proxmox-power-live-validation.md) validation, including
+authenticated loopback Iroh. Live desktop/WAN access remains unvalidated.
+It does not replace or migrate the existing Incus controller.
+
 ## Run the Mac app
 
 ```sh

@@ -12,11 +12,13 @@ mod shutdown_tests;
 mod storage;
 #[cfg(test)]
 mod storage_tests;
+mod virtualization;
 use anyhow::{Result, ensure};
 use homecloud_client::{DeviceProof, read_frame, write_frame};
 use homecloud_core::*;
 use homecloud_host::{Backend, HostRequest, HostResponse};
 use homecloud_store::{Limits, Store};
+use homecloud_virtualization::VirtualizationBackend;
 use iroh::{
     Endpoint, SecretKey,
     endpoint::{Connection, presets},
@@ -64,6 +66,8 @@ impl Default for Config {
 pub struct Service {
     pub store: Store,
     pub backend: Arc<dyn Backend>,
+    virtualization: Option<Arc<dyn VirtualizationBackend>>,
+    virtualization_refresh: Mutex<()>,
     enrollment_attempts: Mutex<HashMap<String, (Instant, u8)>>,
     reconciliation: Mutex<()>,
     application_reconciliation: Mutex<()>,
@@ -76,11 +80,30 @@ pub struct Service {
 }
 impl Service {
     pub fn new(store: Store, backend: Arc<dyn Backend>) -> Result<Arc<Self>> {
+        Self::new_inner(store, backend, None)
+    }
+    fn new_inner(
+        store: Store,
+        backend: Arc<dyn Backend>,
+        virtualization: Option<Arc<dyn VirtualizationBackend>>,
+    ) -> Result<Arc<Self>> {
         let controller_lock = store.lock_controller()?;
-        store.interrupt_host_shutdown()?;
+        if virtualization.is_none() {
+            store.interrupt_host_shutdown()?;
+        } else {
+            if let Some(identity) = virtualization
+                .as_ref()
+                .and_then(|backend| backend.identity())
+            {
+                store.bind_virtualization_backend(&identity)?;
+            }
+            store.interrupt_virtualization_submissions()?;
+        }
         Ok(Arc::new(Self {
             store,
             backend,
+            virtualization,
+            virtualization_refresh: Mutex::new(()),
             enrollment_attempts: Mutex::new(HashMap::new()),
             reconciliation: Mutex::new(()),
             application_reconciliation: Mutex::new(()),
@@ -127,6 +150,22 @@ impl Service {
         }
         let p = peer.clone();
         let me = self.db(move |s| s.authenticate(&p)).await?;
+        if self.virtualization.is_some() {
+            ensure!(me.role == Role::Admin, "Administrator required");
+            ensure!(
+                matches!(
+                    &request,
+                    Request::VirtualizationInventory
+                        | Request::VirtualizationPower { .. }
+                        | Request::VirtualizationOperations
+                        | Request::AcknowledgeVirtualizationOperation { .. }
+                        | Request::ControlPlaneMode
+                        | Request::InviteDevice { .. }
+                        | Request::RevokeDevice { .. }
+                ),
+                "Legacy control-plane operations are unavailable in virtualization mode"
+            );
+        }
         let _gate = if request.changes_host_workload() {
             let gate = self.shutdown_gate.read().await;
             self.ensure_host_not_shutting_down().await?;
@@ -135,6 +174,64 @@ impl Service {
             None
         };
         match request {
+            Request::VirtualizationPower {
+                idempotency_key,
+                guest,
+                action,
+            } => Ok(Response::VirtualizationOperation(
+                self.submit_virtualization_power(peer, idempotency_key, guest, action)
+                    .await?,
+            )),
+            Request::VirtualizationOperations => {
+                ensure!(
+                    self.virtualization.is_some() && me.role == Role::Admin,
+                    "Owner-only virtualization mode required"
+                );
+                Ok(Response::VirtualizationOperations(
+                    self.db(|store| store.virtualization_operations()).await?,
+                ))
+            }
+            Request::AcknowledgeVirtualizationOperation { operation_id } => {
+                ensure!(
+                    self.virtualization.is_some() && me.role == Role::Admin,
+                    "Owner-only virtualization mode required"
+                );
+                Ok(Response::VirtualizationOperation(
+                    self.db(move |store| {
+                        let mut operation = store
+                            .virtualization_operation(operation_id)?
+                            .ok_or_else(|| anyhow::anyhow!("Power operation not found"))?;
+                        if operation.phase != VirtualizationOperationPhase::Acknowledged {
+                            ensure!(
+                                operation.phase == VirtualizationOperationPhase::Unknown,
+                                "Only an uncertain submission can be acknowledged"
+                            );
+                            operation.phase = VirtualizationOperationPhase::Acknowledged;
+                            operation.updated_at = homecloud_store::now();
+                            store.update_virtualization_operation(&operation)?;
+                        }
+                        Ok(operation)
+                    })
+                    .await?,
+                ))
+            }
+            Request::ControlPlaneMode => Ok(Response::ControlPlaneMode(
+                if self.virtualization.is_some() {
+                    ControlPlaneMode::Virtualization
+                } else {
+                    ControlPlaneMode::ManagedHost
+                },
+            )),
+            Request::VirtualizationInventory => {
+                ensure!(me.role == Role::Admin, "Administrator required");
+                let backend = self
+                    .virtualization
+                    .as_ref()
+                    .ok_or_else(|| anyhow::anyhow!("Virtualization mode is not enabled"))?;
+                Ok(Response::VirtualizationInventory(
+                    backend.inventory().await?,
+                ))
+            }
             Request::ShutdownHost {
                 idempotency_key,
                 expected_boot_id,
@@ -739,7 +836,14 @@ impl Service {
         };
         let request: Request =
             tokio::time::timeout(Duration::from_secs(15), read_frame(&mut recv)).await??;
-        if conn.alpn() == SSH_ALPN {
+        if conn.alpn() == SSH_ALPN && self.virtualization.is_some() {
+            write_frame(
+                &mut send,
+                &Response::error("Legacy SSH is unavailable in virtualization mode"),
+            )
+            .await?;
+            send.finish()?;
+        } else if conn.alpn() == SSH_ALPN {
             let Request::Ssh { vm_id } = request else {
                 anyhow::bail!("Invalid SSH request");
             };
@@ -830,6 +934,25 @@ pub async fn endpoint(secret: SecretKey) -> Result<Endpoint> {
         .await?)
 }
 pub async fn serve(service: Arc<Service>, endpoint: Endpoint) -> Result<()> {
+    let monitor = async {
+        if service.virtualization.is_some() {
+            loop {
+                if let Err(error) = service.refresh_virtualization_operations().await {
+                    tracing::warn!(%error, "Virtualization task refresh failed");
+                }
+                tokio::time::sleep(Duration::from_secs(2)).await;
+            }
+        } else {
+            std::future::pending::<()>().await;
+        }
+    };
+    tokio::select! {
+        result = serve_connections(service.clone(), endpoint) => result,
+        () = monitor => Ok(()),
+    }
+}
+
+async fn serve_connections(service: Arc<Service>, endpoint: Endpoint) -> Result<()> {
     let connections = Arc::new(Semaphore::new(64));
     while let Some(incoming) = endpoint.accept().await {
         let Ok(permit) = connections.clone().try_acquire_owned() else {

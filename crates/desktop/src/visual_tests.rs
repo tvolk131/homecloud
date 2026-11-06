@@ -319,6 +319,20 @@ fn screenshot_regressions() {
     let artifacts = root.join("../../target/ui-screenshots");
     let update = std::env::var("UPDATE_SCREENSHOTS").as_deref() == Ok("1");
     let names = [
+        "cockpit-overview",
+        "cockpit-guests-small",
+        "cockpit-details-small",
+        "cockpit-storage",
+        "cockpit-stale-small",
+        "cockpit-unavailable-small",
+        "cockpit-power-controls",
+        "cockpit-force-confirmation-small",
+        "cockpit-power-recovery-small",
+        "cockpit-power-running",
+        "cockpit-power-failed",
+        "cockpit-power-unknown",
+        "cockpit-acknowledge-small",
+        "cockpit-operations-unavailable-small",
         "host-storage-topology",
         "host-storage-smart",
         "host-storage-disks-small",
@@ -471,6 +485,115 @@ fn screenshot_regressions() {
         };
         let mut size = (1180.0, 820.0);
         match name {
+            "cockpit-overview"
+            | "cockpit-guests-small"
+            | "cockpit-details-small"
+            | "cockpit-storage"
+            | "cockpit-stale-small"
+            | "cockpit-unavailable-small"
+            | "cockpit-power-controls"
+            | "cockpit-force-confirmation-small"
+            | "cockpit-power-recovery-small"
+            | "cockpit-power-running"
+            | "cockpit-power-failed"
+            | "cockpit-power-unknown"
+            | "cockpit-acknowledge-small"
+            | "cockpit-operations-unavailable-small" => {
+                app = crate::virtualization_ui_tests::fixture();
+                if name.ends_with("small") {
+                    size = (800.0, 600.0);
+                }
+                let cockpit = app.cockpit.as_mut().unwrap();
+                if name == "cockpit-guests-small" {
+                    cockpit.page = crate::virtualization::Page::Guests;
+                }
+                if name == "cockpit-storage" {
+                    cockpit.page = crate::virtualization::Page::Storage;
+                }
+                if name == "cockpit-details-small" {
+                    cockpit.update(crate::virtualization::Event::Inspect(
+                        crate::virtualization::GuestIdentity {
+                            node: "demo-proxmox".into(),
+                            vmid: 101,
+                        },
+                    ));
+                }
+                if name == "cockpit-stale-small" {
+                    cockpit.error = Some("API unreachable; previous readings retained.".into());
+                }
+                if name == "cockpit-unavailable-small" {
+                    cockpit.inventory = None;
+                    cockpit.error =
+                        Some("The service token does not have access to this resource.".into());
+                }
+                if name == "cockpit-power-controls" {
+                    size = (1180.0, 1100.0);
+                    cockpit.inventory.as_mut().unwrap().guests[0].status = "stopped".into();
+                    cockpit.update(crate::virtualization::Event::Inspect(
+                        crate::virtualization::GuestIdentity {
+                            node: "demo-proxmox".into(),
+                            vmid: 101,
+                        },
+                    ));
+                }
+                if name == "cockpit-force-confirmation-small" {
+                    cockpit.update(crate::virtualization::Event::Inspect(
+                        crate::virtualization::GuestIdentity {
+                            node: "demo-proxmox".into(),
+                            vmid: 101,
+                        },
+                    ));
+                    cockpit.update(crate::virtualization::Event::ReviewPower(
+                        crate::virtualization_power_tests::guest(),
+                        VirtualizationPowerAction::ForceStop,
+                    ));
+                }
+                if name == "cockpit-power-recovery-small" {
+                    size = (800.0, 900.0);
+                    cockpit.pending = Some(crate::virtualization::PendingPower {
+                        request: crate::virtualization::PowerRequest {
+                            key: id(820),
+                            guest: crate::virtualization_power_tests::guest(),
+                            action: VirtualizationPowerAction::Shutdown,
+                        },
+                        in_flight: false,
+                        error: Some("Transport disconnected before the reply arrived.".into()),
+                        checked_missing: true,
+                    });
+                }
+                if matches!(
+                    name,
+                    "cockpit-power-running"
+                        | "cockpit-power-failed"
+                        | "cockpit-power-unknown"
+                        | "cockpit-acknowledge-small"
+                ) {
+                    let phase = match name {
+                        "cockpit-power-running" => VirtualizationOperationPhase::Running,
+                        "cockpit-power-failed" => VirtualizationOperationPhase::Failed,
+                        _ => VirtualizationOperationPhase::Unknown,
+                    };
+                    let mut operation = crate::virtualization_power_tests::operation(phase);
+                    operation.error = Some(match phase {
+                        VirtualizationOperationPhase::Running => "Proxmox polling is temporarily unreachable; the task remains running.",
+                        VirtualizationOperationPhase::Failed => "Proxmox task failed: guest shutdown timed out.",
+                        _ => "Controller restarted during submission. Inspect Proxmox before releasing this safety hold.",
+                    }.into());
+                    cockpit.operations.push(operation);
+                    if name == "cockpit-acknowledge-small" {
+                        cockpit
+                            .update(crate::virtualization::Event::ReviewAcknowledgement(id(810)));
+                    } else {
+                        size = (1180.0, 1240.0);
+                    }
+                }
+                if name == "cockpit-operations-unavailable-small" {
+                    cockpit.operations_error = Some(
+                        "The operations service is unreachable; previous history is retained."
+                            .into(),
+                    );
+                }
+            }
             "host-storage-topology"
             | "host-storage-smart"
             | "host-storage-disks-small"

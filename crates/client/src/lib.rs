@@ -382,6 +382,54 @@ impl Client {
             _ => anyhow::bail!("Unexpected host response"),
         }
     }
+    pub async fn control_plane_mode(&self) -> Result<ControlPlaneMode> {
+        match self.rpc(Request::ControlPlaneMode).await? {
+            Response::ControlPlaneMode(mode) => Ok(mode),
+            _ => anyhow::bail!("Unexpected control-plane mode response"),
+        }
+    }
+    pub async fn virtualization_inventory(&self) -> Result<VirtualizationInventory> {
+        match self.rpc(Request::VirtualizationInventory).await? {
+            Response::VirtualizationInventory(inventory) => Ok(inventory),
+            _ => anyhow::bail!("Unexpected virtualization inventory response"),
+        }
+    }
+    pub async fn virtualization_power(
+        &self,
+        idempotency_key: uuid::Uuid,
+        guest: VirtualizationGuestIdentity,
+        action: VirtualizationPowerAction,
+    ) -> Result<VirtualizationOperation> {
+        match self
+            .rpc(Request::VirtualizationPower {
+                idempotency_key,
+                guest,
+                action,
+            })
+            .await?
+        {
+            Response::VirtualizationOperation(operation) => Ok(operation),
+            _ => anyhow::bail!("Unexpected virtualization power response"),
+        }
+    }
+    pub async fn virtualization_operations(&self) -> Result<Vec<VirtualizationOperation>> {
+        match self.rpc(Request::VirtualizationOperations).await? {
+            Response::VirtualizationOperations(operations) => Ok(operations),
+            _ => anyhow::bail!("Unexpected virtualization operations response"),
+        }
+    }
+    pub async fn acknowledge_virtualization_operation(
+        &self,
+        operation_id: uuid::Uuid,
+    ) -> Result<VirtualizationOperation> {
+        match self
+            .rpc(Request::AcknowledgeVirtualizationOperation { operation_id })
+            .await?
+        {
+            Response::VirtualizationOperation(operation) => Ok(operation),
+            _ => anyhow::bail!("Unexpected virtualization acknowledgement response"),
+        }
+    }
     /// Binary-clean OpenSSH ProxyCommand: protocol metadata is consumed here,
     /// and only guest SSH bytes reach stdout.
     pub async fn ssh_stdio(&self, vm_id: uuid::Uuid) -> Result<()> {

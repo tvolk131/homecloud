@@ -16,6 +16,12 @@ struct Args {
     #[command(subcommand)]
     command: Command,
 }
+#[derive(Clone, Copy, clap::ValueEnum)]
+enum PowerAction {
+    Start,
+    Shutdown,
+    ForceStop,
+}
 #[derive(Subcommand)]
 enum Command {
     /// Read a one-time invitation from stdin, never command-line history.
@@ -24,6 +30,23 @@ enum Command {
         ticket: PathBuf,
     },
     Status,
+    VirtualizationInventory,
+    VirtualizationOperations,
+    VirtualizationPower {
+        node: String,
+        vmid: u32,
+        #[arg(value_enum)]
+        action: PowerAction,
+        #[arg(long)]
+        request_id: Uuid,
+        #[arg(long)]
+        confirm_force_stop: bool,
+    },
+    VirtualizationAcknowledge {
+        operation: Uuid,
+        #[arg(long)]
+        inspected_proxmox: bool,
+    },
     /// Adopt a reviewed physical RAM envelope; preserves all grants and claims.
     MemoryCancel {
         operation: Uuid,
@@ -237,6 +260,23 @@ async fn main() -> Result<()> {
     let outcome = async {
     let request = match args.command {
         Command::Status => Request::Snapshot,
+        Command::VirtualizationInventory => Request::VirtualizationInventory,
+        Command::VirtualizationOperations => Request::VirtualizationOperations,
+        Command::VirtualizationPower {node,vmid,action,request_id,confirm_force_stop} => {
+            let action = match action {
+                PowerAction::Start => VirtualizationPowerAction::Start,
+                PowerAction::Shutdown => VirtualizationPowerAction::Shutdown,
+                PowerAction::ForceStop => {
+                    anyhow::ensure!(confirm_force_stop, "Force-stop can lose guest data; pass --confirm-force-stop to confirm");
+                    VirtualizationPowerAction::ForceStop
+                }
+            };
+            Request::VirtualizationPower {idempotency_key:request_id,guest:VirtualizationGuestIdentity{node,vmid,kind:VirtualizationGuestKind::VirtualMachine},action}
+        },
+        Command::VirtualizationAcknowledge {operation,inspected_proxmox} => {
+            anyhow::ensure!(inspected_proxmox, "Inspect the native Proxmox task history and guest before releasing an uncertain operation; pass --inspected-proxmox to confirm");
+            Request::AcknowledgeVirtualizationOperation{operation_id:operation}
+        },
         Command::MemoryCancel { operation } => Request::CancelMemoryCapacity { operation_id:operation },
         Command::MemoryAdopt { memory, expected_revision, request_id } => Request::AdoptMemoryCapacity {
             target_bytes: memory.checked_mul(GIB).context("Memory overflow")?, expected_revision,

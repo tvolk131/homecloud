@@ -10,6 +10,100 @@ use std::sync::{
 };
 
 #[tokio::test]
+async fn virtualization_inventory_uses_authenticated_iroh_and_honors_revocation() {
+    use homecloud_virtualization::SimulatedVirtualization;
+
+    let credentials = TestCredentials::default();
+    let temp = tempfile::tempdir().unwrap();
+    let store = Store::open(temp.path().join("state.db"), Config::default().limits).unwrap();
+    let (_, token) = store.bootstrap("Administrator").unwrap();
+    let service =
+        Service::new_virtualization(store, Arc::new(SimulatedVirtualization::demo())).unwrap();
+    let host = iroh::Endpoint::builder(iroh::endpoint::presets::Minimal)
+        .alpns(vec![CONTROL_ALPN.to_vec(), SSH_ALPN.to_vec()])
+        .bind_addr("127.0.0.1:0")
+        .unwrap()
+        .bind()
+        .await
+        .unwrap();
+    let address = iroh::EndpointAddr::new(host.id()).with_ip_addr(
+        host.bound_sockets()
+            .into_iter()
+            .find(|socket| socket.ip().is_loopback())
+            .unwrap(),
+    );
+    let task = tokio::spawn(serve(service.clone(), host.clone()));
+    let (admin, _) = Client::enroll_with_store(
+        &temp.path().join("admin.json"),
+        address,
+        token,
+        Default::default(),
+        &credentials,
+    )
+    .await
+    .unwrap();
+    assert_eq!(
+        admin.control_plane_mode().await.unwrap(),
+        ControlPlaneMode::Virtualization
+    );
+    let inventory = admin.virtualization_inventory().await.unwrap();
+    assert_eq!(inventory.source, VirtualizationSource::Simulated);
+    assert_eq!(inventory.guests[0].vmid, 101);
+    let key = uuid::Uuid::new_v4();
+    let identity = VirtualizationGuestIdentity {
+        node: inventory.guests[0].node.clone(),
+        vmid: 101,
+        kind: VirtualizationGuestKind::VirtualMachine,
+    };
+    assert_eq!(
+        admin
+            .virtualization_power(key, identity.clone(), VirtualizationPowerAction::Shutdown)
+            .await
+            .unwrap()
+            .id,
+        key
+    );
+    let completed = tokio::time::timeout(std::time::Duration::from_secs(10), async {
+        loop {
+            let operations = admin.virtualization_operations().await.unwrap();
+            if let Some(operation) = operations.into_iter().find(|operation| {
+                operation.id == key && operation.phase == VirtualizationOperationPhase::Succeeded
+            }) {
+                break operation;
+            }
+            tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+        }
+    })
+    .await
+    .unwrap();
+    assert!(completed.task_id.is_some());
+    assert_eq!(
+        admin
+            .virtualization_power(key, identity, VirtualizationPowerAction::Shutdown)
+            .await
+            .unwrap(),
+        completed
+    );
+    assert!(admin.rpc(Request::Snapshot).await.is_err());
+    assert!(
+        admin
+            .ssh_stdio(uuid::Uuid::new_v4())
+            .await
+            .unwrap_err()
+            .to_string()
+            .contains("Legacy SSH is unavailable")
+    );
+    service
+        .store
+        .revoke_device(&admin.device_id(), &admin.device_id())
+        .unwrap();
+    assert!(admin.rpc(Request::VirtualizationInventory).await.is_err());
+    admin.close().await;
+    host.close().await;
+    task.abort();
+}
+
+#[tokio::test]
 async fn real_quic_storage_preserves_nested_observations_and_redacts_members() {
     struct StorageBackend {
         inner: Simulator,
@@ -373,6 +467,10 @@ async fn real_quic_requires_enrollment_and_rechecks_device_revocation() {
     )
     .await
     .unwrap();
+    assert_eq!(
+        client.control_plane_mode().await.unwrap(),
+        ControlPlaneMode::ManagedHost
+    );
     assert_eq!(client.snapshot().await.unwrap().me.id, user.id);
     let sibling = Client::from_profile(Profile::load_with_store(&path, &credentials).unwrap())
         .await

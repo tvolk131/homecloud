@@ -1,0 +1,190 @@
+{
+  "date": "2026-11-02",
+  "scope": "Disposable nested Proxmox substrate experiment on resolvr-box; not a production backend migration",
+  "primary_run_id": "7657bbb7c7b54e60b465e02b954a52f7",
+  "versions": {
+    "proxmox_ve": "9.2.0",
+    "pve_manager": "9.2.25",
+    "running_kernel": "7.0.14-26-pve",
+    "qemu_package": "11.0.3-4",
+    "management_services_active": true,
+    "dpkg_audit_empty": true,
+    "firmware_note": "Version report flags legacy pve-edk2-firmware; inner guests used BIOS, not tested UEFI"
+  },
+  "topology": {
+    "outer_ram_gib": 12,
+    "outer_shared_vcpus": 4,
+    "outer_zfs_quota_and_reservation_gib": 128,
+    "outer_root_gib": 32,
+    "outer_scratch_gib": 64,
+    "original_vm_states_unchanged_after_primary_cleanup": true,
+    "physical_host_reinstalled": false,
+    "original_guests_stopped_by_experiment": false
+  },
+  "storage": {
+    "enforcer": "Host OpenZFS, independent of Homecloud controller",
+    "tenant_quota_and_reservation_bytes": 17179869184,
+    "tenant_storage_type": "zfspool",
+    "sparse": false,
+    "dataset_properties_required_root_helper": true,
+    "quota_test": {
+      "attempted_write_bytes": 201326592,
+      "completed_write_bytes": 100663296,
+      "error_errno": 122,
+      "quota_bytes": 100859904,
+      "accounted_used_bytes": 100884480,
+      "observed_accounting_overshoot_bytes": 24576,
+      "other_tenant_successful_write_bytes": 33554432
+    },
+    "snapshot_test": {
+      "quota_bytes": 67108864,
+      "accounted_used_bytes": 67149824,
+      "observed_accounting_overshoot_bytes": 40960,
+      "used_by_snapshots_bytes": 50528256,
+      "snapshots_created": 3,
+      "further_write_error_errno": 122
+    },
+    "overshoot_note": "Observed accounting overshoots are not universal upper bounds; no byte-exact ceiling claimed",
+    "oversized_vm_resize": {
+      "requested_increment_gib": 32,
+      "rejected": true,
+      "reason": "ZFS: size is greater than available space",
+      "both_guest_write_sync_and_read_checks_passed_after_rejection": true
+    },
+    "root_zvol": {
+      "volsize_bytes": 8589934592,
+      "refreservation_bytes": 8726249472,
+      "reservation_above_nominal_bytes": 136314880
+    },
+    "unbounded_by_tenant_parent_in_lab": ["central backups", "base image cache", "host logs", "cloud-init snippets"]
+  },
+  "templates": {
+    "source": "Official Debian 13 genericcloud amd64 image",
+    "sha512": "3ace18e33bdd036edb49d1f79342bd01d2ab980e35194edb0b410435cd543538d286a0bd13bbb0835f7862306e3d385ce2f6a70d8ecf0bd961111166adbc1b8e",
+    "checksum_verified": true,
+    "clone_type": "full",
+    "guests_booted": 2,
+    "guest_ram_mib": 1536,
+    "guest_vcpus": 1,
+    "guest_root_gib": 8,
+    "each_guest_root_and_cloud_init_disk_in_own_tenant_storage": true
+  },
+  "authorization": {
+    "alice_own_vm_status": "running",
+    "alice_read_bob_vm_config_http_status": 403,
+    "alice_create_host_storage_http_status": 403,
+    "production_provisioning_role_complete": false,
+    "provisioning_in_lab_used_root_token": true,
+    "guest_agent_exec_requires_unrestricted_agent_privilege_in_tested_version": true
+  },
+  "telemetry": {
+    "cpu_ram_and_disk_capacity_available": true,
+    "alice_maxmem_bytes": 1610612736,
+    "alice_reported_mem_bytes": 550313984,
+    "alice_maxdisk_bytes": 8589934592,
+    "alice_vm_disk_field_bytes": 0,
+    "bob_vm_disk_field_bytes": 0,
+    "vm_disk_field_represents_guest_filesystem_usage_in_this_test": false,
+    "zfs_parent_used_includes_descendant_reservations": true
+  },
+  "t3": {
+    "initial_attempt": {
+      "t3_binary_version": "0.1.2",
+      "codex_installed_version": "0.165.0",
+      "claude_installer_version": "2.1.308",
+      "claude_installer_exit_code": 134,
+      "boot_service_install_reached": false,
+      "api_default_guest_cpu_lacked_sse4_avx_avx2": true,
+      "cause_of_abort_proven": false
+    },
+    "intermediate_attempt": {
+      "run_id": "02fd4fd928c74a9f9cf171475b9ae6ae",
+      "cpu_model": "host",
+      "t3_readiness_and_independent_workload_checks_completed": true,
+      "guest_reboot_and_changed_boot_id_checks_completed": true,
+      "vzdump_backup_completed": true,
+      "restore_not_reached": true,
+      "failure": "Test wrapper sent DELETE parameters in a JSON body; Proxmox returned HTTP 501 before VM deletion",
+      "client_corrected_and_regression_tested": true,
+      "provenance": "Preceding assertions completed before the recorded exception; no stage timing counters retained",
+      "cleanup": {
+        "cleaned": true,
+        "controller_active": "active",
+        "lab_resources_absent": true,
+        "forced_worker_stop": false,
+        "original_cpu_policy_restored": true,
+        "physical_pool_health": "ONLINE",
+        "original_workloads_unchanged": true
+      }
+    },
+    "follow_up_status": "passed",
+    "final_attempt": {
+      "run_id": "59001f4f901140259aa219242330b638",
+      "proxmox_services_active_before_tests": true,
+      "t3_version": "0.1.2",
+      "codex_version": "0.165.0",
+      "claude_code_version": "2.1.308",
+      "cpu_model": "host",
+      "http_status_at_all_checkpoints": 200,
+      "management_transport_disconnect": {
+        "t3_service_active_before_and_after": true,
+        "heartbeat_lines_before": 4,
+        "heartbeat_lines_after": 14
+      },
+      "guest_reboot": {
+        "boot_id_changed": true,
+        "t3_service_active": true,
+        "heartbeat_lines_initial": 28,
+        "heartbeat_lines_later": 33
+      },
+      "backup_delete_restore": {
+        "method": "vzdump snapshot backup to local storage, delete VM, restore archive into hc-alice",
+        "data_preserved": true,
+        "t3_service_active": true,
+        "boot_id_changed": true,
+        "heartbeat_lines_initial": 52,
+        "heartbeat_lines_later": 58,
+        "restored_root_disk": "hc-alice:vm-9001-disk-0,size=8G",
+        "restored_cloud_init_disk": "hc-alice:vm-9001-cloudinit,media=cdrom,size=4M",
+        "restored_cpu_model": "host",
+        "disk_placement_postcheck": "Read back with qm config before final cleanup"
+      },
+      "restore_authorization": {
+        "alice_status_before_acl_rebind_http_status": 403,
+        "alice_status_after_acl_rebind": "running",
+        "bob_config_after_acl_rebind_http_status": 403
+      },
+      "limitation": "Service and independent workload continuity only; not an authenticated T3 client or model task"
+    },
+    "t3_connect_authorized": false,
+    "provider_authorized": false,
+    "authenticated_model_task_tested": false
+  },
+  "primary_cleanup": {
+    "cleaned": true,
+    "controller_active": "active",
+    "original_workloads_unchanged": true
+  },
+  "final_cleanup": {
+    "cleaned": true,
+    "controller_active": "active",
+    "lab_resources_absent": true,
+    "forced_worker_stop": false,
+    "original_cpu_policy_restored": true,
+    "physical_pool_health": "ONLINE",
+    "original_workloads_unchanged": true
+  },
+  "not_established": [
+    "Production Proxmox backend or GUI integration",
+    "API-only per-tenant ZFS quota provisioning",
+    "Complete least-privilege service role and hostile-tenant isolation",
+    "Production network isolation",
+    "Authenticated T3 client/model-task persistence or task resumption",
+    "Proxmox node reboot and guest autostart",
+    "Cross-layer admission races, drift, and retry recovery",
+    "Nix-built image import",
+    "GPU assignment, CPU fairness, or bare-metal performance",
+    "Physical disk failure, off-host disaster recovery, or UEFI guest boot",
+    "Customer demand or competitive differentiation"
+  ]
+}
