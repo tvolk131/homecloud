@@ -28,6 +28,11 @@ mod storage_ui_tests;
 mod ui;
 #[cfg(test)]
 mod ui_status_tests;
+mod virtualization;
+#[cfg(test)]
+mod virtualization_power_tests;
+#[cfg(test)]
+mod virtualization_ui_tests;
 #[cfg(test)]
 mod visual_tests;
 use std::{path::PathBuf, sync::Arc, time::Duration};
@@ -132,6 +137,9 @@ enum Msg {
     Pair,
     Loaded(Result<Arc<Client>, String>),
     Refresh,
+    ControlPlaneMode(u64, Result<ControlPlaneMode, String>),
+    VirtualizationInventory(u64, Result<VirtualizationInventory, String>),
+    Cockpit(virtualization::Event),
     Snapshot(u64, Result<Box<Snapshot>, String>),
     Reply(Result<Response, String>),
     Create,
@@ -179,6 +187,8 @@ struct App {
     profile: PathBuf,
     preferences_path: Option<PathBuf>,
     client: Option<Arc<Client>>,
+    control_plane_mode: Option<ControlPlaneMode>,
+    cockpit: Option<virtualization::Cockpit>,
     snapshot: Option<Snapshot>,
     fields: [String; FIELD_COUNT],
     resource_bounds: Option<resources::FormBounds>,
@@ -263,6 +273,8 @@ impl App {
             // Fixtures never resolve or access the real user's preferences.
             preferences_path: None,
             client: None,
+            control_plane_mode: None,
+            cockpit: None,
             snapshot: None,
             fields,
             resource_bounds: None,
@@ -378,6 +390,10 @@ impl App {
             .into()
     }
     fn rpc(&mut self, r: Request) -> Task<Msg> {
+        if self.cockpit.is_some() || (self.client.is_some() && self.control_plane_mode.is_none()) {
+            self.error = Some("Legacy operations are unavailable in the Proxmox cockpit.".into());
+            return Task::none();
+        }
         if self.shutdown_blocks_work() && r.changes_host_workload() {
             self.error = Some("Host shutdown is in progress. Review it on the Hosts page.".into());
             return Task::none();
@@ -627,7 +643,72 @@ impl App {
         })
     }
     fn update(&mut self, msg: Msg) -> Task<Msg> {
+        if (self.cockpit.is_some() || (self.client.is_some() && self.control_plane_mode.is_none()))
+            && !matches!(
+                &msg,
+                Msg::Loaded(_)
+                    | Msg::Refresh
+                    | Msg::ControlPlaneMode(..)
+                    | Msg::VirtualizationInventory(..)
+                    | Msg::Cockpit(_)
+                    | Msg::ToggleMotion
+                    | Msg::DismissNotice
+            )
+        {
+            return Task::none();
+        }
         match msg {
+            Msg::Cockpit(event) => {
+                return self.update_cockpit(event);
+            }
+            Msg::ControlPlaneMode(generation, response) => {
+                if generation != self.refresh_generation || self.control_plane_mode.is_some() {
+                    return Task::none();
+                }
+                self.refreshing = false;
+                match response {
+                    Ok(mode) => {
+                        self.control_plane_mode = Some(mode);
+                        self.error = None;
+                        if mode == ControlPlaneMode::Virtualization {
+                            self.cockpit = Some(virtualization::Cockpit::default());
+                        } else if let Some(client) = &self.client {
+                            let binding = create_recovery::Binding {
+                                server: client.server_id(),
+                                device: client.device_id(),
+                            };
+                            match self.load_create_outbox(binding) {
+                                Ok(()) if self.create_pending.is_some() => {
+                                    return self.submit_saved_create();
+                                }
+                                Ok(()) => {}
+                                Err(error) => {
+                                    let message =
+                                        format!("VM creation recovery is unavailable: {error}");
+                                    self.create_error = Some(message.clone());
+                                    self.error = Some(message);
+                                }
+                            }
+                        }
+                        return self.update(Msg::Refresh);
+                    }
+                    Err(error) => {
+                        self.error = Some(format!(
+                            "Cannot identify the server mode: {error}. No saved VM requests were replayed. Update the server if it does not support mode discovery."
+                        ));
+                    }
+                }
+            }
+            Msg::VirtualizationInventory(generation, response) => {
+                if generation != self.refresh_generation {
+                    return Task::none();
+                }
+                if let Some(cockpit) = &mut self.cockpit {
+                    cockpit.inventory_loading = false;
+                    self.refreshing = cockpit.operations_loading;
+                    cockpit.receive(response, unix_now());
+                }
+            }
             Msg::ShutdownHost => {
                 if self.busy || self.snapshot_unavailable || self.shutdown_blocks_work() {
                     return Task::none();
@@ -1057,23 +1138,27 @@ impl App {
                 match r {
                     Ok(c) => {
                         self.notice.clear();
-                        let binding = create_recovery::Binding {
-                            server: c.server_id(),
-                            device: c.device_id(),
-                        };
+                        let reconnecting = self.client.as_ref().is_some_and(|previous| {
+                            previous.server_id() == c.server_id()
+                                && previous.device_id() == c.device_id()
+                        }) && self.cockpit.is_some();
                         self.client = Some(c);
-                        match self.load_create_outbox(binding) {
-                            Ok(()) if self.create_pending.is_some() => {
-                                return self.submit_saved_create();
-                            }
-                            Ok(()) => {}
-                            Err(error) => {
-                                let message =
-                                    format!("VM creation recovery is unavailable: {error}");
-                                self.create_error = Some(message.clone());
-                                self.error = Some(message);
-                            }
+                        if reconnecting {
+                            self.cockpit.as_mut().unwrap().reconnect();
+                            self.refreshing = false;
+                            self.refresh_generation = self.refresh_generation.saturating_add(1);
+                            return self.update(Msg::Refresh);
                         }
+                        self.control_plane_mode = None;
+                        self.cockpit = None;
+                        self.snapshot = None;
+                        self.refreshing = false;
+                        self.refresh_generation = self.refresh_generation.saturating_add(1);
+                        self.create_outbox = None;
+                        self.create_pending = None;
+                        self.create_inflight = None;
+                        self.panel = None;
+                        self.last_panel = None;
                         return self.update(Msg::Refresh);
                     }
                     Err(e) => self.error = Some(e),
@@ -1087,6 +1172,20 @@ impl App {
                     self.refreshing = true;
                     self.refresh_generation = self.refresh_generation.saturating_add(1);
                     let generation = self.refresh_generation;
+                    if self.control_plane_mode.is_none() {
+                        return Task::perform(
+                            async move { result(c.control_plane_mode().await) },
+                            move |response| Msg::ControlPlaneMode(generation, response),
+                        );
+                    }
+                    if let Some(cockpit) = &mut self.cockpit {
+                        cockpit.inventory_loading = true;
+                        let inventory = Task::perform(
+                            async move { result(c.virtualization_inventory().await) },
+                            move |response| Msg::VirtualizationInventory(generation, response),
+                        );
+                        return Task::batch([inventory, self.refresh_cockpit_operations()]);
+                    }
                     return Task::perform(
                         async move { result(c.snapshot().await.map(Box::new)) },
                         move |r| Msg::Snapshot(generation, r),

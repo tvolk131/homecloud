@@ -1,9 +1,12 @@
 use anyhow::Result;
-use clap::{Parser, Subcommand};
+use clap::{Parser, Subcommand, ValueEnum};
 use homecloud_client::{load_secret, private_write};
 use homecloud_daemon::{Config, Service};
 use homecloud_host::{Backend, ProcessBackend, Simulator};
 use homecloud_store::Store;
+use homecloud_virtualization::{
+    ProxmoxConnection, SimulatedVirtualization, VirtualizationBackend, connect_proxmox,
+};
 use std::{path::PathBuf, sync::Arc, time::Duration};
 
 #[derive(Parser)]
@@ -16,8 +19,23 @@ struct Args {
     /// Explicit development backend; never starts real guest workloads.
     #[arg(long)]
     simulate: bool,
+    #[arg(long, value_enum, conflicts_with_all = ["simulate", "config"])]
+    virtualization: Option<VirtualizationMode>,
+    #[arg(
+        long,
+        requires = "virtualization",
+        conflicts_with = "virtualization_fixture"
+    )]
+    proxmox_config: Option<PathBuf>,
+    #[arg(long, requires = "virtualization")]
+    virtualization_fixture: Option<PathBuf>,
     #[command(subcommand)]
     command: Command,
+}
+#[derive(Clone, Copy, ValueEnum)]
+enum VirtualizationMode {
+    Simulated,
+    Proxmox,
 }
 #[derive(Subcommand)]
 enum Command {
@@ -40,6 +58,16 @@ async fn main() -> Result<()> {
         .with_writer(std::io::stderr)
         .init();
     let args = Args::parse();
+    anyhow::ensure!(
+        args.proxmox_config.is_none()
+            || matches!(args.virtualization, Some(VirtualizationMode::Proxmox)),
+        "--proxmox-config requires --virtualization proxmox"
+    );
+    anyhow::ensure!(
+        args.virtualization_fixture.is_none()
+            || matches!(args.virtualization, Some(VirtualizationMode::Simulated)),
+        "--virtualization-fixture requires --virtualization simulated"
+    );
     if matches!(args.command, Command::CollectStorage) {
         println!(
             "{}",
@@ -51,7 +79,7 @@ async fn main() -> Result<()> {
         serde_json::from_slice::<Config>(&std::fs::read(path)?)?
     } else {
         anyhow::ensure!(
-            args.simulate,
+            args.simulate || args.virtualization.is_some(),
             "A real host requires an explicit --config file"
         );
         Config::default()
@@ -72,7 +100,20 @@ async fn main() -> Result<()> {
             "State directory must be accessible only by its owner"
         );
     }
-    let store = Store::open(args.state_dir.join("state.db"), config.limits)?;
+    let database = if args.virtualization.is_some() {
+        anyhow::ensure!(
+            !args.state_dir.join("state.db").exists(),
+            "Virtualization mode requires a separate state directory from the legacy controller"
+        );
+        "virtualization.db"
+    } else {
+        anyhow::ensure!(
+            !args.state_dir.join("virtualization.db").exists(),
+            "This state directory belongs to virtualization mode"
+        );
+        "state.db"
+    };
+    let store = Store::open(args.state_dir.join(database), config.limits)?;
     match args.command {
         Command::CollectStorage => unreachable!(),
         Command::BootstrapAdmin { name } => {
@@ -90,6 +131,32 @@ async fn main() -> Result<()> {
             );
         }
         Command::Serve => {
+            if let Some(mode) = args.virtualization {
+                let backend: Arc<dyn VirtualizationBackend> = match mode {
+                    VirtualizationMode::Simulated => {
+                        Arc::new(if let Some(path) = args.virtualization_fixture {
+                            let bytes = std::fs::read(path)?;
+                            anyhow::ensure!(
+                                bytes.len() <= homecloud_core::MAX_FRAME,
+                                "Virtualization fixture is too large"
+                            );
+                            SimulatedVirtualization::new(serde_json::from_slice(&bytes)?)?
+                        } else {
+                            SimulatedVirtualization::demo()
+                        })
+                    }
+                    VirtualizationMode::Proxmox => {
+                        let path = args.proxmox_config.ok_or_else(|| {
+                            anyhow::anyhow!("--virtualization proxmox requires --proxmox-config")
+                        })?;
+                        let config: ProxmoxConnection =
+                            serde_json::from_slice(&std::fs::read(path)?)?;
+                        connect_proxmox(config)?
+                    }
+                };
+                let service = Service::new_virtualization(store, backend)?;
+                return serve_virtualization(service, &args.state_dir).await;
+            }
             let backend: Arc<dyn Backend> = if args.simulate {
                 Arc::new(Simulator::new(args.state_dir.join("observed.json")))
             } else {
@@ -142,4 +209,21 @@ async fn main() -> Result<()> {
         }
     }
     Ok(())
+}
+
+async fn serve_virtualization(service: Arc<Service>, state_dir: &std::path::Path) -> Result<()> {
+    let secret = load_secret(&state_dir.join("endpoint.secret"))?;
+    let endpoint = homecloud_daemon::endpoint(secret).await?;
+    let _ = tokio::time::timeout(Duration::from_secs(15), endpoint.online()).await;
+    private_write(
+        &state_dir.join("server.json"),
+        &serde_json::to_vec_pretty(&endpoint.addr())?,
+    )?;
+    tracing::info!(host=%endpoint.id(), "Owner-only virtualization cockpit listening; legacy workers are disabled");
+    let result = tokio::select! {
+        result = homecloud_daemon::serve(service, endpoint.clone()) => result,
+        result = tokio::signal::ctrl_c() => result.map_err(Into::into),
+    };
+    endpoint.close().await;
+    result
 }

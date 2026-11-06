@@ -32,6 +32,7 @@ homecloud-core = { path = "crates/core" }
 homecloud-store = { path = "crates/store" }
 homecloud-host = { path = "crates/host" }
 homecloud-client = { path = "crates/client" }
+homecloud-virtualization = { path = "crates/virtualization" }
 
 [profile.dev]
 debug = 0

@@ -1,0 +1,826 @@
+{
+  "date": "2026-11-02",
+  "independent_post_run_cleanup_check": {
+    "date_utc": "2026-11-02",
+    "method": "Pinned SSH read-back after all three attempts completed",
+    "run_ids": [
+      "66a07a4f76944851818f52aedee49ce4",
+      "176c885caef54e399bb602f146e3bc4d",
+      "a714fb71790e41239f4ea9c6c11f3af3"
+    ],
+    "each_owned_instance_storage_network_dataset_build_and_manifest_absent": true,
+    "all_six_transient_unit_load_states": "not-found",
+    "original_vm_power_state_counts": {"Running": 2, "Stopped": 1},
+    "controller": "active",
+    "physical_pool_health": "ONLINE",
+    "root_rustup_absent": true,
+    "cpu_policy_sha256": "4fe0c649681964bb945b0a7f6834b4d4c4203b326b3539c3e9f6b5cd6c389917"
+  },
+  "run_id": "a714fb71790e41239f4ea9c6c11f3af3",
+  "physical_host": "Ubuntu/Incus resolvr-box, not Proxmox",
+  "started_at_unix": 1793659523.161309,
+  "finished_at_unix": 1793660392.353344,
+  "official_client_revision": "89c1d597a9d15743049eadcb1add380573265904",
+  "source_sha256": {
+    "Cargo.toml": "453fe239ebe9bb33ce9295b43b4e1d1908fece1778b1cd27cad56610095bc57b",
+    "Cargo.lock": "597756fc265c726e3f56e0038a65a02b73c2717b9a3b39c288cc399c81585d99",
+    "crates/virtualization/Cargo.toml": "1259400f1be2b71313db54f3ad36884f3e89944c2d3897169fef88bc327d2a8e",
+    "crates/virtualization/src/proxmox.rs": "f0eba3d7d83abf191c297504dbec02bba3e7472121e03f6a48da3a76d4d88334",
+    "crates/virtualization/src/resources.rs": "1ce1ee065518ef59be2a746fd60a3cb5ce7920eb73ec53e261437864cf7148d2",
+    "crates/daemon/src/lib.rs": "d3c56892a82821b5b07f8da30fa74c9d269bc42036465a6dfed5e779533a5622",
+    "crates/daemon/src/main.rs": "ed36b0d9dc6765786f1b9d68e46f2a9c1b4b9ee2d7a6b3598c084eb9edbc7350",
+    "crates/client/src/lib.rs": "b7c4e7a8f2d04cbd94727d683c3489c962cbc2358b100bc0ba009fc5eff8b428"
+  },
+  "assessment": {
+    "passed": true,
+    "failures": []
+  },
+  "seed": {
+    "node": "hc-pve-a714fb7179",
+    "pve_version": "pve-manager/9.2.25/88a31f5fd94aab6d (running kernel: 7.0.14-26-pve)",
+    "kernel": "7.0.14-26-pve",
+    "services": [
+      "active",
+      "active",
+      "active"
+    ],
+    "package_audit": "",
+    "native_seed_resources": [
+      {
+        "cpu": 0,
+        "disk": 0,
+        "diskread": 0,
+        "diskwrite": 0,
+        "id": "qemu/7101",
+        "maxcpu": 2,
+        "maxdisk": 1073741824,
+        "maxmem": 536870912,
+        "mem": 0,
+        "memhost": 0,
+        "name": "hc-live-stopped",
+        "netin": 0,
+        "netout": 0,
+        "node": "hc-pve-a714fb7179",
+        "status": "stopped",
+        "tags": "homecloud-live-validation",
+        "template": 0,
+        "type": "qemu",
+        "uptime": 0,
+        "vmid": 7101
+      },
+      {
+        "cpu": 0,
+        "disk": 0,
+        "diskread": 0,
+        "diskwrite": 0,
+        "id": "qemu/7199",
+        "maxcpu": 2,
+        "maxdisk": 1073741824,
+        "maxmem": 536870912,
+        "mem": 0,
+        "memhost": 0,
+        "name": "hc-live-template",
+        "netin": 0,
+        "netout": 0,
+        "node": "hc-pve-a714fb7179",
+        "status": "stopped",
+        "tags": "homecloud-live-validation",
+        "template": 1,
+        "type": "qemu",
+        "uptime": 0,
+        "vmid": 7199
+      }
+    ],
+    "readonly_seed_resources": [
+      {
+        "diskwrite": 0,
+        "disk": 0,
+        "id": "qemu/7101",
+        "node": "hc-pve-a714fb7179",
+        "tags": "homecloud-live-validation",
+        "netin": 0,
+        "vmid": 7101,
+        "uptime": 0,
+        "cpu": 0,
+        "type": "qemu",
+        "mem": 0,
+        "maxmem": 536870912,
+        "memhost": 0,
+        "maxdisk": 1073741824,
+        "maxcpu": 2,
+        "diskread": 0,
+        "netout": 0,
+        "status": "stopped",
+        "name": "hc-live-stopped",
+        "template": 0
+      },
+      {
+        "type": "qemu",
+        "cpu": 0,
+        "uptime": 0,
+        "id": "qemu/7199",
+        "node": "hc-pve-a714fb7179",
+        "diskwrite": 0,
+        "disk": 0,
+        "vmid": 7199,
+        "netin": 0,
+        "tags": "homecloud-live-validation",
+        "name": "hc-live-template",
+        "template": 1,
+        "status": "stopped",
+        "memhost": 0,
+        "maxdisk": 1073741824,
+        "mem": 0,
+        "maxmem": 536870912,
+        "diskread": 0,
+        "netout": 0,
+        "maxcpu": 2
+      }
+    ],
+    "native_config_template": true,
+    "fingerprint_sha256": "dde7cd7c717fef4f3981f9168b710c4ec50be13dac56d2458e7a574e3c13a28a",
+    "token_mode": "private files; PVEAuditor on user AND privsep=1 token; four-hour expiry",
+    "effective_permissions": {
+      "/": {
+        "Datastore.Audit": 1,
+        "Mapping.Audit": 1,
+        "Pool.Audit": 1,
+        "SDN.Audit": 1,
+        "Sys.Audit": 1,
+        "VM.Audit": 1,
+        "VM.GuestAgent.Audit": 1
+      }
+    },
+    "write_denied_http": 403,
+    "seeded_vmids": [
+      7101,
+      7199
+    ],
+    "existing_guest_touched": false
+  },
+  "build": {
+    "rust": "rustc 1.99.0 (b940084d7 2026-09-28)",
+    "tests_and_build": "piling strum_macros v0.28.0\n   Compiling openssl-macros v0.1.1\n   Compiling proxmox-base64 v1.0.1 (https://github.com/proxmox/proxmox-rs.git?rev=89c1d597a9d15743049eadcb1add380573265904#89c1d597)\n   Compiling uuid v1.29.0\n   Compiling lru v0.18.5\n   Compiling rand_pcg v0.10.2\n   Compiling netlink-sys v0.8.8\n   Compiling simple-dns v0.12.0\n   Compiling netlink-sys v0.9.0\n   Compiling iroh-dns v1.4.1\n   Compiling netwatch v0.19.3\n   Compiling noq v1.4.0\n   Compiling blake3 v1.8.7\n   Compiling enum-assoc v1.4.1\n   Compiling powerfmt v0.2.1\n   Compiling sorted-index-buffer v0.2.1\n   Compiling mac-addr v0.3.0\n   Compiling xml-rs v0.8.29\n   Compiling identity-hash v0.1.0\n   Compiling tinyvec v1.13.3\n   Compiling time-core v0.1.9\n   Compiling num-conv v0.2.2\n   Compiling deranged v0.5.9\n   Compiling lru-slab v0.1.3\n   Compiling time v0.3.55\n   Compiling xmltree v0.10.3\n   Compiling strum v0.28.0\n   Compiling noq-proto v1.4.0\n   Compiling netlink-proto v0.12.2\n   Compiling homecloud-core v0.1.0 (/tmp/homecloud-cockpit-a714fb71790e41239f4ea9c6c11f3af3/source/crates/core)\n   Compiling openssl v0.10.82\n   Compiling iroh-metrics v1.0.2\n   Compiling num_enum v0.7.6\n   Compiling n0-watcher v1.0.1\n   Compiling iroh-base v1.4.1\n   Compiling netlink-packet-route v0.31.0\n   Compiling arc-swap v1.9.3\n   Compiling regex v1.13.1\n   Compiling postcard-derive v0.2.2\n   Compiling attohttpc v0.30.1\n   Compiling cobs v0.3.0\n   Compiling libsqlite3-sys v0.39.1\n   Compiling tokio-stream v0.1.19\n   Compiling iroh-relay v1.4.1\n   Compiling nix v0.30.1\n   Compiling utf8parse v0.2.2\n   Compiling simdutf8 v0.1.5\n   Compiling sha1_smol v1.0.1\n   Compiling arrayvec v0.7.8\n   Compiling constant_time_eq v0.4.2\n   Compiling tokio-websockets v0.13.3\n   Compiling anstyle-parse v1.0.0\n   Compiling postcard v1.1.3\n   Compiling igd-next v0.17.1\n   Compiling proxmox-sys v1.0.2 (https://github.com/proxmox/proxmox-rs.git?rev=89c1d597a9d15743049eadcb1add380573265904#89c1d597)\n   Compiling tokio-openssl v0.6.5\n   Compiling proxmox-compression v1.0.1 (https://github.com/proxmox/proxmox-rs.git?rev=89c1d597a9d15743049eadcb1add380573265904#89c1d597)\n   Compiling proxmox-serde v1.0.2 (https://github.com/proxmox/proxmox-rs.git?rev=89c1d597a9d15743049eadcb1add380573265904#89c1d597)\n   Compiling proxmox-rate-limiter v1.0.0 (https://github.com/proxmox/proxmox-rs.git?rev=89c1d597a9d15743049eadcb1add380573265904#89c1d597)\n   Compiling block-buffer v0.10.4\n   Compiling serde_bytes v0.11.19\n   Compiling iroh v1.4.1\n   Compiling colorchoice v1.0.5\n   Compiling seize v0.5.1\n   Compiling anstyle v1.0.14\n   Compiling cmov v0.5.4\n   Compiling anstyle-query v1.1.5\n   Compiling is_terminal_polyfill v1.70.2\n   Compiling anstream v1.0.0\n   Compiling ctutils v0.4.6\n   Compiling papaya v0.2.5\n   Compiling digest v0.10.7\n   Compiling proxmox-http v1.0.6 (https://github.com/proxmox/proxmox-rs.git?rev=89c1d597a9d15743049eadcb1add380573265904#89c1d597)\n   Compiling proxmox-login v1.0.3 (https://github.com/proxmox/proxmox-rs.git?rev=89c1d597a9d15743049eadcb1add380573265904#89c1d597)\n   Compiling portmapper v0.19.3\n   Compiling backon v1.6.0\n   Compiling hashlink v0.12.2\n   Compiling lazy_static v1.5.1\n   Compiling clap_lex v1.1.1\n   Compiling fallible-iterator v0.3.0\n   Compiling strsim v0.11.1\n   Compiling fallible-streaming-iterator v0.1.9\n   Compiling clap_builder v4.6.7\n   Compiling sharded-slab v0.1.7\n   Compiling proxmox-client v1.0.4 (https://github.com/proxmox/proxmox-rs.git?rev=89c1d597a9d15743049eadcb1add380573265904#89c1d597)\n   Compiling sha2 v0.10.9\n   Compiling matchers v0.2.0\n   Compiling clap_derive v4.6.7\n   Compiling rusqlite v0.41.0\n   Compiling tracing-log v0.2.0\n   Compiling thread_local v1.1.10\n   Compiling nu-ansi-term v0.50.3\n   Compiling tracing-subscriber v0.3.23\n   Compiling homecloud-store v0.1.0 (/tmp/homecloud-cockpit-a714fb71790e41239f4ea9c6c11f3af3/source/crates/store)\n   Compiling homecloud-virtualization v0.1.0 (/tmp/homecloud-cockpit-a714fb71790e41239f4ea9c6c11f3af3/source/crates/virtualization)\n   Compiling homecloud-host v0.1.0 (/tmp/homecloud-cockpit-a714fb71790e41239f4ea9c6c11f3af3/source/crates/host)\n   Compiling tempfile v3.27.0\n   Compiling clap v4.6.7\n   Compiling homecloud-client v0.1.0 (/tmp/homecloud-cockpit-a714fb71790e41239f4ea9c6c11f3af3/source/crates/client)\n   Compiling homecloud-daemon v0.1.0 (/tmp/homecloud-cockpit-a714fb71790e41239f4ea9c6c11f3af3/source/crates/daemon)\n   Compiling homecloud-cockpit-live-probe v0.1.0 (/tmp/homecloud-cockpit-a714fb71790e41239f4ea9c6c11f3af3/source/crates/cockpit-live-probe)\n    Finished `dev` profile [unoptimized] target(s) in 6m 01s\nwarning: the following packages contain code that will be rejected by a future version of Rust: syn v0.12.15\nnote: to see what the problems were, use the option `--future-incompat-report`, or run `cargo report future-incompatibilities --id 1`\nproxmox-client v1.0.4 (https://github.com/proxmox/proxmox-rs.git?rev=89c1d597a9d15743049eadcb1add380573265904#89c1d597)\n\u2514\u2500\u2500 homecloud-virtualization v0.1.0 (/tmp/homecloud-cockpit-a714fb71790e41239f4ea9c6c11f3af3/source/crates/virtualization)\n    \u251c\u2500\u2500 homecloud-cockpit-live-probe v0.1.0 (/tmp/homecloud-cockpit-a714fb71790e41239f4ea9c6c11f3af3/source/crates/cockpit-live-probe)\n    \u2514\u2500\u2500 homecloud-daemon v0.1.0 (/tmp/homecloud-cockpit-a714fb71790e41239f4ea9c6c11f3af3/source/crates/daemon)\n        \u2514\u2500\u2500 homecloud-cockpit-live-probe v0.1.0 (/tmp/homecloud-cockpit-a714fb71790e41239f4ea9c6c11f3af3/source/crates/cockpit-live-probe)\n",
+    "host_packages_installed": false,
+    "test_output": [
+      "running 8 tests",
+      "test proxmox::tests::production_connection_rejects_http_and_public_secret_files ... ok",
+      "test proxmox::tests::official_client_uses_pve_token_header_and_extjs_envelope ... ok",
+      "test proxmox::tests::unsuccessful_envelopes_are_not_empty_successful_inventories ... ok",
+      "test resources::tests::accepts_empty_inventory_without_inventing_capacity ... ok",
+      "test resources::tests::maps_native_ids_templates_and_unknown_usage_without_tenant_grants ... ok",
+      "test resources::tests::rejects_ambiguous_or_malformed_known_resources ... ok",
+      "test tests::demo_is_deterministic_and_can_be_updated_without_guest_operations ... ok",
+      "test proxmox::tests::upstream_errors_do_not_echo_response_bodies_or_credentials ... ok",
+      "test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s"
+    ],
+    "compiled_commands": "cargo test --offline -p homecloud-virtualization --features proxmox --lib && cargo build --offline -p homecloud-cockpit-live-probe -p homecloud-daemon && cargo tree --offline -p homecloud-cockpit-live-probe -i proxmox-client",
+    "probe_source_sha256": "af766f45ddfa538ddfe9c813533463767124dbcf1b1013504d43d6ae700fbf80",
+    "private_cargo_home": true,
+    "private_openssl_deb": "libssl-dev_3.5.5-1ubuntu3.7_amd64.deb"
+  },
+  "validation": {
+    "reference_resources": [
+      {
+        "type": "qemu",
+        "cpu": 0,
+        "uptime": 0,
+        "vmid": 7101,
+        "netin": 0,
+        "tags": "homecloud-live-validation",
+        "node": "hc-pve-a714fb7179",
+        "id": "qemu/7101",
+        "diskwrite": 0,
+        "disk": 0,
+        "name": "hc-live-stopped",
+        "template": 0,
+        "status": "stopped",
+        "diskread": 0,
+        "netout": 0,
+        "maxcpu": 2,
+        "memhost": 0,
+        "maxdisk": 1073741824,
+        "mem": 0,
+        "maxmem": 536870912
+      },
+      {
+        "netin": 0,
+        "tags": "homecloud-live-validation",
+        "vmid": 7199,
+        "disk": 0,
+        "diskwrite": 0,
+        "id": "qemu/7199",
+        "node": "hc-pve-a714fb7179",
+        "cpu": 0,
+        "uptime": 0,
+        "type": "qemu",
+        "maxcpu": 2,
+        "netout": 0,
+        "diskread": 0,
+        "maxmem": 536870912,
+        "mem": 0,
+        "maxdisk": 1073741824,
+        "memhost": 0,
+        "status": "stopped",
+        "template": 1,
+        "name": "hc-live-template"
+      },
+      {
+        "id": "node/hc-pve-a714fb7179",
+        "node": "hc-pve-a714fb7179",
+        "disk": 5765681152,
+        "level": "",
+        "type": "node",
+        "cpu": 0.117661388550548,
+        "cgroup-mode": 2,
+        "uptime": 31,
+        "maxcpu": 4,
+        "maxdisk": 33124446208,
+        "mem": 1870077952,
+        "maxmem": 12467384320,
+        "status": "online"
+      },
+      {
+        "type": "storage",
+        "status": "available",
+        "content": "iso,images,rootdir",
+        "storage": "hc-cockpit",
+        "shared": 0,
+        "maxdisk": 33124446208,
+        "id": "storage/hc-pve-a714fb7179/hc-cockpit",
+        "node": "hc-pve-a714fb7179",
+        "disk": 5765681152,
+        "plugintype": "dir"
+      },
+      {
+        "plugintype": "dir",
+        "disk": 5765681152,
+        "id": "storage/hc-pve-a714fb7179/local",
+        "node": "hc-pve-a714fb7179",
+        "maxdisk": 33124446208,
+        "shared": 0,
+        "storage": "local",
+        "content": "vztmpl,snippets,iso,images,rootdir,backup",
+        "status": "available",
+        "type": "storage"
+      },
+      {
+        "node": "hc-pve-a714fb7179",
+        "id": "network/hc-pve-a714fb7179/zone/localnetwork",
+        "network": "localnetwork",
+        "type": "network",
+        "network-type": "zone",
+        "status": "ok"
+      }
+    ],
+    "cases": {
+      "reader": {
+        "ok": true,
+        "result": {
+          "inventory": {
+            "guests": [
+              {
+                "cpu_limit": 2,
+                "kind": "virtual_machine",
+                "memory_limit_bytes": 536870912,
+                "memory_used_bytes": 0,
+                "name": "hc-live-stopped",
+                "node": "hc-pve-a714fb7179",
+                "reported_disk_capacity_bytes": 1073741824,
+                "status": "stopped",
+                "template": false,
+                "vmid": 7101
+              },
+              {
+                "cpu_limit": 2,
+                "kind": "virtual_machine",
+                "memory_limit_bytes": 536870912,
+                "memory_used_bytes": 0,
+                "name": "hc-live-template",
+                "node": "hc-pve-a714fb7179",
+                "reported_disk_capacity_bytes": 1073741824,
+                "status": "stopped",
+                "template": true,
+                "vmid": 7199
+              }
+            ],
+            "nodes": [
+              {
+                "cpu_threads": 4,
+                "cpu_usage_ratio": 0.117661388550548,
+                "memory_capacity_bytes": 12467384320,
+                "memory_used_bytes": 1870077952,
+                "name": "hc-pve-a714fb7179",
+                "status": "online"
+              }
+            ],
+            "source": "proxmox",
+            "storage": [
+              {
+                "capacity_bytes": 33124446208,
+                "name": "hc-cockpit",
+                "node": "hc-pve-a714fb7179",
+                "status": "available",
+                "used_bytes": 5765681152
+              },
+              {
+                "capacity_bytes": 33124446208,
+                "name": "local",
+                "node": "hc-pve-a714fb7179",
+                "status": "available",
+                "used_bytes": 5765681152
+              }
+            ]
+          }
+        }
+      },
+      "trusted-ca": {
+        "ok": true,
+        "result": {
+          "inventory": {
+            "guests": [
+              {
+                "cpu_limit": 2,
+                "kind": "virtual_machine",
+                "memory_limit_bytes": 536870912,
+                "memory_used_bytes": 0,
+                "name": "hc-live-stopped",
+                "node": "hc-pve-a714fb7179",
+                "reported_disk_capacity_bytes": 1073741824,
+                "status": "stopped",
+                "template": false,
+                "vmid": 7101
+              },
+              {
+                "cpu_limit": 2,
+                "kind": "virtual_machine",
+                "memory_limit_bytes": 536870912,
+                "memory_used_bytes": 0,
+                "name": "hc-live-template",
+                "node": "hc-pve-a714fb7179",
+                "reported_disk_capacity_bytes": 1073741824,
+                "status": "stopped",
+                "template": true,
+                "vmid": 7199
+              }
+            ],
+            "nodes": [
+              {
+                "cpu_threads": 4,
+                "cpu_usage_ratio": 0.117661388550548,
+                "memory_capacity_bytes": 12467384320,
+                "memory_used_bytes": 1870077952,
+                "name": "hc-pve-a714fb7179",
+                "status": "online"
+              }
+            ],
+            "source": "proxmox",
+            "storage": [
+              {
+                "capacity_bytes": 33124446208,
+                "name": "hc-cockpit",
+                "node": "hc-pve-a714fb7179",
+                "status": "available",
+                "used_bytes": 5765681152
+              },
+              {
+                "capacity_bytes": 33124446208,
+                "name": "local",
+                "node": "hc-pve-a714fb7179",
+                "status": "available",
+                "used_bytes": 5765681152
+              }
+            ]
+          }
+        }
+      },
+      "trusted-ca-bad-fingerprint": {
+        "ok": true,
+        "result": {
+          "inventory": {
+            "guests": [
+              {
+                "cpu_limit": 2,
+                "kind": "virtual_machine",
+                "memory_limit_bytes": 536870912,
+                "memory_used_bytes": 0,
+                "name": "hc-live-stopped",
+                "node": "hc-pve-a714fb7179",
+                "reported_disk_capacity_bytes": 1073741824,
+                "status": "stopped",
+                "template": false,
+                "vmid": 7101
+              },
+              {
+                "cpu_limit": 2,
+                "kind": "virtual_machine",
+                "memory_limit_bytes": 536870912,
+                "memory_used_bytes": 0,
+                "name": "hc-live-template",
+                "node": "hc-pve-a714fb7179",
+                "reported_disk_capacity_bytes": 1073741824,
+                "status": "stopped",
+                "template": true,
+                "vmid": 7199
+              }
+            ],
+            "nodes": [
+              {
+                "cpu_threads": 4,
+                "cpu_usage_ratio": 0.117661388550548,
+                "memory_capacity_bytes": 12467384320,
+                "memory_used_bytes": 1870077952,
+                "name": "hc-pve-a714fb7179",
+                "status": "online"
+              }
+            ],
+            "source": "proxmox",
+            "storage": [
+              {
+                "capacity_bytes": 33124446208,
+                "name": "hc-cockpit",
+                "node": "hc-pve-a714fb7179",
+                "status": "available",
+                "used_bytes": 5765681152
+              },
+              {
+                "capacity_bytes": 33124446208,
+                "name": "local",
+                "node": "hc-pve-a714fb7179",
+                "status": "available",
+                "used_bytes": 5765681152
+              }
+            ]
+          }
+        }
+      },
+      "noaccess": {
+        "ok": true,
+        "result": {
+          "inventory": {
+            "guests": [],
+            "nodes": [
+              {
+                "cpu_threads": null,
+                "cpu_usage_ratio": null,
+                "memory_capacity_bytes": null,
+                "memory_used_bytes": null,
+                "name": "hc-pve-a714fb7179",
+                "status": "online"
+              }
+            ],
+            "source": "proxmox",
+            "storage": []
+          }
+        }
+      },
+      "invalid": {
+        "error": "Proxmox inventory authentication failed",
+        "ok": false
+      },
+      "bad-fingerprint": {
+        "error": "Proxmox inventory connection failed; check endpoint, TLS trust and service token",
+        "ok": false
+      },
+      "untrusted-ca": {
+        "error": "Proxmox inventory connection failed; check endpoint, TLS trust and service token",
+        "ok": false
+      },
+      "public-secret": {
+        "error": "Proxmox token secret must be a private regular file",
+        "ok": false
+      },
+      "iroh": {
+        "ok": true,
+        "result": {
+          "authenticated_iroh": true,
+          "inventory": {
+            "guests": [
+              {
+                "cpu_limit": 2,
+                "kind": "virtual_machine",
+                "memory_limit_bytes": 536870912,
+                "memory_used_bytes": 0,
+                "name": "hc-live-stopped",
+                "node": "hc-pve-a714fb7179",
+                "reported_disk_capacity_bytes": 1073741824,
+                "status": "stopped",
+                "template": false,
+                "vmid": 7101
+              },
+              {
+                "cpu_limit": 2,
+                "kind": "virtual_machine",
+                "memory_limit_bytes": 536870912,
+                "memory_used_bytes": 0,
+                "name": "hc-live-template",
+                "node": "hc-pve-a714fb7179",
+                "reported_disk_capacity_bytes": 1073741824,
+                "status": "stopped",
+                "template": true,
+                "vmid": 7199
+              }
+            ],
+            "nodes": [
+              {
+                "cpu_threads": 4,
+                "cpu_usage_ratio": 0.117661388550548,
+                "memory_capacity_bytes": 12467384320,
+                "memory_used_bytes": 1870077952,
+                "name": "hc-pve-a714fb7179",
+                "status": "online"
+              }
+            ],
+            "source": "proxmox",
+            "storage": [
+              {
+                "capacity_bytes": 33124446208,
+                "name": "hc-cockpit",
+                "node": "hc-pve-a714fb7179",
+                "status": "available",
+                "used_bytes": 5765681152
+              },
+              {
+                "capacity_bytes": 33124446208,
+                "name": "local",
+                "node": "hc-pve-a714fb7179",
+                "status": "available",
+                "used_bytes": 5765681152
+              }
+            ]
+          },
+          "legacy_denied": true,
+          "legacy_vms_created": 0,
+          "member_denied": true,
+          "revoked_denied": true,
+          "transport": "loopback QUIC",
+          "unknown_denied": true
+        }
+      },
+      "iroh-trusted-ca": {
+        "ok": true,
+        "result": {
+          "authenticated_iroh": true,
+          "inventory": {
+            "guests": [
+              {
+                "cpu_limit": 2,
+                "kind": "virtual_machine",
+                "memory_limit_bytes": 536870912,
+                "memory_used_bytes": 0,
+                "name": "hc-live-stopped",
+                "node": "hc-pve-a714fb7179",
+                "reported_disk_capacity_bytes": 1073741824,
+                "status": "stopped",
+                "template": false,
+                "vmid": 7101
+              },
+              {
+                "cpu_limit": 2,
+                "kind": "virtual_machine",
+                "memory_limit_bytes": 536870912,
+                "memory_used_bytes": 0,
+                "name": "hc-live-template",
+                "node": "hc-pve-a714fb7179",
+                "reported_disk_capacity_bytes": 1073741824,
+                "status": "stopped",
+                "template": true,
+                "vmid": 7199
+              }
+            ],
+            "nodes": [
+              {
+                "cpu_threads": 4,
+                "cpu_usage_ratio": 0.117661388550548,
+                "memory_capacity_bytes": 12467384320,
+                "memory_used_bytes": 1870077952,
+                "name": "hc-pve-a714fb7179",
+                "status": "online"
+              }
+            ],
+            "source": "proxmox",
+            "storage": [
+              {
+                "capacity_bytes": 33124446208,
+                "name": "hc-cockpit",
+                "node": "hc-pve-a714fb7179",
+                "status": "available",
+                "used_bytes": 5765681152
+              },
+              {
+                "capacity_bytes": 33124446208,
+                "name": "local",
+                "node": "hc-pve-a714fb7179",
+                "status": "available",
+                "used_bytes": 5765681152
+              }
+            ]
+          },
+          "legacy_denied": true,
+          "legacy_vms_created": 0,
+          "member_denied": true,
+          "revoked_denied": true,
+          "transport": "loopback QUIC",
+          "unknown_denied": true
+        }
+      }
+    },
+    "token_values_redacted": true,
+    "probe_user": "tommy",
+    "probe_uid": 1000,
+    "pve_services": "active\nactive\nactive"
+  },
+  "cleanup": {
+    "cleaned": true,
+    "controller_active": "active",
+    "lab_resources_absent": true,
+    "forced_worker_stop": false,
+    "original_cpu_policy_restored": true,
+    "physical_pool_health": "ONLINE",
+    "unexpected_fields": [],
+    "baseline_exactly_restored": true,
+    "baseline_configuration_restored": true,
+    "unrelated_image_cache_churn": null,
+    "original_workloads_unchanged": true,
+    "build_directory_absent": true,
+    "host_manifest_absent": true,
+    "transient_units_absent": true,
+    "unit_load_states": {
+      "homecloud-a714fb71790e41239f4ea9c6c11f3af3": "not-found",
+      "homecloud-cockpit-build-a714fb71790e41239f4ea9c6c11f3af3": "not-found"
+    }
+  },
+  "baseline_field_equality": {
+    "os": true,
+    "controller": true,
+    "cpu_policy_sha256": true,
+    "cpu_policy_mode": true,
+    "physical_package_database_sha256": true,
+    "physical_ca_bundle_sha256": true,
+    "root_rustup_exists": true,
+    "openssl_runtime": true,
+    "instances": true,
+    "storage_names": true,
+    "network_names": true,
+    "datasets": true,
+    "pool_health": true,
+    "parent_pool_properties": true
+  },
+  "original_vm_power_states": {
+    "hc-400009d69c984224a929beb7a4bb4067": "Stopped",
+    "hc-e8acf92ed8294f44b844cc12d10c6344": "Running",
+    "hc-fdf95f349a1149ce8cf47e927ce34c8b": "Running"
+  },
+  "cpu_policy_sha256_before_and_after": "4fe0c649681964bb945b0a7f6834b4d4c4203b326b3539c3e9f6b5cd6c389917",
+  "sensitive_baseline_omitted": true,
+  "previous_runs": [
+    {
+      "run_id": "66a07a4f76944851818f52aedee49ce4",
+      "assessment": {
+        "passed": false,
+        "failures": [
+          "error: package ID specification `proxmox-client` did not match any packages"
+        ]
+      },
+      "cleanup": {
+        "cleaned": true,
+        "controller_active": "active",
+        "lab_resources_absent": true,
+        "forced_worker_stop": false,
+        "original_cpu_policy_restored": true,
+        "physical_pool_health": "ONLINE",
+        "unexpected_fields": [],
+        "baseline_exactly_restored": false,
+        "baseline_configuration_restored": true,
+        "unrelated_image_cache_churn": {
+          "added": [
+            "hclab/homecloud/users/6d89cccdd77e4ffd850674833a2cb78d/incus/images/9f0c133069eea98394b0f044d2ab6c2209f7ce88d8b9f1e8b0bcf995860d21f5",
+            "hclab/homecloud/users/6d89cccdd77e4ffd850674833a2cb78d/incus/images/9f0c133069eea98394b0f044d2ab6c2209f7ce88d8b9f1e8b0bcf995860d21f5.block",
+            "hclab/homecloud/users/82d6be5c57ff4323abaf94f10e483d05/incus/images/9f0c133069eea98394b0f044d2ab6c2209f7ce88d8b9f1e8b0bcf995860d21f5",
+            "hclab/homecloud/users/82d6be5c57ff4323abaf94f10e483d05/incus/images/9f0c133069eea98394b0f044d2ab6c2209f7ce88d8b9f1e8b0bcf995860d21f5.block",
+            "hclab/homecloud/users/fe91b9c2ef0a49e380be27a3c1a4697d/incus/deleted/images/2139edd9da4026da8a66c0557af7eee4789101104eb27860bacd57086219cebb",
+            "hclab/homecloud/users/fe91b9c2ef0a49e380be27a3c1a4697d/incus/deleted/images/2139edd9da4026da8a66c0557af7eee4789101104eb27860bacd57086219cebb.block",
+            "hclab/homecloud/users/fe91b9c2ef0a49e380be27a3c1a4697d/incus/images/9f0c133069eea98394b0f044d2ab6c2209f7ce88d8b9f1e8b0bcf995860d21f5",
+            "hclab/homecloud/users/fe91b9c2ef0a49e380be27a3c1a4697d/incus/images/9f0c133069eea98394b0f044d2ab6c2209f7ce88d8b9f1e8b0bcf995860d21f5.block",
+            "hclab/tenants/lab/incus/images/9f0c133069eea98394b0f044d2ab6c2209f7ce88d8b9f1e8b0bcf995860d21f5",
+            "hclab/tenants/lab/incus/images/9f0c133069eea98394b0f044d2ab6c2209f7ce88d8b9f1e8b0bcf995860d21f5.block"
+          ],
+          "removed": [
+            "hclab/homecloud/users/6d89cccdd77e4ffd850674833a2cb78d/incus/images/2139edd9da4026da8a66c0557af7eee4789101104eb27860bacd57086219cebb",
+            "hclab/homecloud/users/6d89cccdd77e4ffd850674833a2cb78d/incus/images/2139edd9da4026da8a66c0557af7eee4789101104eb27860bacd57086219cebb.block",
+            "hclab/homecloud/users/82d6be5c57ff4323abaf94f10e483d05/incus/images/2139edd9da4026da8a66c0557af7eee4789101104eb27860bacd57086219cebb",
+            "hclab/homecloud/users/82d6be5c57ff4323abaf94f10e483d05/incus/images/2139edd9da4026da8a66c0557af7eee4789101104eb27860bacd57086219cebb.block",
+            "hclab/homecloud/users/fe91b9c2ef0a49e380be27a3c1a4697d/incus/images/2139edd9da4026da8a66c0557af7eee4789101104eb27860bacd57086219cebb",
+            "hclab/homecloud/users/fe91b9c2ef0a49e380be27a3c1a4697d/incus/images/2139edd9da4026da8a66c0557af7eee4789101104eb27860bacd57086219cebb.block",
+            "hclab/tenants/lab/incus/images/2139edd9da4026da8a66c0557af7eee4789101104eb27860bacd57086219cebb",
+            "hclab/tenants/lab/incus/images/2139edd9da4026da8a66c0557af7eee4789101104eb27860bacd57086219cebb.block"
+          ]
+        },
+        "original_workloads_unchanged": true,
+        "build_directory_absent": true,
+        "host_manifest_absent": true
+      },
+      "baseline_field_equality": {
+        "os": true,
+        "controller": true,
+        "cpu_policy_sha256": true,
+        "cpu_policy_mode": true,
+        "instances": true,
+        "storage_names": true,
+        "network_names": true,
+        "datasets": false,
+        "pool_health": true
+      },
+      "write_denied_http": 403,
+      "api_case_outcomes": {}
+    },
+    {
+      "run_id": "176c885caef54e399bb602f146e3bc4d",
+      "assessment": {
+        "passed": false,
+        "failures": [
+          "Native PVE template cache not settled for seeded VM 7199"
+        ]
+      },
+      "cleanup": {
+        "cleaned": true,
+        "controller_active": "active",
+        "lab_resources_absent": true,
+        "forced_worker_stop": false,
+        "original_cpu_policy_restored": true,
+        "physical_pool_health": "ONLINE",
+        "unexpected_fields": [],
+        "baseline_exactly_restored": true,
+        "baseline_configuration_restored": true,
+        "unrelated_image_cache_churn": null,
+        "original_workloads_unchanged": true,
+        "build_directory_absent": true,
+        "host_manifest_absent": true,
+        "transient_units_absent": true,
+        "unit_load_states": {
+          "homecloud-176c885caef54e399bb602f146e3bc4d": "not-found",
+          "homecloud-cockpit-build-176c885caef54e399bb602f146e3bc4d": "not-found"
+        }
+      },
+      "baseline_field_equality": {
+        "os": true,
+        "controller": true,
+        "cpu_policy_sha256": true,
+        "cpu_policy_mode": true,
+        "physical_package_database_sha256": true,
+        "physical_ca_bundle_sha256": true,
+        "root_rustup_exists": true,
+        "openssl_runtime": true,
+        "instances": true,
+        "storage_names": true,
+        "network_names": true,
+        "datasets": true,
+        "pool_health": true,
+        "parent_pool_properties": true
+      },
+      "write_denied_http": 403,
+      "api_case_outcomes": {
+        "reader": {
+          "ok": true,
+          "error": null
+        },
+        "trusted-ca": {
+          "ok": true,
+          "error": null
+        },
+        "trusted-ca-bad-fingerprint": {
+          "ok": true,
+          "error": null
+        },
+        "noaccess": {
+          "ok": true,
+          "error": null
+        },
+        "invalid": {
+          "ok": false,
+          "error": "Proxmox inventory authentication failed"
+        },
+        "bad-fingerprint": {
+          "ok": false,
+          "error": "Proxmox inventory connection failed; check endpoint, TLS trust and service token"
+        },
+        "untrusted-ca": {
+          "ok": false,
+          "error": "Proxmox inventory connection failed; check endpoint, TLS trust and service token"
+        },
+        "public-secret": {
+          "ok": false,
+          "error": "Proxmox token secret must be a private regular file"
+        },
+        "iroh": {
+          "ok": true,
+          "error": null
+        },
+        "iroh-trusted-ca": {
+          "ok": true,
+          "error": null
+        }
+      }
+    }
+  ]
+}

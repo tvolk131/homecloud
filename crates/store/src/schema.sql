@@ -28,3 +28,12 @@ CREATE TABLE IF NOT EXISTS create_rejections(actor TEXT NOT NULL REFERENCES user
 
 CREATE TABLE IF NOT EXISTS memory_capacity_operations(id TEXT PRIMARY KEY, actor TEXT NOT NULL REFERENCES users(id), terminal INTEGER NOT NULL, record TEXT NOT NULL);
 CREATE UNIQUE INDEX IF NOT EXISTS one_pending_memory_capacity ON memory_capacity_operations((1)) WHERE terminal=0;
+CREATE TABLE IF NOT EXISTS virtualization_operations (
+    id TEXT PRIMARY KEY,
+    node TEXT NOT NULL,
+    vmid INTEGER NOT NULL,
+    active INTEGER NOT NULL,
+    record TEXT NOT NULL
+);
+CREATE UNIQUE INDEX IF NOT EXISTS virtualization_guest_active
+    ON virtualization_operations(node, vmid) WHERE active = 1;

@@ -1,0 +1,2102 @@
+{
+  "date": "2026-11-02",
+  "run_id": "658284a90ef649828290b9389375076e",
+  "official_client_revision": "89c1d597a9d15743049eadcb1add380573265904",
+  "physical_host": "Ubuntu/Incus resolvr-box, not Proxmox",
+  "started_at_unix": 1793663837.294343,
+  "finished_at_unix": 1793664831.525253,
+  "source_sha256": {
+    "Cargo.toml": "453fe239ebe9bb33ce9295b43b4e1d1908fece1778b1cd27cad56610095bc57b",
+    "Cargo.lock": "597756fc265c726e3f56e0038a65a02b73c2717b9a3b39c288cc399c81585d99",
+    "crates/cli/Cargo.toml": "5fdcd997544cdf6a634987f579674653f0b471281fab51126942c29f0a485d37",
+    "crates/client/Cargo.toml": "8c3659a638b79d53683c6931c5894fcd4c00447ad30df4b4209287989bfabd89",
+    "crates/core/Cargo.toml": "b55f8f071dff06a43fcd6ffac1bb3de11c9333f2fc98ccd9968404b61b7e0fc3",
+    "crates/daemon/Cargo.toml": "45fb2bf5f430bc3a68207ab4fa7e191ba2030b0563ecc4f7f7a622da703981bd",
+    "crates/desktop/Cargo.toml": "87bcff4d8de6f4bc19c064b261027a7240fc56d578f43fabad58c7e5949d834c",
+    "crates/host/Cargo.toml": "cacb61a3643c58a4d08c1827408b5ecdbd9fedfc9dfb3d4a504c38d11144e87d",
+    "crates/store/Cargo.toml": "7bd5dbc847055a60408b6f12dd137086d23b7fff34ca3bd75b52003fadffde5b",
+    "crates/virtualization/Cargo.toml": "1259400f1be2b71313db54f3ad36884f3e89944c2d3897169fef88bc327d2a8e",
+    "crates/cli/src/main.rs": "c8e953c8165d2ff0e3e1398580dffb8f0379f2f8735d765c4c877c7633bbb66c",
+    "crates/client/src/lib.rs": "57adc9e57a9e623f911fb366262d7912387a5a5dbfb09301cf37a01595f276ce",
+    "crates/client/src/profile.rs": "4baf7b6a0099c9b0ef322dc1fbc83783ab14fffa5ba2e5e81517c9b77f35c2d6",
+    "crates/core/src/apps.rs": "9acea3237adf71534cba889ab5934be2268e957d87cb19dc7ab6a69d3d5bed31",
+    "crates/core/src/edit.rs": "7206379b7a938c8b7c81ca33785ed140173fb4b72641ac0f1cc038fefc62cf1c",
+    "crates/core/src/lib.rs": "ac523c7d9a228ecb6c198389b58aff63dc8a076c6a3bad4669e175833f3c49a5",
+    "crates/core/src/memory_health.rs": "991cc0a0ea500f5ab62ce4b06c91b523c2d30dfa73c6d824292d8eaca8b9c69f",
+    "crates/core/src/reserves.rs": "28a846d9aa2f93c5f31530ce1e2d789ae20b15a31a467648ea54680dd211645f",
+    "crates/core/src/setup.rs": "4c90cf3b3ca14c4abba666757e90bdb1bea17e7bd37bd6f414b51bbe2c1cdd6b",
+    "crates/core/src/shutdown.rs": "3a252d346b1cddbf3ec11ea4e5d6631a8477e754483e1af4372c2d9a7383a7ca",
+    "crates/core/src/storage.rs": "2dfd0b2c8a266f8cb6b7b58f549af2caa468a09ca24c6d93f17b00b1db196dd7",
+    "crates/core/src/virtualization.rs": "93d2fcd7f44be7ef461d59c7a5e5a1a6e48215842b074ecec6a5d45224903b6c",
+    "crates/core/src/vm.rs": "cabf497feaeca304e188ce924d674ab2d8125bdad16c8db33f754bbfb8a67ba4",
+    "crates/daemon/src/action_tests.rs": "35781ee579a7cbad93ff217e9d6e9d1b5bc9f1ca7a1b17b7732dd050fa765359",
+    "crates/daemon/src/apps.rs": "2f458e9dbfa3818b1a43d63fc9008f6df36b8c1773da6f713efc8c09e50767e3",
+    "crates/daemon/src/lib.rs": "2409c672e066cfdb6c6f9811f2df830e78109cd04ee72ab3a83c8ab83bb34a31",
+    "crates/daemon/src/main.rs": "611d2f532728b3375b842bc66a47cc3bc305182deb6e0875ba7ec6f431b35a17",
+    "crates/daemon/src/memory_tests.rs": "79f4859212b0902c99e279fba6181b6970c1ce6ac475e11079125721fa167988",
+    "crates/daemon/src/reserve_tests.rs": "861b180615e90bd5567b996c4d2fb92749372a9c096cb7add95cc59c9e351dc6",
+    "crates/daemon/src/reserves.rs": "1daf74696f20254f3a1b5085e8d2d42ecda442516f136ea5466351e633c67891",
+    "crates/daemon/src/shutdown.rs": "f3a7b2daae34f4e234edc4c56e3d2d7f6ea7d669612d367d5545377af243aa9a",
+    "crates/daemon/src/shutdown_tests.rs": "c02c55223bc18d2a2739f3148652a1614fdc10a3304819780fd88034df2c7ca9",
+    "crates/daemon/src/storage.rs": "4540fb4f64352fec8a40dba1571a6eafdf75af591fae5c890715dad5602c63c9",
+    "crates/daemon/src/storage_tests.rs": "6d0de5009c585e319e8136ce6856c00fc650fdecc453064d5df79db15e06f23a",
+    "crates/daemon/src/virtualization.rs": "df0c7e6009e3b96edef5599e7b0b840a91d83b5b6f93e977276bb1ab1d1480bd",
+    "crates/desktop/src/allocation.rs": "1447822c8650e8339e2a373a6139dcd7e401443a4be512321303b4a07465d34f",
+    "crates/desktop/src/create_recovery.rs": "38bb32aa78b65cdf80bd893a608728f74f18a7209a8e8684ed721f79949e410b",
+    "crates/desktop/src/create_recovery_tests.rs": "1d1045b2012517a43d91a6e757fa27c359fd55aa16b76a37a32d39339028e1ca",
+    "crates/desktop/src/dialog_tests.rs": "239a1f57c18061a2581988c2e8f42856b44292081622d25756695844c479cc10",
+    "crates/desktop/src/fab_tests.rs": "3154e273d593a4c36131b0eb354d8cb606277fe5c35da9f5b2a0b250b43a59d0",
+    "crates/desktop/src/host_ui_tests.rs": "512bf2952cd92fcf0f5042054c35075bfa8bd795fd1b36b42158715dc4a2b32f",
+    "crates/desktop/src/main.rs": "4cc10dfd881cd4b45822d991bcd864eb25bf23e5a6f0517d9a4f72d3b406e529",
+    "crates/desktop/src/memory_ui_tests.rs": "38e66f71b15550a5ad8903cefcc5f646d93d441b634fe426f0bf56a6ba7b9d55",
+    "crates/desktop/src/preferences.rs": "8e2b025aa70e0a7f58b6a4de9ca77c2e3e113366c4fd8d8c97f2fd73825c3a52",
+    "crates/desktop/src/preferences_tests.rs": "24b906ebd74249314f188d83bd5fe331ebdbd49b409ff16f5f7425a5b7b0c4cc",
+    "crates/desktop/src/reserve_ui_tests.rs": "ad7669d5d35485e8276f928ff78ffa49a6d969f9a352d26c8008e320decbab1d",
+    "crates/desktop/src/reserves.rs": "821899495a9a1cee87a236ced41e3c513f7f6a8a95586ea5f5e661d68bbf88ed",
+    "crates/desktop/src/resources.rs": "5faa4143052905237d13611f1afd55406dc8df73df6af5ca3da4804703b44b7c",
+    "crates/desktop/src/shutdown_ui_tests.rs": "37a58b7958202ad25bfcb48710c7fac3bb8ede878c146466b77331be66178681",
+    "crates/desktop/src/storage_ui_tests.rs": "e623e8c571a59e05fd45acb5f6279ff94a9eb29c4f34e857b466b9c75911f30b",
+    "crates/desktop/src/ui/applications.rs": "adf252b93fabc4fec63ce3bc7ab855d2b6a8910e65f036ced05b4126fc21d996",
+    "crates/desktop/src/ui/cockpit.rs": "0b7bd91ef8b5b5813834b311307703f015d60d4045f323430dc2e713b739d541",
+    "crates/desktop/src/ui/cockpit_power.rs": "ba33bb522bc07c99a9d419423fff1a3e3dcb2149fcfaef4ca3d0de271a3cbb01",
+    "crates/desktop/src/ui/editor.rs": "5296bb3327d0dc09b32faa56f954f6fc8e56e6ef878df5b6edf4dfbd11698f30",
+    "crates/desktop/src/ui/floating_actions.rs": "23950e1609e7858802b3c94558dc381a0c4814362c0f88eb360ad0b83b5a353b",
+    "crates/desktop/src/ui/hosts/allocations.rs": "c5c35fe3a656fb93db866d955fddc19ca6a7133a10bb0433e22bf442bbbac2a6",
+    "crates/desktop/src/ui/hosts/budget.rs": "cf5eff5e91945a2407035095ad274541d437b79417768cda1ca03df05ba59c96",
+    "crates/desktop/src/ui/hosts/storage.rs": "ece7fe373283290efaefc7e287fcfab17cf5a9e147257578c9565630cd5fae4b",
+    "crates/desktop/src/ui/hosts.rs": "c49377457b681b75ae939c7e87cd308151258fab77aaf150a7da07fbeab16677",
+    "crates/desktop/src/ui/lifecycle.rs": "84d8291c77cfc473698c958c8206852a09853429510c78cd7768bd161f95ac3e",
+    "crates/desktop/src/ui/memory_health.rs": "27a9873c92113e0e936beb6ff93b936ef6b26ba252be4d486bc27efcabcc4292",
+    "crates/desktop/src/ui/reserves.rs": "cfc3dc8d8e803fc304b98bef0ae32033ef73fd79430fec6ad6a78425603ea39c",
+    "crates/desktop/src/ui/resource_controls.rs": "11f81f108aa0c387725d318b9d012a0f5afe6028c6d5a0af5c3155df611aba93",
+    "crates/desktop/src/ui/setup.rs": "776e477b27ffb78dc80952f822a531af13bd4611435e068a7af720460816ef7b",
+    "crates/desktop/src/ui/shutdown.rs": "9203f164cbf39962ce388acaf8cd313b94408db2864cb903ca9431e261caaef9",
+    "crates/desktop/src/ui/status_colors.rs": "429af9fbf8c5c437eae1357813d49a44dbff7a5d76b05b7fb837665d8d3c8f02",
+    "crates/desktop/src/ui/workspace.rs": "9feb6ea3e9c901a04f45de311e9a55a5a9c1ff2edd77e372ca7b430f7b6293b8",
+    "crates/desktop/src/ui/workspaces.rs": "5432fa52fbd6dfa53b01487d19e6eb426948807176062c881da06f31f46acb58",
+    "crates/desktop/src/ui.rs": "e1dbc09ea431728a2d5ff3fbac7bcd5cdfff73ddb2cc4882975f0343c37adfa6",
+    "crates/desktop/src/ui_status_tests.rs": "7373f37e713da0ddcd793071b1b80a2ef80d799112bbaacd22013d7399851e61",
+    "crates/desktop/src/virtualization.rs": "1f0152442c02c152a4be849b30976693aef54f77bc5edde09df6378ed1208e73",
+    "crates/desktop/src/virtualization_power_tests.rs": "8544aea2391d81544c9e110c66d94845f804f30c22c2bdff5fe67311d2ac64bb",
+    "crates/desktop/src/virtualization_ui_tests.rs": "23701b53f3f41f0bbc8869a38b93dc78e97319c79357ce573e4ffae1c5a61108",
+    "crates/desktop/src/visual_tests.rs": "9af09c9b182061e7cee081d35c29c971601a901d68ac08aaa66d5395d3775308",
+    "crates/host/src/lib.rs": "7d68711fa249f0528d614cf431104b7af7928774984aceb9abeb151f6da44b41",
+    "crates/host/src/storage/parse.rs": "e088129af5a6a324f0545dfb3fbb8d53eae7155ca8db786d96c8b03a8ce20e43",
+    "crates/host/src/storage/tests.rs": "d1fb72588a20b54ac9a3b95570aee69aec2c7fd32609733815495bdba4614fe4",
+    "crates/host/src/storage.rs": "3a05628ea449f7b52b08171e73b355fd8f6bcee0d5ec4ae9bf3315c4c6d69f2c",
+    "crates/store/src/apps.rs": "3ea9ea9f1f7ffe2c7d56482407692eb2ac1f3614784a356d95617bb7eb331998",
+    "crates/store/src/create.rs": "e57c0e055405eeae392287f582c2b7351742572c71848a704e13e76170a2f0d2",
+    "crates/store/src/edit.rs": "5749d9a97e76a8afc4eb1d4700fab371b825612045e2f6311c5182ef581cb723",
+    "crates/store/src/lib.rs": "c38f5165a3366a84a2f0133ce3e6b79627981f5b61a6c995942a738b59b01df1",
+    "crates/store/src/memory.rs": "f90bb54ad262522cb18f3d01a29b3d7d78f20cb0be7c8bbf19e067cdbd3c8f41",
+    "crates/store/src/reserve_tests.rs": "b6f6c853502faa15114e8da51fa9c1ad15b3941912ef0aace33a618c210ee45c",
+    "crates/store/src/reserves.rs": "0f7004c378bb545f87be8d0dccd319a65e6c1e51d091ee592c924cdc0b58b385",
+    "crates/store/src/schema.sql": "909b20cc203c7d8ddddc6c62f2696b8f221b60bdc206476905c0d119e1ece62d",
+    "crates/store/src/shutdown.rs": "b709bf5cc41948e12c1f6e7a82d4c125b783030e4620a7c5763cbc9f0536cd45",
+    "crates/store/src/tests.rs": "a605677cc9b7a612069f0736d954becd740eb230107cd14b0adbe29b9cb00028",
+    "crates/store/src/virtualization.rs": "619a8cfb2d896f509a18c4113dd6291cbc845132b30dee5a7dd48885b8033115",
+    "crates/virtualization/src/lib.rs": "7b7b0fd6f479e915ba3eac274d116b9197cee95b0d4ae3f296838d3dbe270c5c",
+    "crates/virtualization/src/proxmox.rs": "fc83df4fbf2217710e65b8699d2ed8e6d371c9fb706667cb6e3d1bd1442e35c0",
+    "crates/virtualization/src/resources.rs": "1ce1ee065518ef59be2a746fd60a3cb5ce7920eb73ec53e261437864cf7148d2"
+  },
+  "harness_sha256": {
+    "proxmox_power_guest.py": "e62da26cf4b3d879f71b87adc2a95a48cd6a604587583f96456764237a6d5758",
+    "proxmox_power_host.py": "374f33e156d6a8567ed221c4212fd0813d5746cd62239b2a9f0e35b04224e364",
+    "proxmox_power_live.py": "49e97e2262f7591d9c599ac2dc3954db68724f13cfc5e3e4b4c5de883a180fe1",
+    "proxmox_power_probe.rs": "73407a8e75473b42cb7d2a87bd5068a88c9e12da9a5b2c3b4be725fe0f9f97fb"
+  },
+  "assessment": {
+    "passed": true,
+    "failures": []
+  },
+  "seed": {
+    "node": "hc-pve-658284a90e",
+    "owned_vmids": [
+      7101,
+      7199
+    ],
+    "power_scope": "/vms/7101",
+    "power_privileges": [
+      "VM.Audit",
+      "VM.PowerMgmt"
+    ],
+    "inventory_role": "PVEAuditor",
+    "privsep": true,
+    "effective_permissions": {
+      "/vms/7101": {
+        "VM.Audit": 0,
+        "VM.PowerMgmt": 0
+      }
+    },
+    "expires_after_seconds": 14400,
+    "bootable_os_installed": false,
+    "original_guests_touched": false
+  },
+  "build": {
+    "rust": "rustc 1.99.0 (b940084d7 2026-09-28)",
+    "tests_and_build": "g iroh-metrics-derive v1.0.1\n   Compiling strum_macros v0.28.0\n   Compiling proxmox-base64 v1.0.1 (https://github.com/proxmox/proxmox-rs.git?rev=89c1d597a9d15743049eadcb1add380573265904#89c1d597)\n   Compiling uuid v1.29.0\n   Compiling lru v0.18.5\n   Compiling rand_pcg v0.10.2\n   Compiling netlink-sys v0.8.8\n   Compiling simple-dns v0.12.0\n   Compiling netlink-sys v0.9.0\n   Compiling iroh-dns v1.4.1\n   Compiling netwatch v0.19.3\n   Compiling noq v1.4.0\n   Compiling blake3 v1.8.7\n   Compiling enum-assoc v1.4.1\n   Compiling powerfmt v0.2.1\n   Compiling sorted-index-buffer v0.2.1\n   Compiling mac-addr v0.3.0\n   Compiling xml-rs v0.8.29\n   Compiling identity-hash v0.1.0\n   Compiling tinyvec v1.13.3\n   Compiling time-core v0.1.9\n   Compiling num-conv v0.2.2\n   Compiling deranged v0.5.9\n   Compiling lru-slab v0.1.3\n   Compiling time v0.3.55\n   Compiling xmltree v0.10.3\n   Compiling noq-proto v1.4.0\n   Compiling strum v0.28.0\n   Compiling netlink-proto v0.12.2\n   Compiling homecloud-core v0.1.0 (/tmp/homecloud-cockpit-658284a90ef649828290b9389375076e/source/crates/core)\n   Compiling openssl v0.10.82\n   Compiling iroh-metrics v1.0.2\n   Compiling num_enum v0.7.6\n   Compiling n0-watcher v1.0.1\n   Compiling iroh-base v1.4.1\n   Compiling netlink-packet-route v0.31.0\n   Compiling arc-swap v1.9.3\n   Compiling regex v1.13.1\n   Compiling postcard-derive v0.2.2\n   Compiling attohttpc v0.30.1\n   Compiling cobs v0.3.0\n   Compiling libsqlite3-sys v0.39.1\n   Compiling tokio-stream v0.1.19\n   Compiling iroh-relay v1.4.1\n   Compiling nix v0.30.1\n   Compiling utf8parse v0.2.2\n   Compiling arrayvec v0.7.8\n   Compiling constant_time_eq v0.4.2\n   Compiling simdutf8 v0.1.5\n   Compiling sha1_smol v1.0.1\n   Compiling tokio-websockets v0.13.3\n   Compiling anstyle-parse v1.0.0\n   Compiling postcard v1.1.3\n   Compiling igd-next v0.17.1\n   Compiling proxmox-sys v1.0.2 (https://github.com/proxmox/proxmox-rs.git?rev=89c1d597a9d15743049eadcb1add380573265904#89c1d597)\n   Compiling proxmox-compression v1.0.1 (https://github.com/proxmox/proxmox-rs.git?rev=89c1d597a9d15743049eadcb1add380573265904#89c1d597)\n   Compiling tokio-openssl v0.6.5\n   Compiling proxmox-serde v1.0.2 (https://github.com/proxmox/proxmox-rs.git?rev=89c1d597a9d15743049eadcb1add380573265904#89c1d597)\n   Compiling proxmox-rate-limiter v1.0.0 (https://github.com/proxmox/proxmox-rs.git?rev=89c1d597a9d15743049eadcb1add380573265904#89c1d597)\n   Compiling block-buffer v0.10.4\n   Compiling serde_bytes v0.11.19\n   Compiling iroh v1.4.1\n   Compiling is_terminal_polyfill v1.70.2\n   Compiling colorchoice v1.0.5\n   Compiling seize v0.5.1\n   Compiling anstyle v1.0.14\n   Compiling anstyle-query v1.1.5\n   Compiling cmov v0.5.4\n   Compiling ctutils v0.4.6\n   Compiling anstream v1.0.0\n   Compiling papaya v0.2.5\n   Compiling digest v0.10.7\n   Compiling proxmox-http v1.0.6 (https://github.com/proxmox/proxmox-rs.git?rev=89c1d597a9d15743049eadcb1add380573265904#89c1d597)\n   Compiling proxmox-login v1.0.3 (https://github.com/proxmox/proxmox-rs.git?rev=89c1d597a9d15743049eadcb1add380573265904#89c1d597)\n   Compiling portmapper v0.19.3\n   Compiling backon v1.6.0\n   Compiling hashlink v0.12.2\n   Compiling lazy_static v1.5.1\n   Compiling clap_lex v1.1.1\n   Compiling fallible-iterator v0.3.0\n   Compiling strsim v0.11.1\n   Compiling fallible-streaming-iterator v0.1.9\n   Compiling clap_builder v4.6.7\n   Compiling sharded-slab v0.1.7\n   Compiling proxmox-client v1.0.4 (https://github.com/proxmox/proxmox-rs.git?rev=89c1d597a9d15743049eadcb1add380573265904#89c1d597)\n   Compiling sha2 v0.10.9\n   Compiling matchers v0.2.0\n   Compiling clap_derive v4.6.7\n   Compiling rusqlite v0.41.0\n   Compiling tracing-log v0.2.0\n   Compiling thread_local v1.1.10\n   Compiling nu-ansi-term v0.50.3\n   Compiling tracing-subscriber v0.3.23\n   Compiling homecloud-store v0.1.0 (/tmp/homecloud-cockpit-658284a90ef649828290b9389375076e/source/crates/store)\n   Compiling homecloud-virtualization v0.1.0 (/tmp/homecloud-cockpit-658284a90ef649828290b9389375076e/source/crates/virtualization)\n   Compiling homecloud-host v0.1.0 (/tmp/homecloud-cockpit-658284a90ef649828290b9389375076e/source/crates/host)\n   Compiling clap v4.6.7\n   Compiling tempfile v3.27.0\n   Compiling homecloud-client v0.1.0 (/tmp/homecloud-cockpit-658284a90ef649828290b9389375076e/source/crates/client)\n   Compiling homecloud-daemon v0.1.0 (/tmp/homecloud-cockpit-658284a90ef649828290b9389375076e/source/crates/daemon)\n   Compiling homecloud-cockpit-live-probe v0.1.0 (/tmp/homecloud-cockpit-658284a90ef649828290b9389375076e/source/crates/cockpit-live-probe)\n    Finished `dev` profile [unoptimized] target(s) in 6m 04s\nwarning: the following packages contain code that will be rejected by a future version of Rust: syn v0.12.15\nnote: to see what the problems were, use the option `--future-incompat-report`, or run `cargo report future-incompatibilities --id 1`\nproxmox-client v1.0.4 (https://github.com/proxmox/proxmox-rs.git?rev=89c1d597a9d15743049eadcb1add380573265904#89c1d597)\n\u2514\u2500\u2500 homecloud-virtualization v0.1.0 (/tmp/homecloud-cockpit-658284a90ef649828290b9389375076e/source/crates/virtualization)\n    \u251c\u2500\u2500 homecloud-cockpit-live-probe v0.1.0 (/tmp/homecloud-cockpit-658284a90ef649828290b9389375076e/source/crates/cockpit-live-probe)\n    \u2514\u2500\u2500 homecloud-daemon v0.1.0 (/tmp/homecloud-cockpit-658284a90ef649828290b9389375076e/source/crates/daemon)\n        \u2514\u2500\u2500 homecloud-cockpit-live-probe v0.1.0 (/tmp/homecloud-cockpit-658284a90ef649828290b9389375076e/source/crates/cockpit-live-probe)\n",
+    "host_packages_installed": false,
+    "test_output": [
+      "running 15 tests",
+      "test proxmox::tests::extjs_rejections_inside_http_success_are_not_ambiguous_or_secret_leaks ... ok",
+      "test proxmox::tests::invalid_targets_are_rejected_before_connecting ... ok",
+      "test proxmox::tests::invalid_or_cross_guest_tasks_remain_uncertain_not_successful ... ok",
+      "test proxmox::tests::official_client_uses_pve_token_header_and_extjs_envelope ... ok",
+      "test proxmox::tests::production_connection_rejects_http_and_public_secret_files ... ok",
+      "test proxmox::tests::shutdown_returns_native_task_and_never_enables_force_fallback ... ok",
+      "test proxmox::tests::power_failures_distinguish_rejection_from_ambiguous_dispatch_without_leaks ... ok",
+      "test proxmox::tests::start_and_force_stop_are_separate_task_types_and_endpoints ... ok",
+      "test proxmox::tests::unsuccessful_envelopes_are_not_empty_successful_inventories ... ok",
+      "test proxmox::tests::upstream_errors_do_not_echo_response_bodies_or_credentials ... ok",
+      "test resources::tests::accepts_empty_inventory_without_inventing_capacity ... ok",
+      "test resources::tests::maps_native_ids_templates_and_unknown_usage_without_tenant_grants ... ok",
+      "test resources::tests::rejects_ambiguous_or_malformed_known_resources ... ok",
+      "test tests::demo_is_deterministic_and_can_be_updated_without_guest_operations ... ok",
+      "test proxmox::tests::task_status_requires_confirmed_terminal_exit_status ... ok",
+      "test result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.13s"
+    ],
+    "compiled_commands": "cargo test --offline -p homecloud-virtualization --features proxmox --lib && cargo build --offline -p homecloud-cockpit-live-probe -p homecloud-daemon && cargo tree --offline -p homecloud-cockpit-live-probe -i proxmox-client",
+    "probe_source_sha256": "73407a8e75473b42cb7d2a87bd5068a88c9e12da9a5b2c3b4be725fe0f9f97fb",
+    "private_cargo_home": true,
+    "private_openssl_deb": "libssl-dev_3.5.5-1ubuntu3.7_amd64.deb",
+    "binary_sha256": {
+      "homecloud-cockpit-live-probe": "cdd2b7663d45cf8c688cb6e703732b1a25b70a6de082a70775273e4849b387b2",
+      "homecloudd": "a1a2150c57156a8afcc51859a8b7e402edb908fe082371b24ce09374c5f5ccca"
+    },
+    "required_binaries_verified": true
+  },
+  "validation": {
+    "cases": {
+      "start": {
+        "ok": true,
+        "result": {
+          "authenticated_iroh": true,
+          "case": "start",
+          "legacy_vms_created": 0,
+          "observations": {
+            "duplicate": {
+              "action": "start",
+              "created_at": 1793664671,
+              "error": null,
+              "guest": {
+                "kind": "virtual_machine",
+                "node": "hc-pve-658284a90e",
+                "vmid": 7101
+              },
+              "id": "00000000-0000-4000-8000-000000000001",
+              "phase": "submitting",
+              "requested_by": "6f31af83e1fa47452ef2bd331e5dcd07dd901b090bce37cc6cf67b4c21acdfbb",
+              "task_id": null,
+              "updated_at": 1793664671
+            },
+            "initial": {
+              "action": "start",
+              "created_at": 1793664671,
+              "error": null,
+              "guest": {
+                "kind": "virtual_machine",
+                "node": "hc-pve-658284a90e",
+                "vmid": 7101
+              },
+              "id": "00000000-0000-4000-8000-000000000001",
+              "phase": "submitting",
+              "requested_by": "6f31af83e1fa47452ef2bd331e5dcd07dd901b090bce37cc6cf67b4c21acdfbb",
+              "task_id": null,
+              "updated_at": 1793664671
+            },
+            "operation_count_after": 1,
+            "operation_count_before": 0,
+            "replay": {
+              "action": "start",
+              "created_at": 1793664671,
+              "error": null,
+              "guest": {
+                "kind": "virtual_machine",
+                "node": "hc-pve-658284a90e",
+                "vmid": 7101
+              },
+              "id": "00000000-0000-4000-8000-000000000001",
+              "phase": "succeeded",
+              "requested_by": "6f31af83e1fa47452ef2bd331e5dcd07dd901b090bce37cc6cf67b4c21acdfbb",
+              "task_id": "UPID:hc-pve-658284a90e:000004BB:0000112F:6AE9269F:qmstart:7101:hc-power@pve!power:",
+              "updated_at": 1793664673
+            },
+            "running": {
+              "action": "start",
+              "created_at": 1793664671,
+              "error": null,
+              "guest": {
+                "kind": "virtual_machine",
+                "node": "hc-pve-658284a90e",
+                "vmid": 7101
+              },
+              "id": "00000000-0000-4000-8000-000000000001",
+              "phase": "running",
+              "requested_by": "6f31af83e1fa47452ef2bd331e5dcd07dd901b090bce37cc6cf67b4c21acdfbb",
+              "task_id": "UPID:hc-pve-658284a90e:000004BB:0000112F:6AE9269F:qmstart:7101:hc-power@pve!power:",
+              "updated_at": 1793664671
+            },
+            "terminal": {
+              "action": "start",
+              "created_at": 1793664671,
+              "error": null,
+              "guest": {
+                "kind": "virtual_machine",
+                "node": "hc-pve-658284a90e",
+                "vmid": 7101
+              },
+              "id": "00000000-0000-4000-8000-000000000001",
+              "phase": "succeeded",
+              "requested_by": "6f31af83e1fa47452ef2bd331e5dcd07dd901b090bce37cc6cf67b4c21acdfbb",
+              "task_id": "UPID:hc-pve-658284a90e:000004BB:0000112F:6AE9269F:qmstart:7101:hc-power@pve!power:",
+              "updated_at": 1793664673
+            }
+          },
+          "operations": [
+            {
+              "action": "start",
+              "created_at": 1793664671,
+              "error": null,
+              "guest": {
+                "kind": "virtual_machine",
+                "node": "hc-pve-658284a90e",
+                "vmid": 7101
+              },
+              "id": "00000000-0000-4000-8000-000000000001",
+              "phase": "succeeded",
+              "requested_by": "6f31af83e1fa47452ef2bd331e5dcd07dd901b090bce37cc6cf67b4c21acdfbb",
+              "task_id": "UPID:hc-pve-658284a90e:000004BB:0000112F:6AE9269F:qmstart:7101:hc-power@pve!power:",
+              "updated_at": 1793664673
+            }
+          ]
+        }
+      },
+      "shutdown": {
+        "ok": true,
+        "result": {
+          "authenticated_iroh": true,
+          "case": "shutdown",
+          "legacy_vms_created": 0,
+          "observations": {
+            "duplicate": {
+              "action": "shutdown",
+              "created_at": 1793664679,
+              "error": null,
+              "guest": {
+                "kind": "virtual_machine",
+                "node": "hc-pve-658284a90e",
+                "vmid": 7101
+              },
+              "id": "00000000-0000-4000-8000-000000000002",
+              "phase": "submitting",
+              "requested_by": "6f31af83e1fa47452ef2bd331e5dcd07dd901b090bce37cc6cf67b4c21acdfbb",
+              "task_id": null,
+              "updated_at": 1793664679
+            },
+            "initial": {
+              "action": "shutdown",
+              "created_at": 1793664679,
+              "error": null,
+              "guest": {
+                "kind": "virtual_machine",
+                "node": "hc-pve-658284a90e",
+                "vmid": 7101
+              },
+              "id": "00000000-0000-4000-8000-000000000002",
+              "phase": "submitting",
+              "requested_by": "6f31af83e1fa47452ef2bd331e5dcd07dd901b090bce37cc6cf67b4c21acdfbb",
+              "task_id": null,
+              "updated_at": 1793664679
+            },
+            "operation_count_after": 2,
+            "operation_count_before": 1,
+            "running": {
+              "action": "shutdown",
+              "created_at": 1793664679,
+              "error": null,
+              "guest": {
+                "kind": "virtual_machine",
+                "node": "hc-pve-658284a90e",
+                "vmid": 7101
+              },
+              "id": "00000000-0000-4000-8000-000000000002",
+              "phase": "running",
+              "requested_by": "6f31af83e1fa47452ef2bd331e5dcd07dd901b090bce37cc6cf67b4c21acdfbb",
+              "task_id": "UPID:hc-pve-658284a90e:000004F2:0000147B:6AE926A7:qmshutdown:7101:hc-power@pve!power:",
+              "updated_at": 1793664679
+            }
+          },
+          "operations": [
+            {
+              "action": "shutdown",
+              "created_at": 1793664679,
+              "error": null,
+              "guest": {
+                "kind": "virtual_machine",
+                "node": "hc-pve-658284a90e",
+                "vmid": 7101
+              },
+              "id": "00000000-0000-4000-8000-000000000002",
+              "phase": "running",
+              "requested_by": "6f31af83e1fa47452ef2bd331e5dcd07dd901b090bce37cc6cf67b4c21acdfbb",
+              "task_id": "UPID:hc-pve-658284a90e:000004F2:0000147B:6AE926A7:qmshutdown:7101:hc-power@pve!power:",
+              "updated_at": 1793664679
+            },
+            {
+              "action": "start",
+              "created_at": 1793664671,
+              "error": null,
+              "guest": {
+                "kind": "virtual_machine",
+                "node": "hc-pve-658284a90e",
+                "vmid": 7101
+              },
+              "id": "00000000-0000-4000-8000-000000000001",
+              "phase": "succeeded",
+              "requested_by": "6f31af83e1fa47452ef2bd331e5dcd07dd901b090bce37cc6cf67b4c21acdfbb",
+              "task_id": "UPID:hc-pve-658284a90e:000004BB:0000112F:6AE9269F:qmstart:7101:hc-power@pve!power:",
+              "updated_at": 1793664673
+            }
+          ]
+        }
+      },
+      "resume": {
+        "ok": true,
+        "result": {
+          "authenticated_iroh": true,
+          "case": "resume",
+          "legacy_vms_created": 0,
+          "observations": {
+            "before": {
+              "action": "shutdown",
+              "created_at": 1793664679,
+              "error": null,
+              "guest": {
+                "kind": "virtual_machine",
+                "node": "hc-pve-658284a90e",
+                "vmid": 7101
+              },
+              "id": "00000000-0000-4000-8000-000000000002",
+              "phase": "running",
+              "requested_by": "6f31af83e1fa47452ef2bd331e5dcd07dd901b090bce37cc6cf67b4c21acdfbb",
+              "task_id": "UPID:hc-pve-658284a90e:000004F2:0000147B:6AE926A7:qmshutdown:7101:hc-power@pve!power:",
+              "updated_at": 1793664679
+            },
+            "new_process_service_and_store": true,
+            "replay": {
+              "action": "shutdown",
+              "created_at": 1793664679,
+              "error": null,
+              "guest": {
+                "kind": "virtual_machine",
+                "node": "hc-pve-658284a90e",
+                "vmid": 7101
+              },
+              "id": "00000000-0000-4000-8000-000000000002",
+              "phase": "running",
+              "requested_by": "6f31af83e1fa47452ef2bd331e5dcd07dd901b090bce37cc6cf67b4c21acdfbb",
+              "task_id": "UPID:hc-pve-658284a90e:000004F2:0000147B:6AE926A7:qmshutdown:7101:hc-power@pve!power:",
+              "updated_at": 1793664679
+            },
+            "terminal": {
+              "action": "shutdown",
+              "created_at": 1793664679,
+              "error": "Proxmox task failed. Inspect its task log before trying another action. Graceful shutdown never falls back to force-stop.",
+              "guest": {
+                "kind": "virtual_machine",
+                "node": "hc-pve-658284a90e",
+                "vmid": 7101
+              },
+              "id": "00000000-0000-4000-8000-000000000002",
+              "phase": "failed",
+              "requested_by": "6f31af83e1fa47452ef2bd331e5dcd07dd901b090bce37cc6cf67b4c21acdfbb",
+              "task_id": "UPID:hc-pve-658284a90e:000004F2:0000147B:6AE926A7:qmshutdown:7101:hc-power@pve!power:",
+              "updated_at": 1793664742
+            }
+          },
+          "operations": [
+            {
+              "action": "shutdown",
+              "created_at": 1793664679,
+              "error": "Proxmox task failed. Inspect its task log before trying another action. Graceful shutdown never falls back to force-stop.",
+              "guest": {
+                "kind": "virtual_machine",
+                "node": "hc-pve-658284a90e",
+                "vmid": 7101
+              },
+              "id": "00000000-0000-4000-8000-000000000002",
+              "phase": "failed",
+              "requested_by": "6f31af83e1fa47452ef2bd331e5dcd07dd901b090bce37cc6cf67b4c21acdfbb",
+              "task_id": "UPID:hc-pve-658284a90e:000004F2:0000147B:6AE926A7:qmshutdown:7101:hc-power@pve!power:",
+              "updated_at": 1793664742
+            },
+            {
+              "action": "start",
+              "created_at": 1793664671,
+              "error": null,
+              "guest": {
+                "kind": "virtual_machine",
+                "node": "hc-pve-658284a90e",
+                "vmid": 7101
+              },
+              "id": "00000000-0000-4000-8000-000000000001",
+              "phase": "succeeded",
+              "requested_by": "6f31af83e1fa47452ef2bd331e5dcd07dd901b090bce37cc6cf67b4c21acdfbb",
+              "task_id": "UPID:hc-pve-658284a90e:000004BB:0000112F:6AE9269F:qmstart:7101:hc-power@pve!power:",
+              "updated_at": 1793664673
+            }
+          ]
+        }
+      },
+      "force-stop": {
+        "ok": true,
+        "result": {
+          "authenticated_iroh": true,
+          "case": "force-stop",
+          "legacy_vms_created": 0,
+          "observations": {
+            "duplicate": {
+              "action": "force_stop",
+              "created_at": 1793664749,
+              "error": null,
+              "guest": {
+                "kind": "virtual_machine",
+                "node": "hc-pve-658284a90e",
+                "vmid": 7101
+              },
+              "id": "00000000-0000-4000-8000-000000000003",
+              "phase": "submitting",
+              "requested_by": "6f31af83e1fa47452ef2bd331e5dcd07dd901b090bce37cc6cf67b4c21acdfbb",
+              "task_id": null,
+              "updated_at": 1793664749
+            },
+            "initial": {
+              "action": "force_stop",
+              "created_at": 1793664749,
+              "error": null,
+              "guest": {
+                "kind": "virtual_machine",
+                "node": "hc-pve-658284a90e",
+                "vmid": 7101
+              },
+              "id": "00000000-0000-4000-8000-000000000003",
+              "phase": "submitting",
+              "requested_by": "6f31af83e1fa47452ef2bd331e5dcd07dd901b090bce37cc6cf67b4c21acdfbb",
+              "task_id": null,
+              "updated_at": 1793664749
+            },
+            "operation_count_after": 3,
+            "operation_count_before": 2,
+            "replay": {
+              "action": "force_stop",
+              "created_at": 1793664749,
+              "error": null,
+              "guest": {
+                "kind": "virtual_machine",
+                "node": "hc-pve-658284a90e",
+                "vmid": 7101
+              },
+              "id": "00000000-0000-4000-8000-000000000003",
+              "phase": "succeeded",
+              "requested_by": "6f31af83e1fa47452ef2bd331e5dcd07dd901b090bce37cc6cf67b4c21acdfbb",
+              "task_id": "UPID:hc-pve-658284a90e:000005B3:00002FBD:6AE926ED:qmstop:7101:hc-power@pve!power:",
+              "updated_at": 1793664751
+            },
+            "running": {
+              "action": "force_stop",
+              "created_at": 1793664749,
+              "error": null,
+              "guest": {
+                "kind": "virtual_machine",
+                "node": "hc-pve-658284a90e",
+                "vmid": 7101
+              },
+              "id": "00000000-0000-4000-8000-000000000003",
+              "phase": "running",
+              "requested_by": "6f31af83e1fa47452ef2bd331e5dcd07dd901b090bce37cc6cf67b4c21acdfbb",
+              "task_id": "UPID:hc-pve-658284a90e:000005B3:00002FBD:6AE926ED:qmstop:7101:hc-power@pve!power:",
+              "updated_at": 1793664749
+            },
+            "terminal": {
+              "action": "force_stop",
+              "created_at": 1793664749,
+              "error": null,
+              "guest": {
+                "kind": "virtual_machine",
+                "node": "hc-pve-658284a90e",
+                "vmid": 7101
+              },
+              "id": "00000000-0000-4000-8000-000000000003",
+              "phase": "succeeded",
+              "requested_by": "6f31af83e1fa47452ef2bd331e5dcd07dd901b090bce37cc6cf67b4c21acdfbb",
+              "task_id": "UPID:hc-pve-658284a90e:000005B3:00002FBD:6AE926ED:qmstop:7101:hc-power@pve!power:",
+              "updated_at": 1793664751
+            }
+          },
+          "operations": [
+            {
+              "action": "force_stop",
+              "created_at": 1793664749,
+              "error": null,
+              "guest": {
+                "kind": "virtual_machine",
+                "node": "hc-pve-658284a90e",
+                "vmid": 7101
+              },
+              "id": "00000000-0000-4000-8000-000000000003",
+              "phase": "succeeded",
+              "requested_by": "6f31af83e1fa47452ef2bd331e5dcd07dd901b090bce37cc6cf67b4c21acdfbb",
+              "task_id": "UPID:hc-pve-658284a90e:000005B3:00002FBD:6AE926ED:qmstop:7101:hc-power@pve!power:",
+              "updated_at": 1793664751
+            },
+            {
+              "action": "shutdown",
+              "created_at": 1793664679,
+              "error": "Proxmox task failed. Inspect its task log before trying another action. Graceful shutdown never falls back to force-stop.",
+              "guest": {
+                "kind": "virtual_machine",
+                "node": "hc-pve-658284a90e",
+                "vmid": 7101
+              },
+              "id": "00000000-0000-4000-8000-000000000002",
+              "phase": "failed",
+              "requested_by": "6f31af83e1fa47452ef2bd331e5dcd07dd901b090bce37cc6cf67b4c21acdfbb",
+              "task_id": "UPID:hc-pve-658284a90e:000004F2:0000147B:6AE926A7:qmshutdown:7101:hc-power@pve!power:",
+              "updated_at": 1793664742
+            },
+            {
+              "action": "start",
+              "created_at": 1793664671,
+              "error": null,
+              "guest": {
+                "kind": "virtual_machine",
+                "node": "hc-pve-658284a90e",
+                "vmid": 7101
+              },
+              "id": "00000000-0000-4000-8000-000000000001",
+              "phase": "succeeded",
+              "requested_by": "6f31af83e1fa47452ef2bd331e5dcd07dd901b090bce37cc6cf67b4c21acdfbb",
+              "task_id": "UPID:hc-pve-658284a90e:000004BB:0000112F:6AE9269F:qmstart:7101:hc-power@pve!power:",
+              "updated_at": 1793664673
+            }
+          ]
+        }
+      },
+      "reader": {
+        "ok": true,
+        "result": {
+          "authenticated_iroh": true,
+          "case": "reader",
+          "legacy_vms_created": 0,
+          "observations": {
+            "failed": {
+              "action": "start",
+              "created_at": 1793664759,
+              "error": "Proxmox rejected the power request (HTTP 403); check VM permissions and configuration",
+              "guest": {
+                "kind": "virtual_machine",
+                "node": "hc-pve-658284a90e",
+                "vmid": 7101
+              },
+              "id": "00000000-0000-4000-8000-000000000010",
+              "phase": "failed",
+              "requested_by": "3f549f6b104575fb92f84878e0449796fdec7f56cfdafc3a6e7a2231b36afe05",
+              "task_id": null,
+              "updated_at": 1793664759
+            },
+            "initial": {
+              "action": "start",
+              "created_at": 1793664759,
+              "error": null,
+              "guest": {
+                "kind": "virtual_machine",
+                "node": "hc-pve-658284a90e",
+                "vmid": 7101
+              },
+              "id": "00000000-0000-4000-8000-000000000010",
+              "phase": "submitting",
+              "requested_by": "3f549f6b104575fb92f84878e0449796fdec7f56cfdafc3a6e7a2231b36afe05",
+              "task_id": null,
+              "updated_at": 1793664759
+            },
+            "replay": {
+              "action": "start",
+              "created_at": 1793664759,
+              "error": "Proxmox rejected the power request (HTTP 403); check VM permissions and configuration",
+              "guest": {
+                "kind": "virtual_machine",
+                "node": "hc-pve-658284a90e",
+                "vmid": 7101
+              },
+              "id": "00000000-0000-4000-8000-000000000010",
+              "phase": "failed",
+              "requested_by": "3f549f6b104575fb92f84878e0449796fdec7f56cfdafc3a6e7a2231b36afe05",
+              "task_id": null,
+              "updated_at": 1793664759
+            }
+          },
+          "operations": [
+            {
+              "action": "start",
+              "created_at": 1793664759,
+              "error": "Proxmox rejected the power request (HTTP 403); check VM permissions and configuration",
+              "guest": {
+                "kind": "virtual_machine",
+                "node": "hc-pve-658284a90e",
+                "vmid": 7101
+              },
+              "id": "00000000-0000-4000-8000-000000000010",
+              "phase": "failed",
+              "requested_by": "3f549f6b104575fb92f84878e0449796fdec7f56cfdafc3a6e7a2231b36afe05",
+              "task_id": null,
+              "updated_at": 1793664759
+            }
+          ]
+        }
+      },
+      "invalid": {
+        "ok": true,
+        "result": {
+          "authenticated_iroh": true,
+          "case": "invalid",
+          "legacy_vms_created": 0,
+          "observations": {
+            "failed": {
+              "action": "start",
+              "created_at": 1793664767,
+              "error": "Proxmox inventory authentication failed",
+              "guest": {
+                "kind": "virtual_machine",
+                "node": "hc-pve-658284a90e",
+                "vmid": 7101
+              },
+              "id": "00000000-0000-4000-8000-000000000010",
+              "phase": "failed",
+              "requested_by": "38469ccb7c202093e649f77d690f4862dfd188a4dcc99c0c7b1bf7c186837773",
+              "task_id": null,
+              "updated_at": 1793664770
+            },
+            "initial": {
+              "action": "start",
+              "created_at": 1793664767,
+              "error": null,
+              "guest": {
+                "kind": "virtual_machine",
+                "node": "hc-pve-658284a90e",
+                "vmid": 7101
+              },
+              "id": "00000000-0000-4000-8000-000000000010",
+              "phase": "submitting",
+              "requested_by": "38469ccb7c202093e649f77d690f4862dfd188a4dcc99c0c7b1bf7c186837773",
+              "task_id": null,
+              "updated_at": 1793664767
+            },
+            "replay": {
+              "action": "start",
+              "created_at": 1793664767,
+              "error": "Proxmox inventory authentication failed",
+              "guest": {
+                "kind": "virtual_machine",
+                "node": "hc-pve-658284a90e",
+                "vmid": 7101
+              },
+              "id": "00000000-0000-4000-8000-000000000010",
+              "phase": "failed",
+              "requested_by": "38469ccb7c202093e649f77d690f4862dfd188a4dcc99c0c7b1bf7c186837773",
+              "task_id": null,
+              "updated_at": 1793664770
+            }
+          },
+          "operations": [
+            {
+              "action": "start",
+              "created_at": 1793664767,
+              "error": "Proxmox inventory authentication failed",
+              "guest": {
+                "kind": "virtual_machine",
+                "node": "hc-pve-658284a90e",
+                "vmid": 7101
+              },
+              "id": "00000000-0000-4000-8000-000000000010",
+              "phase": "failed",
+              "requested_by": "38469ccb7c202093e649f77d690f4862dfd188a4dcc99c0c7b1bf7c186837773",
+              "task_id": null,
+              "updated_at": 1793664770
+            }
+          ]
+        }
+      },
+      "template": {
+        "ok": true,
+        "result": {
+          "authenticated_iroh": true,
+          "case": "template",
+          "legacy_vms_created": 0,
+          "observations": {
+            "failed": {
+              "action": "start",
+              "created_at": 1793664777,
+              "error": "Templates cannot be powered on or off",
+              "guest": {
+                "kind": "virtual_machine",
+                "node": "hc-pve-658284a90e",
+                "vmid": 7199
+              },
+              "id": "00000000-0000-4000-8000-000000000010",
+              "phase": "failed",
+              "requested_by": "6f31af83e1fa47452ef2bd331e5dcd07dd901b090bce37cc6cf67b4c21acdfbb",
+              "task_id": null,
+              "updated_at": 1793664777
+            },
+            "initial": {
+              "action": "start",
+              "created_at": 1793664777,
+              "error": null,
+              "guest": {
+                "kind": "virtual_machine",
+                "node": "hc-pve-658284a90e",
+                "vmid": 7199
+              },
+              "id": "00000000-0000-4000-8000-000000000010",
+              "phase": "submitting",
+              "requested_by": "6f31af83e1fa47452ef2bd331e5dcd07dd901b090bce37cc6cf67b4c21acdfbb",
+              "task_id": null,
+              "updated_at": 1793664777
+            },
+            "replay": {
+              "action": "start",
+              "created_at": 1793664777,
+              "error": "Templates cannot be powered on or off",
+              "guest": {
+                "kind": "virtual_machine",
+                "node": "hc-pve-658284a90e",
+                "vmid": 7199
+              },
+              "id": "00000000-0000-4000-8000-000000000010",
+              "phase": "failed",
+              "requested_by": "6f31af83e1fa47452ef2bd331e5dcd07dd901b090bce37cc6cf67b4c21acdfbb",
+              "task_id": null,
+              "updated_at": 1793664777
+            }
+          },
+          "operations": [
+            {
+              "action": "start",
+              "created_at": 1793664777,
+              "error": "Templates cannot be powered on or off",
+              "guest": {
+                "kind": "virtual_machine",
+                "node": "hc-pve-658284a90e",
+                "vmid": 7199
+              },
+              "id": "00000000-0000-4000-8000-000000000010",
+              "phase": "failed",
+              "requested_by": "6f31af83e1fa47452ef2bd331e5dcd07dd901b090bce37cc6cf67b4c21acdfbb",
+              "task_id": null,
+              "updated_at": 1793664777
+            },
+            {
+              "action": "force_stop",
+              "created_at": 1793664749,
+              "error": null,
+              "guest": {
+                "kind": "virtual_machine",
+                "node": "hc-pve-658284a90e",
+                "vmid": 7101
+              },
+              "id": "00000000-0000-4000-8000-000000000003",
+              "phase": "succeeded",
+              "requested_by": "6f31af83e1fa47452ef2bd331e5dcd07dd901b090bce37cc6cf67b4c21acdfbb",
+              "task_id": "UPID:hc-pve-658284a90e:000005B3:00002FBD:6AE926ED:qmstop:7101:hc-power@pve!power:",
+              "updated_at": 1793664751
+            },
+            {
+              "action": "shutdown",
+              "created_at": 1793664679,
+              "error": "Proxmox task failed. Inspect its task log before trying another action. Graceful shutdown never falls back to force-stop.",
+              "guest": {
+                "kind": "virtual_machine",
+                "node": "hc-pve-658284a90e",
+                "vmid": 7101
+              },
+              "id": "00000000-0000-4000-8000-000000000002",
+              "phase": "failed",
+              "requested_by": "6f31af83e1fa47452ef2bd331e5dcd07dd901b090bce37cc6cf67b4c21acdfbb",
+              "task_id": "UPID:hc-pve-658284a90e:000004F2:0000147B:6AE926A7:qmshutdown:7101:hc-power@pve!power:",
+              "updated_at": 1793664742
+            },
+            {
+              "action": "start",
+              "created_at": 1793664671,
+              "error": null,
+              "guest": {
+                "kind": "virtual_machine",
+                "node": "hc-pve-658284a90e",
+                "vmid": 7101
+              },
+              "id": "00000000-0000-4000-8000-000000000001",
+              "phase": "succeeded",
+              "requested_by": "6f31af83e1fa47452ef2bd331e5dcd07dd901b090bce37cc6cf67b4c21acdfbb",
+              "task_id": "UPID:hc-pve-658284a90e:000004BB:0000112F:6AE9269F:qmstart:7101:hc-power@pve!power:",
+              "updated_at": 1793664673
+            }
+          ]
+        }
+      },
+      "seed-hold": {
+        "ok": true,
+        "result": {
+          "backend_not_called": true,
+          "seeded_submitting": {
+            "action": "start",
+            "created_at": 1793664785,
+            "error": null,
+            "guest": {
+              "kind": "virtual_machine",
+              "node": "hc-pve-658284a90e",
+              "vmid": 7101
+            },
+            "id": "00000000-0000-4000-8000-000000000004",
+            "phase": "submitting",
+            "requested_by": "6f31af83e1fa47452ef2bd331e5dcd07dd901b090bce37cc6cf67b4c21acdfbb",
+            "task_id": null,
+            "updated_at": 1793664785
+          },
+          "synthetic_crash_boundary": true
+        }
+      },
+      "hold": {
+        "ok": true,
+        "result": {
+          "authenticated_iroh": true,
+          "case": "hold",
+          "legacy_vms_created": 0,
+          "observations": {
+            "acknowledged": {
+              "action": "start",
+              "created_at": 1793664785,
+              "error": "Controller restarted during submission. The action may have reached Proxmox. Inspect Proxmox before releasing this safety hold; it will not be retried automatically.",
+              "guest": {
+                "kind": "virtual_machine",
+                "node": "hc-pve-658284a90e",
+                "vmid": 7101
+              },
+              "id": "00000000-0000-4000-8000-000000000004",
+              "phase": "acknowledged",
+              "requested_by": "6f31af83e1fa47452ef2bd331e5dcd07dd901b090bce37cc6cf67b4c21acdfbb",
+              "task_id": null,
+              "updated_at": 1793664792
+            },
+            "new_action_blocked": true,
+            "replay": {
+              "action": "start",
+              "created_at": 1793664785,
+              "error": "Controller restarted during submission. The action may have reached Proxmox. Inspect Proxmox before releasing this safety hold; it will not be retried automatically.",
+              "guest": {
+                "kind": "virtual_machine",
+                "node": "hc-pve-658284a90e",
+                "vmid": 7101
+              },
+              "id": "00000000-0000-4000-8000-000000000004",
+              "phase": "acknowledged",
+              "requested_by": "6f31af83e1fa47452ef2bd331e5dcd07dd901b090bce37cc6cf67b4c21acdfbb",
+              "task_id": null,
+              "updated_at": 1793664792
+            },
+            "unknown": {
+              "action": "start",
+              "created_at": 1793664785,
+              "error": "Controller restarted during submission. The action may have reached Proxmox. Inspect Proxmox before releasing this safety hold; it will not be retried automatically.",
+              "guest": {
+                "kind": "virtual_machine",
+                "node": "hc-pve-658284a90e",
+                "vmid": 7101
+              },
+              "id": "00000000-0000-4000-8000-000000000004",
+              "phase": "unknown",
+              "requested_by": "6f31af83e1fa47452ef2bd331e5dcd07dd901b090bce37cc6cf67b4c21acdfbb",
+              "task_id": null,
+              "updated_at": 1793664792
+            }
+          },
+          "operations": [
+            {
+              "action": "start",
+              "created_at": 1793664785,
+              "error": "Controller restarted during submission. The action may have reached Proxmox. Inspect Proxmox before releasing this safety hold; it will not be retried automatically.",
+              "guest": {
+                "kind": "virtual_machine",
+                "node": "hc-pve-658284a90e",
+                "vmid": 7101
+              },
+              "id": "00000000-0000-4000-8000-000000000004",
+              "phase": "acknowledged",
+              "requested_by": "6f31af83e1fa47452ef2bd331e5dcd07dd901b090bce37cc6cf67b4c21acdfbb",
+              "task_id": null,
+              "updated_at": 1793664792
+            },
+            {
+              "action": "start",
+              "created_at": 1793664777,
+              "error": "Templates cannot be powered on or off",
+              "guest": {
+                "kind": "virtual_machine",
+                "node": "hc-pve-658284a90e",
+                "vmid": 7199
+              },
+              "id": "00000000-0000-4000-8000-000000000010",
+              "phase": "failed",
+              "requested_by": "6f31af83e1fa47452ef2bd331e5dcd07dd901b090bce37cc6cf67b4c21acdfbb",
+              "task_id": null,
+              "updated_at": 1793664777
+            },
+            {
+              "action": "force_stop",
+              "created_at": 1793664749,
+              "error": null,
+              "guest": {
+                "kind": "virtual_machine",
+                "node": "hc-pve-658284a90e",
+                "vmid": 7101
+              },
+              "id": "00000000-0000-4000-8000-000000000003",
+              "phase": "succeeded",
+              "requested_by": "6f31af83e1fa47452ef2bd331e5dcd07dd901b090bce37cc6cf67b4c21acdfbb",
+              "task_id": "UPID:hc-pve-658284a90e:000005B3:00002FBD:6AE926ED:qmstop:7101:hc-power@pve!power:",
+              "updated_at": 1793664751
+            },
+            {
+              "action": "shutdown",
+              "created_at": 1793664679,
+              "error": "Proxmox task failed. Inspect its task log before trying another action. Graceful shutdown never falls back to force-stop.",
+              "guest": {
+                "kind": "virtual_machine",
+                "node": "hc-pve-658284a90e",
+                "vmid": 7101
+              },
+              "id": "00000000-0000-4000-8000-000000000002",
+              "phase": "failed",
+              "requested_by": "6f31af83e1fa47452ef2bd331e5dcd07dd901b090bce37cc6cf67b4c21acdfbb",
+              "task_id": "UPID:hc-pve-658284a90e:000004F2:0000147B:6AE926A7:qmshutdown:7101:hc-power@pve!power:",
+              "updated_at": 1793664742
+            },
+            {
+              "action": "start",
+              "created_at": 1793664671,
+              "error": null,
+              "guest": {
+                "kind": "virtual_machine",
+                "node": "hc-pve-658284a90e",
+                "vmid": 7101
+              },
+              "id": "00000000-0000-4000-8000-000000000001",
+              "phase": "succeeded",
+              "requested_by": "6f31af83e1fa47452ef2bd331e5dcd07dd901b090bce37cc6cf67b4c21acdfbb",
+              "task_id": "UPID:hc-pve-658284a90e:000004BB:0000112F:6AE9269F:qmstart:7101:hc-power@pve!power:",
+              "updated_at": 1793664673
+            }
+          ]
+        }
+      },
+      "authorization": {
+        "ok": true,
+        "result": {
+          "authenticated_iroh": true,
+          "case": "authorization",
+          "legacy_vms_created": 0,
+          "observations": {
+            "container_denied": true,
+            "member_ack_denied": true,
+            "member_denied": true,
+            "member_list_denied": true,
+            "revoked_ack_denied": true,
+            "revoked_denied": true,
+            "revoked_list_denied": true,
+            "unknown_denied": true,
+            "unknown_list_denied": true
+          },
+          "operations": [
+            {
+              "action": "start",
+              "created_at": 1793664785,
+              "error": "Controller restarted during submission. The action may have reached Proxmox. Inspect Proxmox before releasing this safety hold; it will not be retried automatically.",
+              "guest": {
+                "kind": "virtual_machine",
+                "node": "hc-pve-658284a90e",
+                "vmid": 7101
+              },
+              "id": "00000000-0000-4000-8000-000000000004",
+              "phase": "acknowledged",
+              "requested_by": "6f31af83e1fa47452ef2bd331e5dcd07dd901b090bce37cc6cf67b4c21acdfbb",
+              "task_id": null,
+              "updated_at": 1793664792
+            },
+            {
+              "action": "start",
+              "created_at": 1793664777,
+              "error": "Templates cannot be powered on or off",
+              "guest": {
+                "kind": "virtual_machine",
+                "node": "hc-pve-658284a90e",
+                "vmid": 7199
+              },
+              "id": "00000000-0000-4000-8000-000000000010",
+              "phase": "failed",
+              "requested_by": "6f31af83e1fa47452ef2bd331e5dcd07dd901b090bce37cc6cf67b4c21acdfbb",
+              "task_id": null,
+              "updated_at": 1793664777
+            },
+            {
+              "action": "force_stop",
+              "created_at": 1793664749,
+              "error": null,
+              "guest": {
+                "kind": "virtual_machine",
+                "node": "hc-pve-658284a90e",
+                "vmid": 7101
+              },
+              "id": "00000000-0000-4000-8000-000000000003",
+              "phase": "succeeded",
+              "requested_by": "6f31af83e1fa47452ef2bd331e5dcd07dd901b090bce37cc6cf67b4c21acdfbb",
+              "task_id": "UPID:hc-pve-658284a90e:000005B3:00002FBD:6AE926ED:qmstop:7101:hc-power@pve!power:",
+              "updated_at": 1793664751
+            },
+            {
+              "action": "shutdown",
+              "created_at": 1793664679,
+              "error": "Proxmox task failed. Inspect its task log before trying another action. Graceful shutdown never falls back to force-stop.",
+              "guest": {
+                "kind": "virtual_machine",
+                "node": "hc-pve-658284a90e",
+                "vmid": 7101
+              },
+              "id": "00000000-0000-4000-8000-000000000002",
+              "phase": "failed",
+              "requested_by": "6f31af83e1fa47452ef2bd331e5dcd07dd901b090bce37cc6cf67b4c21acdfbb",
+              "task_id": "UPID:hc-pve-658284a90e:000004F2:0000147B:6AE926A7:qmshutdown:7101:hc-power@pve!power:",
+              "updated_at": 1793664742
+            },
+            {
+              "action": "start",
+              "created_at": 1793664671,
+              "error": null,
+              "guest": {
+                "kind": "virtual_machine",
+                "node": "hc-pve-658284a90e",
+                "vmid": 7101
+              },
+              "id": "00000000-0000-4000-8000-000000000001",
+              "phase": "succeeded",
+              "requested_by": "6f31af83e1fa47452ef2bd331e5dcd07dd901b090bce37cc6cf67b4c21acdfbb",
+              "task_id": "UPID:hc-pve-658284a90e:000004BB:0000112F:6AE9269F:qmstart:7101:hc-power@pve!power:",
+              "updated_at": 1793664673
+            }
+          ]
+        }
+      }
+    },
+    "native": {
+      "before": {
+        "qm_status": {
+          "7101": "stopped",
+          "7199": "stopped"
+        },
+        "power_tasks": [],
+        "task_status": {}
+      },
+      "start": {
+        "qm_status": {
+          "7101": "running",
+          "7199": "stopped"
+        },
+        "power_tasks": [
+          {
+            "endtime": 1793664671,
+            "id": "7101",
+            "node": "hc-pve-658284a90e",
+            "pid": 1211,
+            "pstart": 4399,
+            "starttime": 1793664671,
+            "status": "OK",
+            "tokenid": "power",
+            "type": "qmstart",
+            "upid": "UPID:hc-pve-658284a90e:000004BB:0000112F:6AE9269F:qmstart:7101:hc-power@pve!power:",
+            "user": "hc-power@pve"
+          }
+        ],
+        "task_status": {
+          "UPID:hc-pve-658284a90e:000004BB:0000112F:6AE9269F:qmstart:7101:hc-power@pve!power:": {
+            "exitstatus": "OK",
+            "id": "7101",
+            "node": "hc-pve-658284a90e",
+            "pid": 1211,
+            "pstart": 4399,
+            "starttime": 1793664671,
+            "status": "stopped",
+            "tokenid": "power",
+            "type": "qmstart",
+            "upid": "UPID:hc-pve-658284a90e:000004BB:0000112F:6AE9269F:qmstart:7101:hc-power@pve!power:",
+            "user": "hc-power@pve"
+          }
+        }
+      },
+      "shutdown": {
+        "qm_status": {
+          "7101": "running",
+          "7199": "stopped"
+        },
+        "power_tasks": [
+          {
+            "id": "7101",
+            "node": "hc-pve-658284a90e",
+            "pid": 1266,
+            "pstart": 5243,
+            "saved": "0",
+            "starttime": 1793664679,
+            "status": "RUNNING",
+            "type": "qmshutdown",
+            "upid": "UPID:hc-pve-658284a90e:000004F2:0000147B:6AE926A7:qmshutdown:7101:hc-power@pve!power:",
+            "user": "hc-power@pve!power"
+          },
+          {
+            "endtime": 1793664671,
+            "id": "7101",
+            "node": "hc-pve-658284a90e",
+            "pid": 1211,
+            "pstart": 4399,
+            "starttime": 1793664671,
+            "status": "OK",
+            "tokenid": "power",
+            "type": "qmstart",
+            "upid": "UPID:hc-pve-658284a90e:000004BB:0000112F:6AE9269F:qmstart:7101:hc-power@pve!power:",
+            "user": "hc-power@pve"
+          }
+        ],
+        "task_status": {
+          "UPID:hc-pve-658284a90e:000004F2:0000147B:6AE926A7:qmshutdown:7101:hc-power@pve!power:": {
+            "id": "7101",
+            "node": "hc-pve-658284a90e",
+            "pid": 1266,
+            "pstart": 5243,
+            "starttime": 1793664679,
+            "status": "running",
+            "tokenid": "power",
+            "type": "qmshutdown",
+            "upid": "UPID:hc-pve-658284a90e:000004F2:0000147B:6AE926A7:qmshutdown:7101:hc-power@pve!power:",
+            "user": "hc-power@pve"
+          },
+          "UPID:hc-pve-658284a90e:000004BB:0000112F:6AE9269F:qmstart:7101:hc-power@pve!power:": {
+            "exitstatus": "OK",
+            "id": "7101",
+            "node": "hc-pve-658284a90e",
+            "pid": 1211,
+            "pstart": 4399,
+            "starttime": 1793664671,
+            "status": "stopped",
+            "tokenid": "power",
+            "type": "qmstart",
+            "upid": "UPID:hc-pve-658284a90e:000004BB:0000112F:6AE9269F:qmstart:7101:hc-power@pve!power:",
+            "user": "hc-power@pve"
+          }
+        }
+      },
+      "resume": {
+        "qm_status": {
+          "7101": "running",
+          "7199": "stopped"
+        },
+        "power_tasks": [
+          {
+            "endtime": 1793664740,
+            "id": "7101",
+            "node": "hc-pve-658284a90e",
+            "pid": 1266,
+            "pstart": 5243,
+            "starttime": 1793664679,
+            "status": "VM quit/powerdown failed - got timeout",
+            "tokenid": "power",
+            "type": "qmshutdown",
+            "upid": "UPID:hc-pve-658284a90e:000004F2:0000147B:6AE926A7:qmshutdown:7101:hc-power@pve!power:",
+            "user": "hc-power@pve"
+          },
+          {
+            "endtime": 1793664671,
+            "id": "7101",
+            "node": "hc-pve-658284a90e",
+            "pid": 1211,
+            "pstart": 4399,
+            "starttime": 1793664671,
+            "status": "OK",
+            "tokenid": "power",
+            "type": "qmstart",
+            "upid": "UPID:hc-pve-658284a90e:000004BB:0000112F:6AE9269F:qmstart:7101:hc-power@pve!power:",
+            "user": "hc-power@pve"
+          }
+        ],
+        "task_status": {
+          "UPID:hc-pve-658284a90e:000004F2:0000147B:6AE926A7:qmshutdown:7101:hc-power@pve!power:": {
+            "exitstatus": "VM quit/powerdown failed - got timeout",
+            "id": "7101",
+            "node": "hc-pve-658284a90e",
+            "pid": 1266,
+            "pstart": 5243,
+            "starttime": 1793664679,
+            "status": "stopped",
+            "tokenid": "power",
+            "type": "qmshutdown",
+            "upid": "UPID:hc-pve-658284a90e:000004F2:0000147B:6AE926A7:qmshutdown:7101:hc-power@pve!power:",
+            "user": "hc-power@pve"
+          },
+          "UPID:hc-pve-658284a90e:000004BB:0000112F:6AE9269F:qmstart:7101:hc-power@pve!power:": {
+            "exitstatus": "OK",
+            "id": "7101",
+            "node": "hc-pve-658284a90e",
+            "pid": 1211,
+            "pstart": 4399,
+            "starttime": 1793664671,
+            "status": "stopped",
+            "tokenid": "power",
+            "type": "qmstart",
+            "upid": "UPID:hc-pve-658284a90e:000004BB:0000112F:6AE9269F:qmstart:7101:hc-power@pve!power:",
+            "user": "hc-power@pve"
+          }
+        }
+      },
+      "force-stop": {
+        "qm_status": {
+          "7101": "stopped",
+          "7199": "stopped"
+        },
+        "power_tasks": [
+          {
+            "endtime": 1793664749,
+            "id": "7101",
+            "node": "hc-pve-658284a90e",
+            "pid": 1459,
+            "pstart": 12221,
+            "starttime": 1793664749,
+            "status": "OK",
+            "tokenid": "power",
+            "type": "qmstop",
+            "upid": "UPID:hc-pve-658284a90e:000005B3:00002FBD:6AE926ED:qmstop:7101:hc-power@pve!power:",
+            "user": "hc-power@pve"
+          },
+          {
+            "endtime": 1793664740,
+            "id": "7101",
+            "node": "hc-pve-658284a90e",
+            "pid": 1266,
+            "pstart": 5243,
+            "starttime": 1793664679,
+            "status": "VM quit/powerdown failed - got timeout",
+            "tokenid": "power",
+            "type": "qmshutdown",
+            "upid": "UPID:hc-pve-658284a90e:000004F2:0000147B:6AE926A7:qmshutdown:7101:hc-power@pve!power:",
+            "user": "hc-power@pve"
+          },
+          {
+            "endtime": 1793664671,
+            "id": "7101",
+            "node": "hc-pve-658284a90e",
+            "pid": 1211,
+            "pstart": 4399,
+            "starttime": 1793664671,
+            "status": "OK",
+            "tokenid": "power",
+            "type": "qmstart",
+            "upid": "UPID:hc-pve-658284a90e:000004BB:0000112F:6AE9269F:qmstart:7101:hc-power@pve!power:",
+            "user": "hc-power@pve"
+          }
+        ],
+        "task_status": {
+          "UPID:hc-pve-658284a90e:000005B3:00002FBD:6AE926ED:qmstop:7101:hc-power@pve!power:": {
+            "exitstatus": "OK",
+            "id": "7101",
+            "node": "hc-pve-658284a90e",
+            "pid": 1459,
+            "pstart": 12221,
+            "starttime": 1793664749,
+            "status": "stopped",
+            "tokenid": "power",
+            "type": "qmstop",
+            "upid": "UPID:hc-pve-658284a90e:000005B3:00002FBD:6AE926ED:qmstop:7101:hc-power@pve!power:",
+            "user": "hc-power@pve"
+          },
+          "UPID:hc-pve-658284a90e:000004F2:0000147B:6AE926A7:qmshutdown:7101:hc-power@pve!power:": {
+            "exitstatus": "VM quit/powerdown failed - got timeout",
+            "id": "7101",
+            "node": "hc-pve-658284a90e",
+            "pid": 1266,
+            "pstart": 5243,
+            "starttime": 1793664679,
+            "status": "stopped",
+            "tokenid": "power",
+            "type": "qmshutdown",
+            "upid": "UPID:hc-pve-658284a90e:000004F2:0000147B:6AE926A7:qmshutdown:7101:hc-power@pve!power:",
+            "user": "hc-power@pve"
+          },
+          "UPID:hc-pve-658284a90e:000004BB:0000112F:6AE9269F:qmstart:7101:hc-power@pve!power:": {
+            "exitstatus": "OK",
+            "id": "7101",
+            "node": "hc-pve-658284a90e",
+            "pid": 1211,
+            "pstart": 4399,
+            "starttime": 1793664671,
+            "status": "stopped",
+            "tokenid": "power",
+            "type": "qmstart",
+            "upid": "UPID:hc-pve-658284a90e:000004BB:0000112F:6AE9269F:qmstart:7101:hc-power@pve!power:",
+            "user": "hc-power@pve"
+          }
+        }
+      },
+      "reader": {
+        "qm_status": {
+          "7101": "stopped",
+          "7199": "stopped"
+        },
+        "power_tasks": [
+          {
+            "endtime": 1793664749,
+            "id": "7101",
+            "node": "hc-pve-658284a90e",
+            "pid": 1459,
+            "pstart": 12221,
+            "starttime": 1793664749,
+            "status": "OK",
+            "tokenid": "power",
+            "type": "qmstop",
+            "upid": "UPID:hc-pve-658284a90e:000005B3:00002FBD:6AE926ED:qmstop:7101:hc-power@pve!power:",
+            "user": "hc-power@pve"
+          },
+          {
+            "endtime": 1793664740,
+            "id": "7101",
+            "node": "hc-pve-658284a90e",
+            "pid": 1266,
+            "pstart": 5243,
+            "starttime": 1793664679,
+            "status": "VM quit/powerdown failed - got timeout",
+            "tokenid": "power",
+            "type": "qmshutdown",
+            "upid": "UPID:hc-pve-658284a90e:000004F2:0000147B:6AE926A7:qmshutdown:7101:hc-power@pve!power:",
+            "user": "hc-power@pve"
+          },
+          {
+            "endtime": 1793664671,
+            "id": "7101",
+            "node": "hc-pve-658284a90e",
+            "pid": 1211,
+            "pstart": 4399,
+            "starttime": 1793664671,
+            "status": "OK",
+            "tokenid": "power",
+            "type": "qmstart",
+            "upid": "UPID:hc-pve-658284a90e:000004BB:0000112F:6AE9269F:qmstart:7101:hc-power@pve!power:",
+            "user": "hc-power@pve"
+          }
+        ],
+        "task_status": {
+          "UPID:hc-pve-658284a90e:000005B3:00002FBD:6AE926ED:qmstop:7101:hc-power@pve!power:": {
+            "exitstatus": "OK",
+            "id": "7101",
+            "node": "hc-pve-658284a90e",
+            "pid": 1459,
+            "pstart": 12221,
+            "starttime": 1793664749,
+            "status": "stopped",
+            "tokenid": "power",
+            "type": "qmstop",
+            "upid": "UPID:hc-pve-658284a90e:000005B3:00002FBD:6AE926ED:qmstop:7101:hc-power@pve!power:",
+            "user": "hc-power@pve"
+          },
+          "UPID:hc-pve-658284a90e:000004F2:0000147B:6AE926A7:qmshutdown:7101:hc-power@pve!power:": {
+            "exitstatus": "VM quit/powerdown failed - got timeout",
+            "id": "7101",
+            "node": "hc-pve-658284a90e",
+            "pid": 1266,
+            "pstart": 5243,
+            "starttime": 1793664679,
+            "status": "stopped",
+            "tokenid": "power",
+            "type": "qmshutdown",
+            "upid": "UPID:hc-pve-658284a90e:000004F2:0000147B:6AE926A7:qmshutdown:7101:hc-power@pve!power:",
+            "user": "hc-power@pve"
+          },
+          "UPID:hc-pve-658284a90e:000004BB:0000112F:6AE9269F:qmstart:7101:hc-power@pve!power:": {
+            "exitstatus": "OK",
+            "id": "7101",
+            "node": "hc-pve-658284a90e",
+            "pid": 1211,
+            "pstart": 4399,
+            "starttime": 1793664671,
+            "status": "stopped",
+            "tokenid": "power",
+            "type": "qmstart",
+            "upid": "UPID:hc-pve-658284a90e:000004BB:0000112F:6AE9269F:qmstart:7101:hc-power@pve!power:",
+            "user": "hc-power@pve"
+          }
+        }
+      },
+      "invalid": {
+        "qm_status": {
+          "7101": "stopped",
+          "7199": "stopped"
+        },
+        "power_tasks": [
+          {
+            "endtime": 1793664749,
+            "id": "7101",
+            "node": "hc-pve-658284a90e",
+            "pid": 1459,
+            "pstart": 12221,
+            "starttime": 1793664749,
+            "status": "OK",
+            "tokenid": "power",
+            "type": "qmstop",
+            "upid": "UPID:hc-pve-658284a90e:000005B3:00002FBD:6AE926ED:qmstop:7101:hc-power@pve!power:",
+            "user": "hc-power@pve"
+          },
+          {
+            "endtime": 1793664740,
+            "id": "7101",
+            "node": "hc-pve-658284a90e",
+            "pid": 1266,
+            "pstart": 5243,
+            "starttime": 1793664679,
+            "status": "VM quit/powerdown failed - got timeout",
+            "tokenid": "power",
+            "type": "qmshutdown",
+            "upid": "UPID:hc-pve-658284a90e:000004F2:0000147B:6AE926A7:qmshutdown:7101:hc-power@pve!power:",
+            "user": "hc-power@pve"
+          },
+          {
+            "endtime": 1793664671,
+            "id": "7101",
+            "node": "hc-pve-658284a90e",
+            "pid": 1211,
+            "pstart": 4399,
+            "starttime": 1793664671,
+            "status": "OK",
+            "tokenid": "power",
+            "type": "qmstart",
+            "upid": "UPID:hc-pve-658284a90e:000004BB:0000112F:6AE9269F:qmstart:7101:hc-power@pve!power:",
+            "user": "hc-power@pve"
+          }
+        ],
+        "task_status": {
+          "UPID:hc-pve-658284a90e:000005B3:00002FBD:6AE926ED:qmstop:7101:hc-power@pve!power:": {
+            "exitstatus": "OK",
+            "id": "7101",
+            "node": "hc-pve-658284a90e",
+            "pid": 1459,
+            "pstart": 12221,
+            "starttime": 1793664749,
+            "status": "stopped",
+            "tokenid": "power",
+            "type": "qmstop",
+            "upid": "UPID:hc-pve-658284a90e:000005B3:00002FBD:6AE926ED:qmstop:7101:hc-power@pve!power:",
+            "user": "hc-power@pve"
+          },
+          "UPID:hc-pve-658284a90e:000004F2:0000147B:6AE926A7:qmshutdown:7101:hc-power@pve!power:": {
+            "exitstatus": "VM quit/powerdown failed - got timeout",
+            "id": "7101",
+            "node": "hc-pve-658284a90e",
+            "pid": 1266,
+            "pstart": 5243,
+            "starttime": 1793664679,
+            "status": "stopped",
+            "tokenid": "power",
+            "type": "qmshutdown",
+            "upid": "UPID:hc-pve-658284a90e:000004F2:0000147B:6AE926A7:qmshutdown:7101:hc-power@pve!power:",
+            "user": "hc-power@pve"
+          },
+          "UPID:hc-pve-658284a90e:000004BB:0000112F:6AE9269F:qmstart:7101:hc-power@pve!power:": {
+            "exitstatus": "OK",
+            "id": "7101",
+            "node": "hc-pve-658284a90e",
+            "pid": 1211,
+            "pstart": 4399,
+            "starttime": 1793664671,
+            "status": "stopped",
+            "tokenid": "power",
+            "type": "qmstart",
+            "upid": "UPID:hc-pve-658284a90e:000004BB:0000112F:6AE9269F:qmstart:7101:hc-power@pve!power:",
+            "user": "hc-power@pve"
+          }
+        }
+      },
+      "template": {
+        "qm_status": {
+          "7101": "stopped",
+          "7199": "stopped"
+        },
+        "power_tasks": [
+          {
+            "endtime": 1793664749,
+            "id": "7101",
+            "node": "hc-pve-658284a90e",
+            "pid": 1459,
+            "pstart": 12221,
+            "starttime": 1793664749,
+            "status": "OK",
+            "tokenid": "power",
+            "type": "qmstop",
+            "upid": "UPID:hc-pve-658284a90e:000005B3:00002FBD:6AE926ED:qmstop:7101:hc-power@pve!power:",
+            "user": "hc-power@pve"
+          },
+          {
+            "endtime": 1793664740,
+            "id": "7101",
+            "node": "hc-pve-658284a90e",
+            "pid": 1266,
+            "pstart": 5243,
+            "starttime": 1793664679,
+            "status": "VM quit/powerdown failed - got timeout",
+            "tokenid": "power",
+            "type": "qmshutdown",
+            "upid": "UPID:hc-pve-658284a90e:000004F2:0000147B:6AE926A7:qmshutdown:7101:hc-power@pve!power:",
+            "user": "hc-power@pve"
+          },
+          {
+            "endtime": 1793664671,
+            "id": "7101",
+            "node": "hc-pve-658284a90e",
+            "pid": 1211,
+            "pstart": 4399,
+            "starttime": 1793664671,
+            "status": "OK",
+            "tokenid": "power",
+            "type": "qmstart",
+            "upid": "UPID:hc-pve-658284a90e:000004BB:0000112F:6AE9269F:qmstart:7101:hc-power@pve!power:",
+            "user": "hc-power@pve"
+          }
+        ],
+        "task_status": {
+          "UPID:hc-pve-658284a90e:000005B3:00002FBD:6AE926ED:qmstop:7101:hc-power@pve!power:": {
+            "exitstatus": "OK",
+            "id": "7101",
+            "node": "hc-pve-658284a90e",
+            "pid": 1459,
+            "pstart": 12221,
+            "starttime": 1793664749,
+            "status": "stopped",
+            "tokenid": "power",
+            "type": "qmstop",
+            "upid": "UPID:hc-pve-658284a90e:000005B3:00002FBD:6AE926ED:qmstop:7101:hc-power@pve!power:",
+            "user": "hc-power@pve"
+          },
+          "UPID:hc-pve-658284a90e:000004F2:0000147B:6AE926A7:qmshutdown:7101:hc-power@pve!power:": {
+            "exitstatus": "VM quit/powerdown failed - got timeout",
+            "id": "7101",
+            "node": "hc-pve-658284a90e",
+            "pid": 1266,
+            "pstart": 5243,
+            "starttime": 1793664679,
+            "status": "stopped",
+            "tokenid": "power",
+            "type": "qmshutdown",
+            "upid": "UPID:hc-pve-658284a90e:000004F2:0000147B:6AE926A7:qmshutdown:7101:hc-power@pve!power:",
+            "user": "hc-power@pve"
+          },
+          "UPID:hc-pve-658284a90e:000004BB:0000112F:6AE9269F:qmstart:7101:hc-power@pve!power:": {
+            "exitstatus": "OK",
+            "id": "7101",
+            "node": "hc-pve-658284a90e",
+            "pid": 1211,
+            "pstart": 4399,
+            "starttime": 1793664671,
+            "status": "stopped",
+            "tokenid": "power",
+            "type": "qmstart",
+            "upid": "UPID:hc-pve-658284a90e:000004BB:0000112F:6AE9269F:qmstart:7101:hc-power@pve!power:",
+            "user": "hc-power@pve"
+          }
+        }
+      },
+      "seed-hold": {
+        "qm_status": {
+          "7101": "stopped",
+          "7199": "stopped"
+        },
+        "power_tasks": [
+          {
+            "endtime": 1793664749,
+            "id": "7101",
+            "node": "hc-pve-658284a90e",
+            "pid": 1459,
+            "pstart": 12221,
+            "starttime": 1793664749,
+            "status": "OK",
+            "tokenid": "power",
+            "type": "qmstop",
+            "upid": "UPID:hc-pve-658284a90e:000005B3:00002FBD:6AE926ED:qmstop:7101:hc-power@pve!power:",
+            "user": "hc-power@pve"
+          },
+          {
+            "endtime": 1793664740,
+            "id": "7101",
+            "node": "hc-pve-658284a90e",
+            "pid": 1266,
+            "pstart": 5243,
+            "starttime": 1793664679,
+            "status": "VM quit/powerdown failed - got timeout",
+            "tokenid": "power",
+            "type": "qmshutdown",
+            "upid": "UPID:hc-pve-658284a90e:000004F2:0000147B:6AE926A7:qmshutdown:7101:hc-power@pve!power:",
+            "user": "hc-power@pve"
+          },
+          {
+            "endtime": 1793664671,
+            "id": "7101",
+            "node": "hc-pve-658284a90e",
+            "pid": 1211,
+            "pstart": 4399,
+            "starttime": 1793664671,
+            "status": "OK",
+            "tokenid": "power",
+            "type": "qmstart",
+            "upid": "UPID:hc-pve-658284a90e:000004BB:0000112F:6AE9269F:qmstart:7101:hc-power@pve!power:",
+            "user": "hc-power@pve"
+          }
+        ],
+        "task_status": {
+          "UPID:hc-pve-658284a90e:000005B3:00002FBD:6AE926ED:qmstop:7101:hc-power@pve!power:": {
+            "exitstatus": "OK",
+            "id": "7101",
+            "node": "hc-pve-658284a90e",
+            "pid": 1459,
+            "pstart": 12221,
+            "starttime": 1793664749,
+            "status": "stopped",
+            "tokenid": "power",
+            "type": "qmstop",
+            "upid": "UPID:hc-pve-658284a90e:000005B3:00002FBD:6AE926ED:qmstop:7101:hc-power@pve!power:",
+            "user": "hc-power@pve"
+          },
+          "UPID:hc-pve-658284a90e:000004F2:0000147B:6AE926A7:qmshutdown:7101:hc-power@pve!power:": {
+            "exitstatus": "VM quit/powerdown failed - got timeout",
+            "id": "7101",
+            "node": "hc-pve-658284a90e",
+            "pid": 1266,
+            "pstart": 5243,
+            "starttime": 1793664679,
+            "status": "stopped",
+            "tokenid": "power",
+            "type": "qmshutdown",
+            "upid": "UPID:hc-pve-658284a90e:000004F2:0000147B:6AE926A7:qmshutdown:7101:hc-power@pve!power:",
+            "user": "hc-power@pve"
+          },
+          "UPID:hc-pve-658284a90e:000004BB:0000112F:6AE9269F:qmstart:7101:hc-power@pve!power:": {
+            "exitstatus": "OK",
+            "id": "7101",
+            "node": "hc-pve-658284a90e",
+            "pid": 1211,
+            "pstart": 4399,
+            "starttime": 1793664671,
+            "status": "stopped",
+            "tokenid": "power",
+            "type": "qmstart",
+            "upid": "UPID:hc-pve-658284a90e:000004BB:0000112F:6AE9269F:qmstart:7101:hc-power@pve!power:",
+            "user": "hc-power@pve"
+          }
+        }
+      },
+      "hold": {
+        "qm_status": {
+          "7101": "stopped",
+          "7199": "stopped"
+        },
+        "power_tasks": [
+          {
+            "endtime": 1793664749,
+            "id": "7101",
+            "node": "hc-pve-658284a90e",
+            "pid": 1459,
+            "pstart": 12221,
+            "starttime": 1793664749,
+            "status": "OK",
+            "tokenid": "power",
+            "type": "qmstop",
+            "upid": "UPID:hc-pve-658284a90e:000005B3:00002FBD:6AE926ED:qmstop:7101:hc-power@pve!power:",
+            "user": "hc-power@pve"
+          },
+          {
+            "endtime": 1793664740,
+            "id": "7101",
+            "node": "hc-pve-658284a90e",
+            "pid": 1266,
+            "pstart": 5243,
+            "starttime": 1793664679,
+            "status": "VM quit/powerdown failed - got timeout",
+            "tokenid": "power",
+            "type": "qmshutdown",
+            "upid": "UPID:hc-pve-658284a90e:000004F2:0000147B:6AE926A7:qmshutdown:7101:hc-power@pve!power:",
+            "user": "hc-power@pve"
+          },
+          {
+            "endtime": 1793664671,
+            "id": "7101",
+            "node": "hc-pve-658284a90e",
+            "pid": 1211,
+            "pstart": 4399,
+            "starttime": 1793664671,
+            "status": "OK",
+            "tokenid": "power",
+            "type": "qmstart",
+            "upid": "UPID:hc-pve-658284a90e:000004BB:0000112F:6AE9269F:qmstart:7101:hc-power@pve!power:",
+            "user": "hc-power@pve"
+          }
+        ],
+        "task_status": {
+          "UPID:hc-pve-658284a90e:000005B3:00002FBD:6AE926ED:qmstop:7101:hc-power@pve!power:": {
+            "exitstatus": "OK",
+            "id": "7101",
+            "node": "hc-pve-658284a90e",
+            "pid": 1459,
+            "pstart": 12221,
+            "starttime": 1793664749,
+            "status": "stopped",
+            "tokenid": "power",
+            "type": "qmstop",
+            "upid": "UPID:hc-pve-658284a90e:000005B3:00002FBD:6AE926ED:qmstop:7101:hc-power@pve!power:",
+            "user": "hc-power@pve"
+          },
+          "UPID:hc-pve-658284a90e:000004F2:0000147B:6AE926A7:qmshutdown:7101:hc-power@pve!power:": {
+            "exitstatus": "VM quit/powerdown failed - got timeout",
+            "id": "7101",
+            "node": "hc-pve-658284a90e",
+            "pid": 1266,
+            "pstart": 5243,
+            "starttime": 1793664679,
+            "status": "stopped",
+            "tokenid": "power",
+            "type": "qmshutdown",
+            "upid": "UPID:hc-pve-658284a90e:000004F2:0000147B:6AE926A7:qmshutdown:7101:hc-power@pve!power:",
+            "user": "hc-power@pve"
+          },
+          "UPID:hc-pve-658284a90e:000004BB:0000112F:6AE9269F:qmstart:7101:hc-power@pve!power:": {
+            "exitstatus": "OK",
+            "id": "7101",
+            "node": "hc-pve-658284a90e",
+            "pid": 1211,
+            "pstart": 4399,
+            "starttime": 1793664671,
+            "status": "stopped",
+            "tokenid": "power",
+            "type": "qmstart",
+            "upid": "UPID:hc-pve-658284a90e:000004BB:0000112F:6AE9269F:qmstart:7101:hc-power@pve!power:",
+            "user": "hc-power@pve"
+          }
+        }
+      },
+      "authorization": {
+        "qm_status": {
+          "7101": "stopped",
+          "7199": "stopped"
+        },
+        "power_tasks": [
+          {
+            "endtime": 1793664749,
+            "id": "7101",
+            "node": "hc-pve-658284a90e",
+            "pid": 1459,
+            "pstart": 12221,
+            "starttime": 1793664749,
+            "status": "OK",
+            "tokenid": "power",
+            "type": "qmstop",
+            "upid": "UPID:hc-pve-658284a90e:000005B3:00002FBD:6AE926ED:qmstop:7101:hc-power@pve!power:",
+            "user": "hc-power@pve"
+          },
+          {
+            "endtime": 1793664740,
+            "id": "7101",
+            "node": "hc-pve-658284a90e",
+            "pid": 1266,
+            "pstart": 5243,
+            "starttime": 1793664679,
+            "status": "VM quit/powerdown failed - got timeout",
+            "tokenid": "power",
+            "type": "qmshutdown",
+            "upid": "UPID:hc-pve-658284a90e:000004F2:0000147B:6AE926A7:qmshutdown:7101:hc-power@pve!power:",
+            "user": "hc-power@pve"
+          },
+          {
+            "endtime": 1793664671,
+            "id": "7101",
+            "node": "hc-pve-658284a90e",
+            "pid": 1211,
+            "pstart": 4399,
+            "starttime": 1793664671,
+            "status": "OK",
+            "tokenid": "power",
+            "type": "qmstart",
+            "upid": "UPID:hc-pve-658284a90e:000004BB:0000112F:6AE9269F:qmstart:7101:hc-power@pve!power:",
+            "user": "hc-power@pve"
+          }
+        ],
+        "task_status": {
+          "UPID:hc-pve-658284a90e:000005B3:00002FBD:6AE926ED:qmstop:7101:hc-power@pve!power:": {
+            "exitstatus": "OK",
+            "id": "7101",
+            "node": "hc-pve-658284a90e",
+            "pid": 1459,
+            "pstart": 12221,
+            "starttime": 1793664749,
+            "status": "stopped",
+            "tokenid": "power",
+            "type": "qmstop",
+            "upid": "UPID:hc-pve-658284a90e:000005B3:00002FBD:6AE926ED:qmstop:7101:hc-power@pve!power:",
+            "user": "hc-power@pve"
+          },
+          "UPID:hc-pve-658284a90e:000004F2:0000147B:6AE926A7:qmshutdown:7101:hc-power@pve!power:": {
+            "exitstatus": "VM quit/powerdown failed - got timeout",
+            "id": "7101",
+            "node": "hc-pve-658284a90e",
+            "pid": 1266,
+            "pstart": 5243,
+            "starttime": 1793664679,
+            "status": "stopped",
+            "tokenid": "power",
+            "type": "qmshutdown",
+            "upid": "UPID:hc-pve-658284a90e:000004F2:0000147B:6AE926A7:qmshutdown:7101:hc-power@pve!power:",
+            "user": "hc-power@pve"
+          },
+          "UPID:hc-pve-658284a90e:000004BB:0000112F:6AE9269F:qmstart:7101:hc-power@pve!power:": {
+            "exitstatus": "OK",
+            "id": "7101",
+            "node": "hc-pve-658284a90e",
+            "pid": 1211,
+            "pstart": 4399,
+            "starttime": 1793664671,
+            "status": "stopped",
+            "tokenid": "power",
+            "type": "qmstart",
+            "upid": "UPID:hc-pve-658284a90e:000004BB:0000112F:6AE9269F:qmstart:7101:hc-power@pve!power:",
+            "user": "hc-power@pve"
+          }
+        }
+      }
+    },
+    "failure": null,
+    "probe_uid": 1000,
+    "token_values_redacted": true,
+    "probe_sha256": "cdd2b7663d45cf8c688cb6e703732b1a25b70a6de082a70775273e4849b387b2",
+    "pve_version": "pve-manager/9.2.25/88a31f5fd94aab6d (running kernel: 7.0.14-26-pve)",
+    "kernel": "7.0.14-26-pve",
+    "probe_unit_load_state": "not-found"
+  },
+  "failure": null,
+  "cleanup": {
+    "cleaned": true,
+    "controller_active": "active",
+    "lab_resources_absent": true,
+    "forced_worker_stop": false,
+    "original_cpu_policy_restored": true,
+    "physical_pool_health": "ONLINE",
+    "unexpected_fields": [],
+    "baseline_exactly_restored": true,
+    "baseline_configuration_restored": true,
+    "unrelated_image_cache_churn": null,
+    "original_workloads_unchanged": true,
+    "build_directory_absent": true,
+    "host_manifest_absent": true,
+    "transient_units_absent": true,
+    "unit_load_states": {
+      "homecloud-658284a90ef649828290b9389375076e": "not-found",
+      "homecloud-cockpit-build-658284a90ef649828290b9389375076e": "not-found"
+    },
+    "power_probe_unit_absent": true,
+    "load_state": "not-found",
+    "independent_recheck": {
+      "verified_at_unix": 1793665105.504749,
+      "unexpected_fields": [],
+      "baseline_exactly_restored": true,
+      "baseline_configuration_restored": true,
+      "unrelated_image_cache_churn": null,
+      "original_workloads_unchanged": true,
+      "build_directory_absent": true,
+      "host_manifest_absent": true,
+      "transient_units_absent": true,
+      "unit_load_states": {
+        "homecloud-658284a90ef649828290b9389375076e": "not-found",
+        "homecloud-cockpit-build-658284a90ef649828290b9389375076e": "not-found"
+      },
+      "power_probe_unit_absent": true,
+      "load_state": "not-found"
+    }
+  },
+  "baseline_field_equality": {
+    "os": true,
+    "controller": true,
+    "cpu_policy_sha256": true,
+    "cpu_policy_mode": true,
+    "physical_package_database_sha256": true,
+    "physical_ca_bundle_sha256": true,
+    "root_rustup_exists": true,
+    "openssl_runtime": true,
+    "instances": true,
+    "storage_names": true,
+    "network_names": true,
+    "datasets": true,
+    "pool_health": true,
+    "parent_pool_properties": true
+  },
+  "original_vm_power_states": {
+    "hc-400009d69c984224a929beb7a4bb4067": "Stopped",
+    "hc-e8acf92ed8294f44b844cc12d10c6344": "Running",
+    "hc-fdf95f349a1149ce8cf47e927ce34c8b": "Running"
+  },
+  "sensitive_baseline_omitted": true,
+  "previous_runs": [
+    {
+      "run_id": "818e229cf0244f30befd8ff2a87f620d",
+      "assessment": {
+        "passed": false,
+        "failures": [
+          "Traceback (most recent call last):\n  File \"<string>\", line 152, in <module>\n    main()\n    ~~~~^^\n  File \"<string>\", line 138, in main\n    result = validate(state, directory)\n  File \"<string>\", line 120, in validate\n    'probe_sha256': hashlib.sha256(binary.read_bytes()).hexdigest(),\n                                   ~~~~~~~~~~~~~~~~~^^\n  File \"/usr/lib/python3.14/pathlib/__init__.py\", line 778, in read_bytes\n    with self.open(mode='rb', buffering=0) as f:\n         ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/lib/python3.14/pathlib/__init__.py\", line 772, in open\n    return io.open(self, mode, buffering, encoding, errors, newline)\n           ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nFileNotFoundError: [Errno 2] No such file or directory: '/tmp/homecloud-cockpit-818e229cf0244f30befd8ff2a87f620d/target/debug/homecloud-cockpit-live-probe'\n"
+        ]
+      },
+      "failure": "Traceback (most recent call last):\n  File \"<string>\", line 152, in <module>\n    main()\n    ~~~~^^\n  File \"<string>\", line 138, in main\n    result = validate(state, directory)\n  File \"<string>\", line 120, in validate\n    'probe_sha256': hashlib.sha256(binary.read_bytes()).hexdigest(),\n                                   ~~~~~~~~~~~~~~~~~^^\n  File \"/usr/lib/python3.14/pathlib/__init__.py\", line 778, in read_bytes\n    with self.open(mode='rb', buffering=0) as f:\n         ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/lib/python3.14/pathlib/__init__.py\", line 772, in open\n    return io.open(self, mode, buffering, encoding, errors, newline)\n           ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nFileNotFoundError: [Errno 2] No such file or directory: '/tmp/homecloud-cockpit-818e229cf0244f30befd8ff2a87f620d/target/debug/homecloud-cockpit-live-probe'\n",
+      "cleanup": {
+        "cleaned": true,
+        "controller_active": "active",
+        "lab_resources_absent": true,
+        "forced_worker_stop": false,
+        "original_cpu_policy_restored": true,
+        "physical_pool_health": "ONLINE",
+        "unexpected_fields": [],
+        "baseline_exactly_restored": true,
+        "baseline_configuration_restored": true,
+        "unrelated_image_cache_churn": null,
+        "original_workloads_unchanged": true,
+        "build_directory_absent": true,
+        "host_manifest_absent": true,
+        "transient_units_absent": true,
+        "unit_load_states": {
+          "homecloud-818e229cf0244f30befd8ff2a87f620d": "not-found",
+          "homecloud-cockpit-build-818e229cf0244f30befd8ff2a87f620d": "not-found"
+        },
+        "power_probe_unit_absent": true,
+        "load_state": "not-found"
+      },
+      "baseline_field_equality": {
+        "os": true,
+        "controller": true,
+        "cpu_policy_sha256": true,
+        "cpu_policy_mode": true,
+        "physical_package_database_sha256": true,
+        "physical_ca_bundle_sha256": true,
+        "root_rustup_exists": true,
+        "openssl_runtime": true,
+        "instances": true,
+        "storage_names": true,
+        "network_names": true,
+        "datasets": true,
+        "pool_health": true,
+        "parent_pool_properties": true
+      },
+      "source_sha256": {
+        "Cargo.toml": "453fe239ebe9bb33ce9295b43b4e1d1908fece1778b1cd27cad56610095bc57b",
+        "Cargo.lock": "597756fc265c726e3f56e0038a65a02b73c2717b9a3b39c288cc399c81585d99",
+        "crates/cli/Cargo.toml": "5fdcd997544cdf6a634987f579674653f0b471281fab51126942c29f0a485d37",
+        "crates/client/Cargo.toml": "8c3659a638b79d53683c6931c5894fcd4c00447ad30df4b4209287989bfabd89",
+        "crates/core/Cargo.toml": "b55f8f071dff06a43fcd6ffac1bb3de11c9333f2fc98ccd9968404b61b7e0fc3",
+        "crates/daemon/Cargo.toml": "45fb2bf5f430bc3a68207ab4fa7e191ba2030b0563ecc4f7f7a622da703981bd",
+        "crates/desktop/Cargo.toml": "87bcff4d8de6f4bc19c064b261027a7240fc56d578f43fabad58c7e5949d834c",
+        "crates/host/Cargo.toml": "cacb61a3643c58a4d08c1827408b5ecdbd9fedfc9dfb3d4a504c38d11144e87d",
+        "crates/store/Cargo.toml": "7bd5dbc847055a60408b6f12dd137086d23b7fff34ca3bd75b52003fadffde5b",
+        "crates/virtualization/Cargo.toml": "1259400f1be2b71313db54f3ad36884f3e89944c2d3897169fef88bc327d2a8e",
+        "crates/cli/src/main.rs": "c8e953c8165d2ff0e3e1398580dffb8f0379f2f8735d765c4c877c7633bbb66c",
+        "crates/client/src/lib.rs": "57adc9e57a9e623f911fb366262d7912387a5a5dbfb09301cf37a01595f276ce",
+        "crates/client/src/profile.rs": "4baf7b6a0099c9b0ef322dc1fbc83783ab14fffa5ba2e5e81517c9b77f35c2d6",
+        "crates/core/src/apps.rs": "9acea3237adf71534cba889ab5934be2268e957d87cb19dc7ab6a69d3d5bed31",
+        "crates/core/src/edit.rs": "7206379b7a938c8b7c81ca33785ed140173fb4b72641ac0f1cc038fefc62cf1c",
+        "crates/core/src/lib.rs": "ac523c7d9a228ecb6c198389b58aff63dc8a076c6a3bad4669e175833f3c49a5",
+        "crates/core/src/memory_health.rs": "991cc0a0ea500f5ab62ce4b06c91b523c2d30dfa73c6d824292d8eaca8b9c69f",
+        "crates/core/src/reserves.rs": "28a846d9aa2f93c5f31530ce1e2d789ae20b15a31a467648ea54680dd211645f",
+        "crates/core/src/setup.rs": "4c90cf3b3ca14c4abba666757e90bdb1bea17e7bd37bd6f414b51bbe2c1cdd6b",
+        "crates/core/src/shutdown.rs": "3a252d346b1cddbf3ec11ea4e5d6631a8477e754483e1af4372c2d9a7383a7ca",
+        "crates/core/src/storage.rs": "2dfd0b2c8a266f8cb6b7b58f549af2caa468a09ca24c6d93f17b00b1db196dd7",
+        "crates/core/src/virtualization.rs": "93d2fcd7f44be7ef461d59c7a5e5a1a6e48215842b074ecec6a5d45224903b6c",
+        "crates/core/src/vm.rs": "cabf497feaeca304e188ce924d674ab2d8125bdad16c8db33f754bbfb8a67ba4",
+        "crates/daemon/src/action_tests.rs": "35781ee579a7cbad93ff217e9d6e9d1b5bc9f1ca7a1b17b7732dd050fa765359",
+        "crates/daemon/src/apps.rs": "2f458e9dbfa3818b1a43d63fc9008f6df36b8c1773da6f713efc8c09e50767e3",
+        "crates/daemon/src/lib.rs": "2409c672e066cfdb6c6f9811f2df830e78109cd04ee72ab3a83c8ab83bb34a31",
+        "crates/daemon/src/main.rs": "611d2f532728b3375b842bc66a47cc3bc305182deb6e0875ba7ec6f431b35a17",
+        "crates/daemon/src/memory_tests.rs": "79f4859212b0902c99e279fba6181b6970c1ce6ac475e11079125721fa167988",
+        "crates/daemon/src/reserve_tests.rs": "861b180615e90bd5567b996c4d2fb92749372a9c096cb7add95cc59c9e351dc6",
+        "crates/daemon/src/reserves.rs": "1daf74696f20254f3a1b5085e8d2d42ecda442516f136ea5466351e633c67891",
+        "crates/daemon/src/shutdown.rs": "f3a7b2daae34f4e234edc4c56e3d2d7f6ea7d669612d367d5545377af243aa9a",
+        "crates/daemon/src/shutdown_tests.rs": "c02c55223bc18d2a2739f3148652a1614fdc10a3304819780fd88034df2c7ca9",
+        "crates/daemon/src/storage.rs": "4540fb4f64352fec8a40dba1571a6eafdf75af591fae5c890715dad5602c63c9",
+        "crates/daemon/src/storage_tests.rs": "6d0de5009c585e319e8136ce6856c00fc650fdecc453064d5df79db15e06f23a",
+        "crates/daemon/src/virtualization.rs": "df0c7e6009e3b96edef5599e7b0b840a91d83b5b6f93e977276bb1ab1d1480bd",
+        "crates/desktop/src/allocation.rs": "1447822c8650e8339e2a373a6139dcd7e401443a4be512321303b4a07465d34f",
+        "crates/desktop/src/create_recovery.rs": "38bb32aa78b65cdf80bd893a608728f74f18a7209a8e8684ed721f79949e410b",
+        "crates/desktop/src/create_recovery_tests.rs": "1d1045b2012517a43d91a6e757fa27c359fd55aa16b76a37a32d39339028e1ca",
+        "crates/desktop/src/dialog_tests.rs": "239a1f57c18061a2581988c2e8f42856b44292081622d25756695844c479cc10",
+        "crates/desktop/src/fab_tests.rs": "3154e273d593a4c36131b0eb354d8cb606277fe5c35da9f5b2a0b250b43a59d0",
+        "crates/desktop/src/host_ui_tests.rs": "512bf2952cd92fcf0f5042054c35075bfa8bd795fd1b36b42158715dc4a2b32f",
+        "crates/desktop/src/main.rs": "4cc10dfd881cd4b45822d991bcd864eb25bf23e5a6f0517d9a4f72d3b406e529",
+        "crates/desktop/src/memory_ui_tests.rs": "38e66f71b15550a5ad8903cefcc5f646d93d441b634fe426f0bf56a6ba7b9d55",
+        "crates/desktop/src/preferences.rs": "8e2b025aa70e0a7f58b6a4de9ca77c2e3e113366c4fd8d8c97f2fd73825c3a52",
+        "crates/desktop/src/preferences_tests.rs": "24b906ebd74249314f188d83bd5fe331ebdbd49b409ff16f5f7425a5b7b0c4cc",
+        "crates/desktop/src/reserve_ui_tests.rs": "ad7669d5d35485e8276f928ff78ffa49a6d969f9a352d26c8008e320decbab1d",
+        "crates/desktop/src/reserves.rs": "821899495a9a1cee87a236ced41e3c513f7f6a8a95586ea5f5e661d68bbf88ed",
+        "crates/desktop/src/resources.rs": "5faa4143052905237d13611f1afd55406dc8df73df6af5ca3da4804703b44b7c",
+        "crates/desktop/src/shutdown_ui_tests.rs": "37a58b7958202ad25bfcb48710c7fac3bb8ede878c146466b77331be66178681",
+        "crates/desktop/src/storage_ui_tests.rs": "e623e8c571a59e05fd45acb5f6279ff94a9eb29c4f34e857b466b9c75911f30b",
+        "crates/desktop/src/ui/applications.rs": "adf252b93fabc4fec63ce3bc7ab855d2b6a8910e65f036ced05b4126fc21d996",
+        "crates/desktop/src/ui/cockpit.rs": "0b7bd91ef8b5b5813834b311307703f015d60d4045f323430dc2e713b739d541",
+        "crates/desktop/src/ui/cockpit_power.rs": "ba33bb522bc07c99a9d419423fff1a3e3dcb2149fcfaef4ca3d0de271a3cbb01",
+        "crates/desktop/src/ui/editor.rs": "5296bb3327d0dc09b32faa56f954f6fc8e56e6ef878df5b6edf4dfbd11698f30",
+        "crates/desktop/src/ui/floating_actions.rs": "23950e1609e7858802b3c94558dc381a0c4814362c0f88eb360ad0b83b5a353b",
+        "crates/desktop/src/ui/hosts/allocations.rs": "c5c35fe3a656fb93db866d955fddc19ca6a7133a10bb0433e22bf442bbbac2a6",
+        "crates/desktop/src/ui/hosts/budget.rs": "cf5eff5e91945a2407035095ad274541d437b79417768cda1ca03df05ba59c96",
+        "crates/desktop/src/ui/hosts/storage.rs": "ece7fe373283290efaefc7e287fcfab17cf5a9e147257578c9565630cd5fae4b",
+        "crates/desktop/src/ui/hosts.rs": "c49377457b681b75ae939c7e87cd308151258fab77aaf150a7da07fbeab16677",
+        "crates/desktop/src/ui/lifecycle.rs": "84d8291c77cfc473698c958c8206852a09853429510c78cd7768bd161f95ac3e",
+        "crates/desktop/src/ui/memory_health.rs": "27a9873c92113e0e936beb6ff93b936ef6b26ba252be4d486bc27efcabcc4292",
+        "crates/desktop/src/ui/reserves.rs": "cfc3dc8d8e803fc304b98bef0ae32033ef73fd79430fec6ad6a78425603ea39c",
+        "crates/desktop/src/ui/resource_controls.rs": "11f81f108aa0c387725d318b9d012a0f5afe6028c6d5a0af5c3155df611aba93",
+        "crates/desktop/src/ui/setup.rs": "776e477b27ffb78dc80952f822a531af13bd4611435e068a7af720460816ef7b",
+        "crates/desktop/src/ui/shutdown.rs": "9203f164cbf39962ce388acaf8cd313b94408db2864cb903ca9431e261caaef9",
+        "crates/desktop/src/ui/status_colors.rs": "429af9fbf8c5c437eae1357813d49a44dbff7a5d76b05b7fb837665d8d3c8f02",
+        "crates/desktop/src/ui/workspace.rs": "9feb6ea3e9c901a04f45de311e9a55a5a9c1ff2edd77e372ca7b430f7b6293b8",
+        "crates/desktop/src/ui/workspaces.rs": "5432fa52fbd6dfa53b01487d19e6eb426948807176062c881da06f31f46acb58",
+        "crates/desktop/src/ui.rs": "e1dbc09ea431728a2d5ff3fbac7bcd5cdfff73ddb2cc4882975f0343c37adfa6",
+        "crates/desktop/src/ui_status_tests.rs": "7373f37e713da0ddcd793071b1b80a2ef80d799112bbaacd22013d7399851e61",
+        "crates/desktop/src/virtualization.rs": "1f0152442c02c152a4be849b30976693aef54f77bc5edde09df6378ed1208e73",
+        "crates/desktop/src/virtualization_power_tests.rs": "8544aea2391d81544c9e110c66d94845f804f30c22c2bdff5fe67311d2ac64bb",
+        "crates/desktop/src/virtualization_ui_tests.rs": "23701b53f3f41f0bbc8869a38b93dc78e97319c79357ce573e4ffae1c5a61108",
+        "crates/desktop/src/visual_tests.rs": "9af09c9b182061e7cee081d35c29c971601a901d68ac08aaa66d5395d3775308",
+        "crates/host/src/lib.rs": "7d68711fa249f0528d614cf431104b7af7928774984aceb9abeb151f6da44b41",
+        "crates/host/src/storage/parse.rs": "e088129af5a6a324f0545dfb3fbb8d53eae7155ca8db786d96c8b03a8ce20e43",
+        "crates/host/src/storage/tests.rs": "d1fb72588a20b54ac9a3b95570aee69aec2c7fd32609733815495bdba4614fe4",
+        "crates/host/src/storage.rs": "3a05628ea449f7b52b08171e73b355fd8f6bcee0d5ec4ae9bf3315c4c6d69f2c",
+        "crates/store/src/apps.rs": "3ea9ea9f1f7ffe2c7d56482407692eb2ac1f3614784a356d95617bb7eb331998",
+        "crates/store/src/create.rs": "e57c0e055405eeae392287f582c2b7351742572c71848a704e13e76170a2f0d2",
+        "crates/store/src/edit.rs": "5749d9a97e76a8afc4eb1d4700fab371b825612045e2f6311c5182ef581cb723",
+        "crates/store/src/lib.rs": "c38f5165a3366a84a2f0133ce3e6b79627981f5b61a6c995942a738b59b01df1",
+        "crates/store/src/memory.rs": "f90bb54ad262522cb18f3d01a29b3d7d78f20cb0be7c8bbf19e067cdbd3c8f41",
+        "crates/store/src/reserve_tests.rs": "b6f6c853502faa15114e8da51fa9c1ad15b3941912ef0aace33a618c210ee45c",
+        "crates/store/src/reserves.rs": "0f7004c378bb545f87be8d0dccd319a65e6c1e51d091ee592c924cdc0b58b385",
+        "crates/store/src/schema.sql": "909b20cc203c7d8ddddc6c62f2696b8f221b60bdc206476905c0d119e1ece62d",
+        "crates/store/src/shutdown.rs": "b709bf5cc41948e12c1f6e7a82d4c125b783030e4620a7c5763cbc9f0536cd45",
+        "crates/store/src/tests.rs": "a605677cc9b7a612069f0736d954becd740eb230107cd14b0adbe29b9cb00028",
+        "crates/store/src/virtualization.rs": "619a8cfb2d896f509a18c4113dd6291cbc845132b30dee5a7dd48885b8033115",
+        "crates/virtualization/src/lib.rs": "7b7b0fd6f479e915ba3eac274d116b9197cee95b0d4ae3f296838d3dbe270c5c",
+        "crates/virtualization/src/proxmox.rs": "fc83df4fbf2217710e65b8699d2ed8e6d371c9fb706667cb6e3d1bd1442e35c0",
+        "crates/virtualization/src/resources.rs": "1ce1ee065518ef59be2a746fd60a3cb5ce7920eb73ec53e261437864cf7148d2"
+      },
+      "harness_sha256": {
+        "proxmox_power_guest.py": "e62da26cf4b3d879f71b87adc2a95a48cd6a604587583f96456764237a6d5758",
+        "proxmox_power_host.py": "d3c1c3a395ec19d102a2106641806d5900e03d17ef03b0e2f67723c145359e82",
+        "proxmox_power_live.py": "28666e58252f5edda1732b784903c18978f113839f4f9c26266a07e5fd75f323",
+        "proxmox_power_probe.rs": "cdf88db0caf9b7eea8090fb704d1d9aa3ddce3db0ac999ed4a8964db529e5c98"
+      }
+    }
+  ]
+}

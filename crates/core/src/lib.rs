@@ -9,12 +9,14 @@ mod reserves;
 mod storage;
 pub use memory_health::*;
 pub use storage::*;
+mod virtualization;
 mod vm;
 pub use apps::*;
 pub use edit::*;
 pub use reserves::*;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
+pub use virtualization::*;
 pub use vm::*;
 
 pub const CONTROL_ALPN: &[u8] = b"homecloud/control/2";
@@ -347,6 +349,17 @@ pub enum Request {
         token: String,
     },
     Snapshot,
+    ControlPlaneMode,
+    VirtualizationInventory,
+    VirtualizationPower {
+        idempotency_key: Uuid,
+        guest: VirtualizationGuestIdentity,
+        action: VirtualizationPowerAction,
+    },
+    VirtualizationOperations,
+    AcknowledgeVirtualizationOperation {
+        operation_id: Uuid,
+    },
     CancelMemoryCapacity {
         operation_id: Uuid,
     },
@@ -449,6 +462,11 @@ impl Request {
             | Self::CancelHostShutdown { .. }
             | Self::Enroll { .. }
             | Self::Snapshot
+            | Self::ControlPlaneMode
+            | Self::VirtualizationInventory
+            | Self::VirtualizationPower { .. }
+            | Self::VirtualizationOperations
+            | Self::AcknowledgeVirtualizationOperation { .. }
             | Self::InviteDevice { .. }
             | Self::RevokeDevice { .. }
             | Self::SetAccountActive { .. }
@@ -465,6 +483,10 @@ pub enum Response {
     Enrolled(User),
     HostReserveOperation(HostReserveOperation),
     Snapshot(Box<Snapshot>),
+    ControlPlaneMode(ControlPlaneMode),
+    VirtualizationInventory(VirtualizationInventory),
+    VirtualizationOperation(VirtualizationOperation),
+    VirtualizationOperations(Vec<VirtualizationOperation>),
     Invitation {
         token: String,
         user_id: Uuid,

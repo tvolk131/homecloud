@@ -1,5 +1,7 @@
 use super::{App, Field, Msg, Page, Panel, unix_now};
 mod applications;
+mod cockpit;
+mod cockpit_power;
 mod editor;
 mod floating_actions;
 mod hosts;
@@ -138,6 +140,9 @@ const PAGE_EDGE_INSET: f32 = 24.0;
 const SCROLLBAR_GUTTER: f32 = 16.0;
 
 pub fn view(app: &App) -> Element<'_, Msg> {
+    if let Some(cockpit) = &app.cockpit {
+        return iced_m3::focus::scope(cockpit::view(app, cockpit));
+    }
     let background: Element<'_, Msg> = if let Some(snapshot) = &app.snapshot {
         responsive(move |size| {
             let items = [
@@ -543,7 +548,7 @@ fn pairing(app: &App) -> Element<'_, Msg> {
             Type::HeadlineLarge
         ),
         copy(if connecting {
-            "Fetching your machines and host status…"
+            "Checking the server mode and loading its inventory…"
         } else {
             "Pair this Mac once, then manage your development machines from anywhere."
         })
@@ -554,6 +559,9 @@ fn pairing(app: &App) -> Element<'_, Msg> {
             .push(app.input("Public host ticket",Field::Ticket))
             .push(iced_m3::text_field("Invitation code",app.get(Field::Token)).secure(true).on_input(|s|Msg::Edit(Field::Token,s)))
             .push(button(if app.busy{"Pairing…"}else{"Pair device"}).on_press(Msg::Pair).disabled(app.busy||app.get(Field::Token).is_empty()||app.get(Field::Ticket).is_empty()));
+    } else if app.error.is_some() {
+        content =
+            content.push(secondary("Retry connection", Msg::Refresh).disabled(app.refreshing));
     }
     if let Some(error) = &app.error {
         content = content.push(message(error, true));
